@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { DishService } from '../services/DishService.js';
 import { validateSchema } from '../utils/validation.js';
-import { DishCreateSchema, DishUpdateSchema } from '@menumaker/shared';
+import { DishCreateSchema, DishUpdateSchema, CategoryCreateSchema } from '@menumaker/shared';
 import { authenticate } from '../middleware/auth.js';
 
 export async function dishRoutes(fastify: FastifyInstance): Promise<void> {
@@ -98,28 +98,14 @@ export async function dishRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/categories', {
     preHandler: authenticate,
   }, async (request, reply) => {
-    const { businessId, name, description } = request.body as {
-      businessId: string;
-      name: string;
-      description?: string;
-    };
-
-    if (!businessId || !name) {
-      reply.status(400).send({
-        success: false,
-        error: {
-          code: 'MISSING_FIELDS',
-          message: 'businessId and name are required',
-        },
-      });
-      return;
-    }
+    // Security: Validate input with Zod schema
+    const data = validateSchema(CategoryCreateSchema, request.body);
 
     const category = await dishService.createCategory(
-      businessId,
+      data.businessId,
       request.user!.userId,
-      name,
-      description
+      data.name,
+      data.description
     );
 
     reply.status(201).send({

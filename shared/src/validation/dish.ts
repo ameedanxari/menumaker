@@ -15,5 +15,12 @@ export const DishCreateSchema = z.object({
 
 export const DishUpdateSchema = DishCreateSchema.partial();
 
+export const CategoryCreateSchema = z.object({
+  businessId: z.string().uuid('Invalid business ID format'),
+  name: z.string().min(1, 'Category name is required').max(100, 'Category name too long'),
+  description: z.string().max(500, 'Description too long').optional(),
+});
+
 export type DishCreateInput = z.infer<typeof DishCreateSchema>;
 export type DishUpdateInput = z.infer<typeof DishUpdateSchema>;
+export type CategoryCreateInput = z.infer<typeof CategoryCreateSchema>;
