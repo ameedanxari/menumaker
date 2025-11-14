@@ -3,6 +3,8 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import multipart from '@fastify/multipart';
+import swagger from '@fastify/swagger';
+import swaggerUi from '@fastify/swagger-ui';
 import dotenv from 'dotenv';
 import { AppDataSource } from './config/database.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -51,10 +53,73 @@ async function registerPlugins() {
       directives: {
         defaultSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"], // Allow inline for Swagger UI
         imgSrc: ["'self'", 'data:', 'https:'],
       },
     },
+  });
+
+  // Swagger/OpenAPI Documentation
+  await fastify.register(swagger, {
+    openapi: {
+      openapi: '3.0.0',
+      info: {
+        title: 'MenuMaker API',
+        description: 'RESTful API for MenuMaker - Restaurant Menu Management & Ordering System',
+        version: '1.0.0',
+        contact: {
+          name: 'MenuMaker Team',
+          url: 'https://github.com/ameedanxari/menumaker',
+        },
+        license: {
+          name: 'MIT',
+          url: 'https://opensource.org/licenses/MIT',
+        },
+      },
+      servers: [
+        {
+          url: 'http://localhost:3001',
+          description: 'Development server',
+        },
+        {
+          url: 'https://api.menumaker.app',
+          description: 'Production server',
+        },
+      ],
+      tags: [
+        { name: 'auth', description: 'Authentication endpoints' },
+        { name: 'businesses', description: 'Business management endpoints' },
+        { name: 'dishes', description: 'Dish and category management endpoints' },
+        { name: 'menus', description: 'Menu management endpoints' },
+        { name: 'orders', description: 'Order management endpoints' },
+        { name: 'media', description: 'File upload and management endpoints' },
+        { name: 'reports', description: 'Reporting and analytics endpoints' },
+      ],
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'JWT',
+            description: 'Enter your JWT token obtained from the login endpoint',
+          },
+        },
+      },
+    },
+  });
+
+  await fastify.register(swaggerUi, {
+    routePrefix: '/api/docs',
+    uiConfig: {
+      docExpansion: 'list',
+      deepLinking: true,
+      displayRequestDuration: true,
+      filter: true,
+      showExtensions: true,
+      showCommonExtensions: true,
+    },
+    staticCSP: true,
+    transformStaticCSP: (header) => header,
   });
 
   // Rate limiting
@@ -132,6 +197,7 @@ async function start() {
     await fastify.listen({ port: PORT, host: HOST });
 
     fastify.log.info(`Server listening on http://${HOST}:${PORT}`);
+    fastify.log.info(`API Documentation available at http://${HOST}:${PORT}/api/docs`);
     fastify.log.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
   } catch (error) {
     fastify.log.error(error);
