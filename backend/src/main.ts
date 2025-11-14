@@ -37,6 +37,14 @@ const fastify = Fastify({
       },
     }),
   },
+  // Generate unique request IDs for request tracing
+  genReqId: (req) => {
+    // Use X-Request-ID header if provided, otherwise generate UUID-style ID
+    return req.headers['x-request-id']?.toString() ||
+           `req-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+  },
+  // Disable default request logging (we'll use our custom middleware)
+  disableRequestLogging: process.env.NODE_ENV === 'production',
 });
 
 // Register plugins
@@ -139,6 +147,43 @@ async function registerPlugins() {
 
 // Register routes
 async function registerRoutes() {
+  // Global request logging hook
+  fastify.addHook('onRequest', async (request, reply) => {
+    request.log.info({
+      msg: 'Incoming request',
+      requestId: request.id,
+      method: request.method,
+      url: request.url,
+      userAgent: request.headers['user-agent'],
+      ip: request.ip,
+    });
+
+    // Track request start time for duration calculation
+    (request as any).startTime = Date.now();
+
+    // Add response hook to log completion
+    reply.addHook('onSend', async () => {
+      const duration = Date.now() - (request as any).startTime;
+      const isProduction = process.env.NODE_ENV === 'production';
+      const isSlow = duration > 1000;
+      const isError = reply.statusCode >= 400;
+
+      // Log all requests in dev, only slow or error requests in production
+      if (!isProduction || isSlow || isError) {
+        request.log.info({
+          msg: 'Request completed',
+          requestId: request.id,
+          method: request.method,
+          url: request.url,
+          statusCode: reply.statusCode,
+          duration,
+          ...(isSlow && { performance: 'slow' }),
+          ...(isError && { level: 'warn' }),
+        });
+      }
+    });
+  });
+
   // Health check
   fastify.get('/health', async () => {
     return {
