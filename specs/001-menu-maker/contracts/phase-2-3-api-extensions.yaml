@@ -1,0 +1,1297 @@
+# Phase 2 & 3 API Extensions for MenuMaker
+# To be appended to api.openapi.yaml
+
+# Copy this content and append to api.openapi.yaml after line 1722
+
+  # ===== PHASE 2: COMMON DISHES (Phase 1 Carryover) =====
+  /common-dishes:
+    get:
+      summary: Get common dish templates catalog
+      tags: [Common Dishes]
+      security: []
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [north_indian, south_indian, chinese, bakery, beverages, desserts]
+        - name: subcategory
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Common dish templates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dishes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CommonDish'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /common-dishes/{id}:
+    get:
+      summary: Get common dish details
+      tags: [Common Dishes]
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Common dish details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonDish'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /dishes/from-template:
+    post:
+      summary: Create dish from common dish template
+      tags: [Dishes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - business_id
+                - common_dish_id
+              properties:
+                business_id:
+                  type: string
+                  format: uuid
+                common_dish_id:
+                  type: string
+                  format: uuid
+                price_cents:
+                  type: integer
+                  description: Override template price
+                description:
+                  type: string
+                  description: Override template description
+                category_id:
+                  type: string
+                  format: uuid
+                  description: User-defined category
+      responses:
+        '201':
+          description: Dish created from template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dish'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  # ===== PHASE 2: DISH CATEGORIES =====
+  /businesses/{businessId}/dish-categories:
+    get:
+      summary: Get dish categories for business
+      tags: [Dish Categories]
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Dish categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DishCategory'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create dish category
+      tags: [Dish Categories]
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: "Appetizers"
+                description:
+                  type: string
+                sort_order:
+                  type: integer
+                  default: 0
+      responses:
+        '201':
+          description: Category created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DishCategory'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /dish-categories/{id}:
+    patch:
+      summary: Update dish category
+      tags: [Dish Categories]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                sort_order:
+                  type: integer
+      responses:
+        '200':
+          description: Category updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DishCategory'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete dish category
+      tags: [Dish Categories]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Category deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===== PHASE 2: REFERRAL SYSTEM =====
+  /users/me/referral-code:
+    get:
+      summary: Get my referral code
+      tags: [Referrals]
+      responses:
+        '200':
+          description: Referral code
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  referral_code:
+                    type: string
+                    example: "PRIYA2024"
+                  referral_url:
+                    type: string
+                    example: "https://menumaker.app/signup?ref=PRIYA2024"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me/referrals:
+    get:
+      summary: Get my referrals list
+      tags: [Referrals]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [link_clicked, signup_completed, first_menu_published, expired]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Referrals list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  referrals:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Referral'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me/referrals/stats:
+    get:
+      summary: Get referral statistics
+      tags: [Referrals]
+      responses:
+        '200':
+          description: Referral stats
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_referrals:
+                    type: integer
+                  completed_referrals:
+                    type: integer
+                  pending_referrals:
+                    type: integer
+                  total_rewards_earned_cents:
+                    type: integer
+                  leaderboard_position:
+                    type: integer
+                    nullable: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /referrals/track-click:
+    post:
+      summary: Track referral link click
+      tags: [Referrals]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - referral_code
+              properties:
+                referral_code:
+                  type: string
+                device_fingerprint:
+                  type: string
+                referrer_url:
+                  type: string
+      responses:
+        '200':
+          description: Click tracked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tracked:
+                    type: boolean
+                  requires_review:
+                    type: boolean
+                  reason:
+                    type: string
+                    nullable: true
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /referrals/validate:
+    post:
+      summary: Validate referral code on signup
+      tags: [Referrals]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - referral_code
+              properties:
+                referral_code:
+                  type: string
+      responses:
+        '200':
+          description: Referral code valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  referrer_name:
+                    type: string
+                  reward_type:
+                    type: string
+                    enum: [free_pro_month, account_credit]
+                  reward_amount_cents:
+                    type: integer
+                    nullable: true
+        '404':
+          description: Invalid referral code
+
+  /referrals/claim-reward:
+    post:
+      summary: Claim referral reward (after first menu published)
+      tags: [Referrals]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - referral_code
+              properties:
+                referral_code:
+                  type: string
+      responses:
+        '200':
+          description: Reward claimed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reward_claimed:
+                    type: boolean
+                  reward_type:
+                    type: string
+                  reward_amount_cents:
+                    type: integer
+                    nullable: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Reward already claimed
+
+  # ===== PHASE 2: GDPR =====
+  /users/me/export-data:
+    post:
+      summary: Request GDPR data export
+      tags: [GDPR]
+      responses:
+        '202':
+          description: Export request accepted (will be emailed within 12 hours)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_id:
+                    type: string
+                    format: uuid
+                  estimated_completion:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me/delete-account:
+    post:
+      summary: Request account deletion (7-day grace period)
+      tags: [GDPR]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - confirm_deletion
+              properties:
+                confirm_deletion:
+                  type: boolean
+                reason:
+                  type: string
+      responses:
+        '202':
+          description: Deletion scheduled (7-day grace period)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deletion_scheduled_at:
+                    type: string
+                    format: date-time
+                  cancellation_deadline:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me/consents:
+    get:
+      summary: Get user consents (cookies, analytics, marketing)
+      tags: [GDPR]
+      responses:
+        '200':
+          description: User consents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserConsent'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Update user consents
+      tags: [GDPR]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - consent_type
+                - granted
+              properties:
+                consent_type:
+                  type: string
+                  enum: [cookies, analytics, marketing]
+                granted:
+                  type: boolean
+      responses:
+        '200':
+          description: Consent updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserConsent'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ===== PHASE 3: ADMIN BACKEND =====
+  /admin/users:
+    get:
+      summary: List all users (admin only)
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: email
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, suspended, banned]
+        - name: subscription_tier
+          in: query
+          schema:
+            type: string
+            enum: [free, pro, business]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Users list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden (requires admin role)
+
+  /admin/users/{id}:
+    get:
+      summary: Get user details (admin only)
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  businesses:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Business'
+                  orders_count:
+                    type: integer
+                  total_gmv_cents:
+                    type: integer
+                  last_login_at:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/users/{id}/suspend:
+    patch:
+      summary: Suspend user (admin only)
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+                - duration_days
+              properties:
+                reason:
+                  type: string
+                  enum: [spam, fraud, tos_violation, payment_dispute]
+                duration_days:
+                  type: integer
+                  description: "7, 30, or null for permanent"
+                  nullable: true
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: User suspended
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/users/{id}/ban:
+    post:
+      summary: Ban user permanently (admin only, super_admin role required)
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: User banned
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden (requires super_admin role)
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/users/{id}/unsuspend:
+    patch:
+      summary: Unsuspend user (admin only)
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User unsuspended
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===== PHASE 3: CONTENT MODERATION =====
+  /admin/flags:
+    get:
+      summary: Get content moderation queue (admin only)
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
+        - name: content_type
+          in: query
+          schema:
+            type: string
+            enum: [review, dish, image]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Flagged content
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  flags:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ContentFlag'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden
+
+  /admin/flags/{id}:
+    get:
+      summary: Get flag details (admin only)
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Flag details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentFlag'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/flags/{id}/approve:
+    post:
+      summary: Approve flagged content (admin only)
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Content approved (unhidden)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/flags/{id}/reject:
+    post:
+      summary: Reject flagged content (admin only, keeps content hidden)
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Content rejected (remains hidden)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===== PHASE 3: ADMIN ANALYTICS =====
+  /admin/analytics/dashboard:
+    get:
+      summary: Get platform analytics dashboard (admin only)
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Dashboard metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  active_sellers:
+                    type: integer
+                  total_orders_today:
+                    type: integer
+                  gmv_today_cents:
+                    type: integer
+                  uptime_percentage:
+                    type: number
+                  error_rate_percentage:
+                    type: number
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden
+
+  # ===== PHASE 3: FEATURE FLAGS =====
+  /admin/feature-flags:
+    get:
+      summary: List all feature flags (admin only)
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Feature flags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FeatureFlag'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden
+
+  /admin/feature-flags/{id}:
+    patch:
+      summary: Update feature flag (admin only)
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled_globally:
+                  type: boolean
+                enabled_tiers:
+                  type: array
+                  items:
+                    type: string
+                    enum: [free, pro, business]
+                rollout_percentage:
+                  type: integer
+                  minimum: 0
+                  maximum: 100
+      responses:
+        '200':
+          description: Feature flag updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlag'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===== PHASE 3: REVIEWS =====
+  /orders/{orderId}/reviews:
+    post:
+      summary: Submit review for order
+      tags: [Reviews]
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - rating
+              properties:
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                review_text:
+                  type: string
+                  maxLength: 500
+                customer_name:
+                  type: string
+      responses:
+        '201':
+          description: Review submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '409':
+          description: Review already exists for this order
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /businesses/{businessId}/reviews:
+    get:
+      summary: Get reviews for business
+      tags: [Reviews]
+      security: []
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: rating
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Reviews
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reviews:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Review'
+                  average_rating:
+                    type: number
+                  total_count:
+                    type: integer
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /reviews/{id}/respond:
+    patch:
+      summary: Seller response to review
+      tags: [Reviews]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - response_text
+              properties:
+                response_text:
+                  type: string
+                  maxLength: 500
+      responses:
+        '200':
+          description: Response posted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===== CONTENT FLAGGING (Public) =====
+  /content/{type}/{id}/flag:
+    post:
+      summary: Flag content as offensive
+      tags: [Content Moderation]
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [review, dish, image]
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                  enum: [offensive_language, inappropriate_image, spam, fraud, other]
+                details:
+                  type: string
+      responses:
+        '201':
+          description: Content flagged for review
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+# ===== SCHEMA ADDITIONS =====
+# Add these to the components.schemas section in api.openapi.yaml
+
+components:
+  schemas:
+    # Phase 2 Schemas
+    CommonDish:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Samosa"
+        description:
+          type: string
+        category:
+          type: string
+          enum: [north_indian, south_indian, chinese, bakery, beverages, desserts]
+        subcategory:
+          type: string
+        min_price_cents:
+          type: integer
+        max_price_cents:
+          type: integer
+        default_allergens:
+          type: array
+          items:
+            type: string
+        popularity_score:
+          type: integer
+        image_url:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    DishCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Appetizers"
+        description:
+          type: string
+        sort_order:
+          type: integer
+        business_id:
+          type: string
+          format: uuid
+        is_default:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    Referral:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        referral_code:
+          type: string
+          example: "PRIYA2024"
+        referee_name:
+          type: string
+        status:
+          type: string
+          enum: [link_clicked, signup_completed, first_menu_published, expired]
+        reward_type:
+          type: string
+          enum: [free_pro_month, account_credit]
+        reward_amount_cents:
+          type: integer
+        reward_claimed:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    UserConsent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        consent_type:
+          type: string
+          enum: [cookies, analytics, marketing]
+        granted:
+          type: boolean
+        granted_at:
+          type: string
+          format: date-time
+        revoked_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    # Phase 3 Schemas
+    FeatureFlag:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        flag_key:
+          type: string
+          example: "whatsapp_automation_enabled"
+        enabled_globally:
+          type: boolean
+        enabled_tiers:
+          type: array
+          items:
+            type: string
+            enum: [free, pro, business]
+        rollout_percentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ContentFlag:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        content_type:
+          type: string
+          enum: [review, dish, image]
+        content_id:
+          type: string
+          format: uuid
+        reason:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        flagged_by_user_id:
+          type: string
+          format: uuid
+        reviewed_by_admin_id:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        reviewed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        order_id:
+          type: string
+          format: uuid
+        business_id:
+          type: string
+          format: uuid
+        customer_name:
+          type: string
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        review_text:
+          type: string
+        seller_response:
+          type: string
+          nullable: true
+        verified_purchase:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time

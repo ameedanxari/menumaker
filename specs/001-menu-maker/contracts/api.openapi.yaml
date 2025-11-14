@@ -1,0 +1,1864 @@
+openapi: 3.0.0
+info:
+  title: MenuMaker API
+  version: 1.0.0-mvp
+  description: |
+    MenuMaker MVP API for home food business sellers to manage menus, accept orders, and track sales.
+    
+    **Base URL**: https://api.menu-maker.app/v1
+    **Authentication**: Bearer JWT token (in Authorization header)
+    
+    Error responses always include:
+    ```json
+    {
+      "error": { "code": "ERROR_CODE", "message": "User-friendly message" }
+    }
+    ```
+
+servers:
+  - url: https://api.menu-maker.app/v1
+    description: Production
+  - url: http://localhost:3001/v1
+    description: Local development
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ===== Common =====
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Email must be a valid email address
+            details:
+              type: array
+              items:
+                type: object
+              example: []
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          default: 1
+        limit:
+          type: integer
+          default: 20
+        total:
+          type: integer
+        pages:
+          type: integer
+
+    # ===== Auth =====
+    SignUpRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: seller@example.com
+        password:
+          type: string
+          minLength: 8
+          example: SecurePassword123
+      description: Seller email/password signup
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT token (valid 15 minutes)
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        refresh_token:
+          type: string
+          description: Refresh token (valid 7 days; for PWA only)
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        user:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        business_id:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    # ===== Business =====
+    BusinessCreateRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Mom's Tiffin Service
+        description:
+          type: string
+          maxLength: 1000
+          example: Homemade healthy meals delivered weekly
+        primary_color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          example: '#E74C3C'
+        locale:
+          type: string
+          default: en
+          example: en
+
+    Business:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+          example: moms-tiffin-service
+        logo_url:
+          type: string
+          format: uri
+          nullable: true
+        primary_color:
+          type: string
+        description:
+          type: string
+        locale:
+          type: string
+        timezone:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    BusinessSettings:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        delivery_type:
+          type: string
+          enum: [flat, distance, free]
+          default: flat
+        delivery_fee_cents:
+          type: integer
+          minimum: 0
+          example: 5000
+        delivery_base_fee_cents:
+          type: integer
+          minimum: 0
+          nullable: true
+        delivery_per_km_cents:
+          type: integer
+          minimum: 0
+          nullable: true
+        min_order_free_delivery_cents:
+          type: integer
+          minimum: 0
+          nullable: true
+        distance_rounding:
+          type: string
+          enum: [round, ceil, floor]
+          default: round
+        payment_method:
+          type: string
+          enum: [cash, bank_transfer, upi, other]
+          default: cash
+        payment_instructions:
+          type: string
+          nullable: true
+          example: Bank Account: 12345678, IFSC: HDFC0001234
+        currency:
+          type: string
+          length: 3
+          default: INR
+        auto_confirm_orders:
+          type: boolean
+          default: false
+        created_at:
+          type: string
+          format: date-time
+
+    BusinessSettingsUpdateRequest:
+      type: object
+      properties:
+        delivery_type:
+          type: string
+          enum: [flat, distance, free]
+        delivery_fee_cents:
+          type: integer
+          minimum: 0
+        delivery_base_fee_cents:
+          type: integer
+          minimum: 0
+          nullable: true
+        delivery_per_km_cents:
+          type: integer
+          minimum: 0
+          nullable: true
+        payment_method:
+          type: string
+          enum: [cash, bank_transfer, upi, other]
+        payment_instructions:
+          type: string
+          maxLength: 1000
+          nullable: true
+        currency:
+          type: string
+          length: 3
+
+    # ===== Dish =====
+    DishCreateRequest:
+      type: object
+      required:
+        - name
+        - description
+        - price_cents
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Sambar Rice
+        description:
+          type: string
+          minLength: 50
+          maxLength: 500
+          example: Fluffy basmati rice cooked with sambar, served with fresh vegetables and a side of pickle.
+        price_cents:
+          type: integer
+          minimum: 0
+          example: 7500
+        allergen_tags:
+          type: array
+          items:
+            type: string
+            enum: [dairy, nuts, gluten, vegan, shellfish, sesame, soy]
+          example: [dairy]
+        image_urls:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: S3 URLs; first is primary
+          example: [https://s3.amazonaws.com/menu-maker/dish-1.jpg]
+
+    Dish:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        business_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        price_cents:
+          type: integer
+        currency:
+          type: string
+        allergen_tags:
+          type: array
+          items:
+            type: string
+        image_urls:
+          type: array
+          items:
+            type: string
+            format: uri
+        is_available:
+          type: boolean
+          default: true
+        position:
+          type: integer
+        common_dish_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Reference to common dish template (if imported)
+        category_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: User-defined category
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    # ===== Common Dishes =====
+    CommonDish:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Samosa
+        description:
+          type: string
+          nullable: true
+          example: Crispy fried pastry filled with spiced potatoes and peas
+        category:
+          type: string
+          enum: [north_indian, south_indian, chinese, bakery, beverages, desserts]
+        subcategory:
+          type: string
+          nullable: true
+          example: appetizers
+        suggested_price_range:
+          type: object
+          nullable: true
+          properties:
+            min_cents:
+              type: integer
+              example: 1000
+            max_cents:
+              type: integer
+              example: 3000
+            min_formatted:
+              type: string
+              example: "₹10"
+            max_formatted:
+              type: string
+              example: "₹30"
+        default_allergens:
+          type: array
+          items:
+            type: string
+          example: ["gluten"]
+        aliases:
+          type: array
+          items:
+            type: string
+          example: ["Samsa", "Sambosa"]
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["vegetarian", "fried", "spicy"]
+        image_url:
+          type: string
+          format: uri
+          nullable: true
+        popularity_score:
+          type: integer
+          example: 95
+        active:
+          type: boolean
+
+    DishFromTemplateRequest:
+      type: object
+      required:
+        - common_dish_id
+        - business_id
+        - menu_id
+      properties:
+        common_dish_id:
+          type: string
+          format: uuid
+        business_id:
+          type: string
+          format: uuid
+        menu_id:
+          type: string
+          format: uuid
+        overrides:
+          type: object
+          description: Optional field overrides for customization
+          properties:
+            name:
+              type: string
+              maxLength: 255
+            description:
+              type: string
+              maxLength: 500
+            price_cents:
+              type: integer
+              minimum: 0
+            allergen_tags:
+              type: array
+              items:
+                type: string
+            image_urls:
+              type: array
+              items:
+                type: string
+                format: uri
+            category_id:
+              type: string
+              format: uuid
+
+    # ===== Dish Categories =====
+    DishCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Appetizers
+        description:
+          type: string
+          nullable: true
+          example: Starters and snacks
+        sort_order:
+          type: integer
+          default: 0
+        business_id:
+          type: string
+          format: uuid
+        is_default:
+          type: boolean
+          description: True for system-suggested categories
+        dish_count:
+          type: integer
+          description: Number of dishes in this category
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    DishCategoryCreateRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: Chef's Specials
+        description:
+          type: string
+          maxLength: 500
+          example: Our signature dishes
+        sort_order:
+          type: integer
+          default: 0
+
+    DishCategoryUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        description:
+          type: string
+          maxLength: 500
+        sort_order:
+          type: integer
+
+    # ===== Menu =====
+    MenuCreateRequest:
+      type: object
+      required:
+        - title
+        - start_date
+        - end_date
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Weekly Menu - Nov 10-16
+        start_date:
+          type: string
+          format: date
+          example: '2025-11-10'
+        end_date:
+          type: string
+          format: date
+          example: '2025-11-16'
+        menu_items:
+          type: array
+          items:
+            type: object
+            properties:
+              dish_id:
+                type: string
+                format: uuid
+              price_override_cents:
+                type: integer
+                nullable: true
+              position:
+                type: integer
+                default: 0
+
+    MenuItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        dish:
+          $ref: '#/components/schemas/Dish'
+        price_override_cents:
+          type: integer
+          nullable: true
+        is_available:
+          type: boolean
+        position:
+          type: integer
+
+    Menu:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        business_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [draft, published, archived]
+          default: draft
+        menu_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MenuItem'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    # ===== Order =====
+    OrderCreateRequest:
+      type: object
+      required:
+        - menu_id
+        - customer_name
+        - customer_phone
+        - delivery_type
+        - items
+      properties:
+        menu_id:
+          type: string
+          format: uuid
+        customer_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Rajesh Kumar
+        customer_phone:
+          type: string
+          pattern: '^[+]?[0-9]{1,15}$'
+          example: '+919876543210'
+        customer_email:
+          type: string
+          format: email
+          nullable: true
+        delivery_type:
+          type: string
+          enum: [pickup, delivery]
+          example: delivery
+        delivery_address:
+          type: string
+          maxLength: 1000
+          nullable: true
+          example: 123 Main St, Apt 4B, City
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - dish_id
+              - quantity
+            properties:
+              dish_id:
+                type: string
+                format: uuid
+              quantity:
+                type: integer
+                minimum: 1
+          minItems: 1
+          example:
+            - dish_id: 550e8400-e29b-41d4-a716-446655440000
+              quantity: 2
+        notes:
+          type: string
+          maxLength: 500
+          nullable: true
+          example: No spice please, extra rice
+
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        dish:
+          $ref: '#/components/schemas/Dish'
+        quantity:
+          type: integer
+        price_at_purchase_cents:
+          type: integer
+          example: 7500
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        business_id:
+          type: string
+          format: uuid
+        menu_id:
+          type: string
+          format: uuid
+        customer_name:
+          type: string
+        customer_phone:
+          type: string
+        customer_email:
+          type: string
+          nullable: true
+        delivery_type:
+          type: string
+          enum: [pickup, delivery]
+        delivery_address:
+          type: string
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        total_cents:
+          type: integer
+          example: 22500
+        delivery_fee_cents:
+          type: integer
+          default: 0
+        payment_method:
+          type: string
+        payment_status:
+          type: string
+          enum: [unpaid, paid]
+          default: unpaid
+        order_status:
+          type: string
+          enum: [pending, confirmed, ready, fulfilled, cancelled]
+          default: pending
+        notes:
+          type: string
+          nullable: true
+        currency:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+        fulfilled_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    OrderUpdateRequest:
+      type: object
+      properties:
+        order_status:
+          type: string
+          enum: [pending, confirmed, ready, fulfilled, cancelled]
+        payment_status:
+          type: string
+          enum: [unpaid, paid]
+        notes:
+          type: string
+          maxLength: 500
+          nullable: true
+
+    # ===== Reports =====
+    OrdersReportRow:
+      type: object
+      properties:
+        order_id:
+          type: string
+        customer_name:
+          type: string
+        customer_phone:
+          type: string
+        items:
+          type: string
+          example: "Sambar Rice (2), Dosa (1)"
+        subtotal_cents:
+          type: integer
+        delivery_fee_cents:
+          type: integer
+        total_cents:
+          type: integer
+        payment_status:
+          type: string
+        order_status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    SummaryReport:
+      type: object
+      properties:
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        total_orders:
+          type: integer
+        total_revenue_cents:
+          type: integer
+        avg_order_value_cents:
+          type: integer
+        orders_by_status:
+          type: object
+          properties:
+            pending:
+              type: integer
+            confirmed:
+              type: integer
+            fulfilled:
+              type: integer
+
+  responses:
+    Unauthorized:
+      description: Unauthorized (invalid or expired token)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: UNAUTHORIZED
+              message: Invalid or expired token
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Conflict:
+      description: Conflict (e.g., duplicate email)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ===== AUTH =====
+  /auth/signup:
+    post:
+      summary: Seller sign up
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpRequest'
+      responses:
+        '201':
+          description: Signup successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /auth/login:
+    post:
+      summary: Seller login
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /auth/me:
+    get:
+      summary: Get current user info
+      tags: [Auth]
+      responses:
+        '200':
+          description: User info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ===== BUSINESSES =====
+  /businesses:
+    post:
+      summary: Create business profile
+      tags: [Businesses]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BusinessCreateRequest'
+      responses:
+        '201':
+          description: Business created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Business'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /businesses/{id}:
+    get:
+      summary: Get business profile
+      tags: [Businesses]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Business profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Business'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update business profile
+      tags: [Businesses]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BusinessCreateRequest'
+      responses:
+        '200':
+          description: Business updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Business'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /businesses/{id}/settings:
+    get:
+      summary: Get business settings (delivery, payment)
+      tags: [Businesses]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Business settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessSettings'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update business settings
+      tags: [Businesses]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BusinessSettingsUpdateRequest'
+      responses:
+        '200':
+          description: Settings updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===== DISHES =====
+  /dishes:
+    post:
+      summary: Create dish
+      tags: [Dishes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DishCreateRequest'
+      responses:
+        '201':
+          description: Dish created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dish'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    get:
+      summary: List dishes for business
+      tags: [Dishes]
+      parameters:
+        - name: business_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of dishes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dish'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /dishes/{id}:
+    get:
+      summary: Get dish
+      tags: [Dishes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Dish details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dish'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update dish
+      tags: [Dishes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DishCreateRequest'
+      responses:
+        '200':
+          description: Dish updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dish'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete dish
+      tags: [Dishes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Dish deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===== COMMON DISHES (Templates) =====
+  /common-dishes:
+    get:
+      summary: List common dish templates
+      description: Get pre-populated dish templates for quick import
+      tags: [Common Dishes]
+      parameters:
+        - name: category
+          in: query
+          description: Filter by cuisine category
+          schema:
+            type: string
+            enum: [north_indian, south_indian, chinese, bakery, beverages, desserts]
+        - name: subcategory
+          in: query
+          description: Filter by subcategory
+          schema:
+            type: string
+            example: appetizers
+        - name: search
+          in: query
+          description: Search by name or alias
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Max results per page
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+        - name: offset
+          in: query
+          description: Pagination offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of common dishes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CommonDish'
+                  meta:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      limit:
+                        type: integer
+                      offset:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /common-dishes/{id}:
+    get:
+      summary: Get common dish template by ID
+      tags: [Common Dishes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Common dish details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonDish'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /dishes/from-template:
+    post:
+      summary: Create dish from common template
+      description: Import a common dish as a custom dish with optional overrides
+      tags: [Dishes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DishFromTemplateRequest'
+      responses:
+        '201':
+          description: Dish created from template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dish'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Common dish template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  # ===== DISH CATEGORIES =====
+  /businesses/{businessId}/dish-categories:
+    get:
+      summary: List dish categories for a business
+      tags: [Dish Categories]
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of dish categories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DishCategory'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      summary: Create dish category
+      tags: [Dish Categories]
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DishCategoryCreateRequest'
+      responses:
+        '201':
+          description: Category created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DishCategory'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /dish-categories/{id}:
+    patch:
+      summary: Update dish category
+      tags: [Dish Categories]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DishCategoryUpdateRequest'
+      responses:
+        '200':
+          description: Category updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DishCategory'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    delete:
+      summary: Delete dish category
+      description: Deletes category; dishes in this category become uncategorized
+      tags: [Dish Categories]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Category deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===== MENUS =====
+  /menus:
+    post:
+      summary: Create menu
+      tags: [Menus]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MenuCreateRequest'
+      responses:
+        '201':
+          description: Menu created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Menu'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /menus/{id}:
+    get:
+      summary: Get menu (public, no auth required)
+      tags: [Menus]
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Menu details with items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Menu'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update menu
+      tags: [Menus]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MenuCreateRequest'
+      responses:
+        '200':
+          description: Menu updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Menu'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /businesses/{business_id}/menu/current:
+    get:
+      summary: Get current active menu for business (public)
+      tags: [Menus]
+      security: []
+      parameters:
+        - name: business_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Current menu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Menu'
+        '404':
+          description: No active menu found
+
+  # ===== ORDERS =====
+  /orders:
+    post:
+      summary: Create order (public)
+      tags: [Orders]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreateRequest'
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /orders/calculate-delivery:
+    post:
+      summary: Calculate delivery fee before order creation
+      description: |
+        Calculates the delivery fee based on business settings and delivery address.
+        Used by frontend to show total cost before order submission.
+
+        **Calculation Logic**:
+        - `flat`: Returns business.delivery_fee_cents
+        - `distance`: Calculate distance from business to delivery address, apply per-km rate + base fee, then apply rounding rules
+        - `free`: Returns 0
+      tags: [Orders]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - business_id
+                - delivery_type
+              properties:
+                business_id:
+                  type: string
+                  format: uuid
+                  description: Business ID to calculate delivery fee for
+                delivery_type:
+                  type: string
+                  enum: [pickup, delivery]
+                  description: Order delivery type
+                delivery_address:
+                  type: string
+                  description: Full delivery address (required if delivery_type = 'delivery')
+                  nullable: true
+              example:
+                business_id: "660e8400-e29b-41d4-a716-446655440000"
+                delivery_type: "delivery"
+                delivery_address: "123 Main St, City, PIN 12345"
+      responses:
+        '200':
+          description: Delivery fee calculated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  delivery_fee_cents:
+                    type: integer
+                    description: Calculated delivery fee in cents (paisa for INR)
+                    example: 5000
+                  currency:
+                    type: string
+                    description: Currency code (ISO 4217)
+                    example: "INR"
+                  delivery_type:
+                    type: string
+                    description: Business delivery type configuration
+                    enum: [flat, distance, free]
+                    example: "distance"
+                  distance_km:
+                    type: number
+                    format: float
+                    description: Calculated distance in kilometers (only for distance-based)
+                    nullable: true
+                    example: 4.2
+                  breakdown:
+                    type: object
+                    nullable: true
+                    description: Detailed breakdown (only for distance-based)
+                    properties:
+                      base_fee_cents:
+                        type: integer
+                        example: 2000
+                      distance_fee_cents:
+                        type: integer
+                        example: 2100
+                      total_before_rounding:
+                        type: integer
+                        example: 4100
+                      rounding_applied:
+                        type: integer
+                        example: 900
+                      rounding_rule:
+                        type: string
+                        enum: [none, up_to_10, up_to_50]
+                        example: "up_to_10"
+              examples:
+                flat:
+                  value:
+                    delivery_fee_cents: 5000
+                    currency: "INR"
+                    delivery_type: "flat"
+                    distance_km: null
+                    breakdown: null
+                distance:
+                  value:
+                    delivery_fee_cents: 5000
+                    currency: "INR"
+                    delivery_type: "distance"
+                    distance_km: 4.2
+                    breakdown:
+                      base_fee_cents: 2000
+                      distance_fee_cents: 2100
+                      total_before_rounding: 4100
+                      rounding_applied: 900
+                      rounding_rule: "up_to_10"
+                free:
+                  value:
+                    delivery_fee_cents: 0
+                    currency: "INR"
+                    delivery_type: "free"
+                    distance_km: null
+                    breakdown: null
+        '400':
+          description: Validation error (e.g., missing delivery_address for delivery orders)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  code: VALIDATION_ERROR
+                  message: "delivery_address is required for delivery orders"
+        '404':
+          description: Business not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  code: NOT_FOUND
+                  message: "Business not found"
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /businesses/{business_id}/orders:
+    get:
+      summary: List orders for business
+      tags: [Orders]
+      parameters:
+        - name: business_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, fulfilled, cancelled]
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Orders list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Order'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /orders/{id}:
+    get:
+      summary: Get order details
+      tags: [Orders]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update order status/notes
+      tags: [Orders]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderUpdateRequest'
+      responses:
+        '200':
+          description: Order updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===== MEDIA =====
+  /media/upload:
+    post:
+      summary: Upload image
+      tags: [Media]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image file (JPG, PNG; max 2MB)
+      responses:
+        '201':
+          description: Image uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    format: uri
+                    example: https://s3.amazonaws.com/menu-maker/image-1234.jpg
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /media/social-preview/{menu_id}:
+    get:
+      summary: Generate social preview image for menu
+      tags: [Media]
+      security: []
+      parameters:
+        - name: menu_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: template
+          in: query
+          schema:
+            type: string
+            enum: [template1, template2, template3]
+            default: template1
+      responses:
+        '200':
+          description: Social preview image (PNG)
+          content:
+            image/png: {}
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===== REPORTS =====
+  /reports/orders:
+    get:
+      summary: Export orders as CSV
+      tags: [Reports]
+      parameters:
+        - name: business_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [json, csv]
+            default: csv
+      responses:
+        '200':
+          description: Orders export
+          content:
+            text/csv:
+              example: |
+                order_id,customer_name,customer_phone,items,subtotal,delivery_fee,total,payment_status,order_status,created_at
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /reports/summary:
+    get:
+      summary: Get sales summary report
+      tags: [Reports]
+      parameters:
+        - name: business_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Summary report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SummaryReport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ===== OCR (Stub) =====
+  /ocr/parse:
+    post:
+      summary: Parse image or text into dishes (Phase 2 feature; returns 501 in Phase 1)
+      description: |
+        **Phase 1 (MVP)**: This endpoint exists but returns 501 Not Implemented. Use manual dish entry.
+        **Phase 2 (Growth)**: Full OCR implementation using Google Vision API or Tesseract.
+      tags: [OCR]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Menu image (JPG, PNG; max 5MB)
+                text:
+                  type: string
+                  description: Plain text menu to parse
+      responses:
+        '501':
+          description: Not implemented yet - full OCR available in Phase 2
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  code: "NOT_IMPLEMENTED"
+                  message: "OCR feature coming in Phase 2. Use manual dish entry for now."
