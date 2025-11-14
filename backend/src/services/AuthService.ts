@@ -48,8 +48,11 @@ export class AuthService {
   }
 
   async login(email: string, password: string): Promise<{ user: User; tokens: { accessToken: string; refreshToken: string } }> {
-    // Find user
-    const user = await this.userRepository.findOne({ where: { email } });
+    // Find user with business relation
+    const user = await this.userRepository.findOne({
+      where: { email },
+      relations: ['business'],
+    });
 
     if (!user) {
       const error = new Error('Invalid email or password') as Error & {
@@ -74,10 +77,11 @@ export class AuthService {
       throw error;
     }
 
-    // Generate tokens
+    // Generate tokens with businessId if available
     const payload: JWTPayload = {
       userId: user.id,
       email: user.email,
+      businessId: (user as any).business?.id, // Include businessId if user has a business
     };
 
     const tokens = generateTokens(payload);

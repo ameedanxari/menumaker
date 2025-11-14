@@ -3,12 +3,15 @@ import { OrderService } from '../services/OrderService.js';
 import { validateSchema } from '../utils/validation.js';
 import { OrderCreateSchema, OrderUpdateSchema } from '@menumaker/shared';
 import { authenticate } from '../middleware/auth.js';
+import { checkSubscriptionLimits } from '../middleware/subscriptionTier.js';
 
 export async function orderRoutes(fastify: FastifyInstance): Promise<void> {
   const orderService = new OrderService();
 
   // POST /orders - Create order (public, no auth required)
-  fastify.post('/', async (request, reply) => {
+  fastify.post('/', {
+    preHandler: checkSubscriptionLimits, // Check subscription limits before creating order
+  }, async (request, reply) => {
     const data = validateSchema(OrderCreateSchema, request.body);
 
     const order = await orderService.createOrder(data);
