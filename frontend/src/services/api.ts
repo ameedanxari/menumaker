@@ -336,6 +336,48 @@ class ApiClient {
     );
     return response.data;
   }
+
+  // Subscription endpoints
+  async getSubscriptionTiers() {
+    const response = await this.client.get('/subscriptions/tiers');
+    return response.data;
+  }
+
+  async getCurrentSubscription() {
+    const response = await this.client.get('/subscriptions/current');
+    return response.data;
+  }
+
+  async createSubscription(tier: 'free' | 'starter' | 'pro', options?: {
+    trialDays?: number;
+    email?: string;
+  }) {
+    const response = await this.client.post('/subscriptions/subscribe', {
+      tier,
+      ...options,
+    });
+    return response.data;
+  }
+
+  async cancelSubscription(immediate?: boolean) {
+    const response = await this.client.post('/subscriptions/cancel', { immediate });
+    return response.data;
+  }
+
+  async resumeSubscription() {
+    const response = await this.client.post('/subscriptions/resume');
+    return response.data;
+  }
+
+  async getSubscriptionPortal(returnUrl: string) {
+    const response = await this.client.get(`/subscriptions/portal?returnUrl=${encodeURIComponent(returnUrl)}`);
+    return response.data;
+  }
+
+  async getSubscriptionUsage() {
+    const response = await this.client.get('/subscriptions/usage');
+    return response.data;
+  }
 }
 
 export const api = new ApiClient();
