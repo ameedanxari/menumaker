@@ -15,6 +15,7 @@ import { menuRoutes } from './routes/menus.js';
 import { orderRoutes } from './routes/orders.js';
 import { mediaRoutes } from './routes/media.js';
 import { reportRoutes } from './routes/reports.js';
+import { paymentRoutes } from './routes/payments.js';
 
 // Load environment variables
 dotenv.config();
@@ -201,6 +202,7 @@ async function registerRoutes() {
   await fastify.register(orderRoutes, { prefix: '/api/v1/orders' });
   await fastify.register(mediaRoutes, { prefix: '/api/v1/media' });
   await fastify.register(reportRoutes, { prefix: '/api/v1/reports' });
+  await fastify.register(paymentRoutes, { prefix: '/api/v1/payments' });
 
   // 404 handler
   fastify.setNotFoundHandler((request, reply) => {
