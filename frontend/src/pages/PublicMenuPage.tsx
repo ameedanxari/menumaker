@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../services/api';
 import { useCartStore } from '../stores/cartStore';
+import { PaymentModal } from '../components/payments/PaymentModal';
 import {
   ShoppingCart,
   Plus,
@@ -90,6 +91,8 @@ export default function PublicMenuPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -166,7 +169,7 @@ export default function PublicMenuPage() {
         quantity: item.quantity,
       }));
 
-      await api.createOrder({
+      const response = await api.createOrder({
         business_id: business.id,
         customer_name: checkoutForm.customerName,
         customer_phone: checkoutForm.customerPhone,
@@ -181,17 +184,39 @@ export default function PublicMenuPage() {
         payment_method: checkoutForm.paymentMethod,
       });
 
-      setOrderSuccess(true);
-      clearCart();
-      setShowCheckout(false);
-      setShowCart(false);
-
-      setTimeout(() => setOrderSuccess(false), 5000);
+      // If payment method is online, show payment modal
+      if (checkoutForm.paymentMethod === 'online' && response.success) {
+        setPendingOrderId(response.data.order.id);
+        setShowCheckout(false);
+        setShowPaymentModal(true);
+      } else {
+        // For cash/card (COD), order is complete
+        setOrderSuccess(true);
+        clearCart();
+        setShowCheckout(false);
+        setShowCart(false);
+        setTimeout(() => setOrderSuccess(false), 5000);
+      }
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to place order');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handlePaymentSuccess = () => {
+    setShowPaymentModal(false);
+    setPendingOrderId(null);
+    setOrderSuccess(true);
+    clearCart();
+    setShowCart(false);
+    setTimeout(() => setOrderSuccess(false), 5000);
+  };
+
+  const handlePaymentCancel = () => {
+    setShowPaymentModal(false);
+    setPendingOrderId(null);
+    setShowCheckout(true);
   };
 
   const deliveryFee =
@@ -669,6 +694,17 @@ export default function PublicMenuPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Payment Modal */}
+      {showPaymentModal && pendingOrderId && (
+        <PaymentModal
+          orderId={pendingOrderId}
+          amount={Math.round(total * 100)} // Convert to cents
+          currency={business?.settings?.currency || 'INR'}
+          onSuccess={handlePaymentSuccess}
+          onCancel={handlePaymentCancel}
+        />
       )}
     </div>
   );

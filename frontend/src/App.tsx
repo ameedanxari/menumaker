@@ -17,6 +17,7 @@ const BusinessProfilePage = lazy(() => import('./pages/BusinessProfilePage'));
 const MenuEditorPage = lazy(() => import('./pages/MenuEditorPage'));
 const OrdersPage = lazy(() => import('./pages/OrdersPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
 const PublicMenuPage = lazy(() => import('./pages/PublicMenuPage'));
 
 // Loading fallback component
@@ -72,6 +73,7 @@ function AppContent() {
             <Route path="/menu" element={<MenuEditorPage />} />
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/subscription" element={<SubscriptionPage />} />
           </Route>
 
           {/* Redirect root to dashboard or login */}

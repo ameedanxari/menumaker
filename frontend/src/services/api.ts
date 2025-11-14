@@ -304,6 +304,80 @@ class ApiClient {
     const response = await this.client.get(`/reports/dashboard?${params.toString()}`);
     return response.data;
   }
+
+  // Payment endpoints
+  async createPaymentIntent(orderId: string) {
+    const response = await this.client.post('/payments/create-intent', { orderId });
+    return response.data;
+  }
+
+  async getPaymentById(paymentId: string) {
+    const response = await this.client.get(`/payments/${paymentId}`);
+    return response.data;
+  }
+
+  async createRefund(paymentId: string, options?: {
+    amount?: number;
+    reason?: 'duplicate' | 'fraudulent' | 'requested_by_customer';
+  }) {
+    const response = await this.client.post(`/payments/${paymentId}/refund`, options);
+    return response.data;
+  }
+
+  async getBusinessPaymentStats(businessId: string, filters?: {
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const params = new URLSearchParams();
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    const response = await this.client.get(
+      `/payments/business/${businessId}/stats?${params.toString()}`
+    );
+    return response.data;
+  }
+
+  // Subscription endpoints
+  async getSubscriptionTiers() {
+    const response = await this.client.get('/subscriptions/tiers');
+    return response.data;
+  }
+
+  async getCurrentSubscription() {
+    const response = await this.client.get('/subscriptions/current');
+    return response.data;
+  }
+
+  async createSubscription(tier: 'free' | 'starter' | 'pro', options?: {
+    trialDays?: number;
+    email?: string;
+  }) {
+    const response = await this.client.post('/subscriptions/subscribe', {
+      tier,
+      ...options,
+    });
+    return response.data;
+  }
+
+  async cancelSubscription(immediate?: boolean) {
+    const response = await this.client.post('/subscriptions/cancel', { immediate });
+    return response.data;
+  }
+
+  async resumeSubscription() {
+    const response = await this.client.post('/subscriptions/resume');
+    return response.data;
+  }
+
+  async getSubscriptionPortal(returnUrl: string) {
+    const response = await this.client.get(`/subscriptions/portal?returnUrl=${encodeURIComponent(returnUrl)}`);
+    return response.data;
+  }
+
+  async getSubscriptionUsage() {
+    const response = await this.client.get('/subscriptions/usage');
+    return response.data;
+  }
 }
 
 export const api = new ApiClient();
