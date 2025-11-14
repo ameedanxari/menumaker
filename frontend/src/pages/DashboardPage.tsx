@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useBusinessStore } from '../stores/businessStore';
 import { useOrderStore } from '../stores/orderStore';
 import { api } from '../services/api';
+import { SubscriptionStatusWidget } from '../components/subscription/SubscriptionStatusWidget';
 import {
   TrendingUp,
   ShoppingBag,
@@ -180,6 +181,9 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+
+          {/* Subscription Status Widget */}
+          <SubscriptionStatusWidget />
 
           {/* Revenue Chart */}
           {stats.revenueByDay.length > 0 && (

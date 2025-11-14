@@ -6,6 +6,7 @@ import {
   ChefHat,
   ShoppingBag,
   BarChart3,
+  CreditCard,
   LogOut,
   Menu,
 } from 'lucide-react';
@@ -27,6 +28,7 @@ export default function DashboardLayout() {
     { to: '/menu', icon: ChefHat, label: 'Menu Editor' },
     { to: '/orders', icon: ShoppingBag, label: 'Orders' },
     { to: '/reports', icon: BarChart3, label: 'Reports' },
+    { to: '/subscription', icon: CreditCard, label: 'Subscription' },
   ];
 
   return (
