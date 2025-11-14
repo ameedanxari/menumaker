@@ -2,6 +2,8 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { usePageTracking } from './utils/analytics';
+import { SkipToContent } from './utils/accessibility';
 
 // Layouts (eager loaded as they're needed immediately)
 import AuthLayout from './components/layouts/AuthLayout';
@@ -39,40 +41,52 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function AppContent() {
+  // Track page views automatically
+  usePageTracking();
+
+  return (
+    <>
+      <SkipToContent />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/:businessSlug" element={<PublicMenuPage />} />
+
+          {/* Auth routes */}
+          <Route element={<AuthLayout />}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+          </Route>
+
+          {/* Protected dashboard routes */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/business/profile" element={<BusinessProfilePage />} />
+            <Route path="/menu" element={<MenuEditorPage />} />
+            <Route path="/orders" element={<OrdersPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
+          </Route>
+
+          {/* Redirect root to dashboard or login */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </Suspense>
+    </>
+  );
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/:businessSlug" element={<PublicMenuPage />} />
-
-            {/* Auth routes */}
-            <Route element={<AuthLayout />}>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-            </Route>
-
-            {/* Protected dashboard routes */}
-            <Route
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/business/profile" element={<BusinessProfilePage />} />
-              <Route path="/menu" element={<MenuEditorPage />} />
-              <Route path="/orders" element={<OrdersPage />} />
-              <Route path="/reports" element={<ReportsPage />} />
-            </Route>
-
-            {/* Redirect root to dashboard or login */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </Suspense>
+        <AppContent />
       </BrowserRouter>
     </ErrorBoundary>
   );

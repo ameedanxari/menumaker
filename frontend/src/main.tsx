@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import { useAuthStore } from './stores/authStore';
 import './styles/index.css';
+import './styles/mobile.css';
 
 // Optimized React Query configuration for performance
 const queryClient = new QueryClient({
