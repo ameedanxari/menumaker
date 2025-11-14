@@ -11,6 +11,8 @@ import { businessRoutes } from './routes/businesses.js';
 import { dishRoutes } from './routes/dishes.js';
 import { menuRoutes } from './routes/menus.js';
 import { orderRoutes } from './routes/orders.js';
+import { mediaRoutes } from './routes/media.js';
+import { reportRoutes } from './routes/reports.js';
 
 // Load environment variables
 dotenv.config();
@@ -87,6 +89,8 @@ async function registerRoutes() {
   await fastify.register(dishRoutes, { prefix: '/api/v1/dishes' });
   await fastify.register(menuRoutes, { prefix: '/api/v1/menus' });
   await fastify.register(orderRoutes, { prefix: '/api/v1/orders' });
+  await fastify.register(mediaRoutes, { prefix: '/api/v1/media' });
+  await fastify.register(reportRoutes, { prefix: '/api/v1/reports' });
 
   // 404 handler
   fastify.setNotFoundHandler((request, reply) => {
