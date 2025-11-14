@@ -56,129 +56,207 @@ export class OrderService {
   }
 
   async createOrder(data: OrderCreateInput): Promise<Order> {
-    // Verify menu exists and is published
-    const menu = await this.menuRepository.findOne({
-      where: { id: data.menu_id },
-      relations: ['business'],
-    });
+    // Use transaction for atomicity
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    if (!menu) {
-      const error = new Error('Menu not found') as Error & {
-        statusCode: number;
-        code: string;
-      };
-      error.statusCode = 404;
-      error.code = 'MENU_NOT_FOUND';
-      throw error;
-    }
-
-    if (menu.status !== 'published') {
-      const error = new Error('This menu is not currently available for ordering') as Error & {
-        statusCode: number;
-        code: string;
-      };
-      error.statusCode = 400;
-      error.code = 'MENU_NOT_AVAILABLE';
-      throw error;
-    }
-
-    // Get business settings for delivery fee calculation and payment method
-    const settings = await this.settingsRepository.findOne({
-      where: { business_id: menu.business_id },
-    });
-
-    if (!settings) {
-      const error = new Error('Business settings not found') as Error & {
-        statusCode: number;
-        code: string;
-      };
-      error.statusCode = 404;
-      error.code = 'SETTINGS_NOT_FOUND';
-      throw error;
-    }
-
-    // Verify all dishes exist
-    const dishIds = data.items.map(item => item.dish_id);
-    const dishes = await this.dishRepository.findByIds(dishIds);
-
-    if (dishes.length !== dishIds.length) {
-      const error = new Error('One or more dishes not found') as Error & {
-        statusCode: number;
-        code: string;
-      };
-      error.statusCode = 404;
-      error.code = 'DISH_NOT_FOUND';
-      throw error;
-    }
-
-    // Create dish map for price lookup
-    const dishMap = new Map(dishes.map(d => [d.id, d]));
-
-    // Calculate order total
-    let itemsTotal = 0;
-    const orderItems: Partial<OrderItem>[] = [];
-
-    for (const item of data.items) {
-      const dish = dishMap.get(item.dish_id);
-      if (!dish) continue;
-
-      const itemPrice = dish.price_cents * item.quantity;
-      itemsTotal += itemPrice;
-
-      orderItems.push({
-        dish_id: item.dish_id,
-        quantity: item.quantity,
-        price_at_purchase_cents: dish.price_cents,
+    try {
+      // Verify menu exists and is published
+      const menu = await queryRunner.manager.findOne(Menu, {
+        where: { id: data.menu_id },
+        relations: ['business'],
       });
+
+      if (!menu) {
+        const error = new Error('Menu not found') as Error & {
+          statusCode: number;
+          code: string;
+        };
+        error.statusCode = 404;
+        error.code = 'MENU_NOT_FOUND';
+        throw error;
+      }
+
+      if (menu.status !== 'published') {
+        const error = new Error('This menu is not currently available for ordering') as Error & {
+          statusCode: number;
+          code: string;
+        };
+        error.statusCode = 400;
+        error.code = 'MENU_NOT_AVAILABLE';
+        throw error;
+      }
+
+      // Validate menu date range
+      const now = new Date();
+      if (menu.start_date && new Date(menu.start_date) > now) {
+        const error = new Error('This menu is not yet available') as Error & {
+          statusCode: number;
+          code: string;
+        };
+        error.statusCode = 400;
+        error.code = 'MENU_NOT_YET_AVAILABLE';
+        throw error;
+      }
+
+      if (menu.end_date && new Date(menu.end_date) < now) {
+        const error = new Error('This menu is no longer available') as Error & {
+          statusCode: number;
+          code: string;
+        };
+        error.statusCode = 400;
+        error.code = 'MENU_EXPIRED';
+        throw error;
+      }
+
+      // Get business settings for delivery fee calculation and payment method
+      const settings = await queryRunner.manager.findOne(BusinessSettings, {
+        where: { business_id: menu.business_id },
+      });
+
+      if (!settings) {
+        const error = new Error('Business settings not found') as Error & {
+          statusCode: number;
+          code: string;
+        };
+        error.statusCode = 404;
+        error.code = 'SETTINGS_NOT_FOUND';
+        throw error;
+      }
+
+      // Check if business is accepting orders (based on operating hours or settings)
+      // Note: This is a simple check. In production, you'd check operating hours
+      if (settings.payment_method === 'none') {
+        const error = new Error('This business is not currently accepting orders') as Error & {
+          statusCode: number;
+          code: string;
+        };
+        error.statusCode = 400;
+        error.code = 'ORDERS_NOT_ACCEPTED';
+        throw error;
+      }
+
+      // Verify all dishes exist and are available
+      const dishIds = data.items.map(item => item.dish_id);
+      const dishes = await queryRunner.manager.findByIds(Dish, dishIds);
+
+      if (dishes.length !== dishIds.length) {
+        const error = new Error('One or more dishes not found') as Error & {
+          statusCode: number;
+          code: string;
+        };
+        error.statusCode = 404;
+        error.code = 'DISH_NOT_FOUND';
+        throw error;
+      }
+
+      // Check if all dishes are available
+      const unavailableDishes = dishes.filter(dish => !dish.is_available);
+      if (unavailableDishes.length > 0) {
+        const dishNames = unavailableDishes.map(d => d.name).join(', ');
+        const error = new Error(`The following dishes are currently unavailable: ${dishNames}`) as Error & {
+          statusCode: number;
+          code: string;
+          details: { unavailableDishes: unavailableDishes.map(d => ({ id: d.id, name: d.name })) };
+        };
+        error.statusCode = 400;
+        error.code = 'DISHES_UNAVAILABLE';
+        throw error;
+      }
+
+      // Create dish map for price lookup
+      const dishMap = new Map(dishes.map(d => [d.id, d]));
+
+      // Calculate order total
+      let itemsTotal = 0;
+      const orderItems: Partial<OrderItem>[] = [];
+
+      for (const item of data.items) {
+        const dish = dishMap.get(item.dish_id);
+        if (!dish) continue;
+
+        const itemPrice = dish.price_cents * item.quantity;
+        itemsTotal += itemPrice;
+
+        orderItems.push({
+          dish_id: item.dish_id,
+          quantity: item.quantity,
+          price_at_purchase_cents: dish.price_cents,
+        });
+      }
+
+      // Validate minimum order amount if set
+      if (settings.min_order_cents && itemsTotal < settings.min_order_cents) {
+        const error = new Error(`Minimum order amount is ${settings.currency} ${settings.min_order_cents / 100}`) as Error & {
+          statusCode: number;
+          code: string;
+          details: { minAmount: settings.min_order_cents, currentAmount: itemsTotal };
+        };
+        error.statusCode = 400;
+        error.code = 'MINIMUM_ORDER_NOT_MET';
+        throw error;
+      }
+
+      // Calculate delivery fee (simplified - no distance calculation in MVP)
+      let deliveryFee = data.delivery_type === 'delivery'
+        ? this.calculateDeliveryFee(settings)
+        : 0;
+
+      // Apply free delivery if minimum order amount met
+      if (
+        settings.min_order_free_delivery_cents &&
+        itemsTotal >= settings.min_order_free_delivery_cents &&
+        data.delivery_type === 'delivery'
+      ) {
+        deliveryFee = 0; // Free delivery applied
+      }
+
+      const totalCents = itemsTotal + deliveryFee;
+
+      // Create order
+      const order = queryRunner.manager.create(Order, {
+        business_id: menu.business_id,
+        menu_id: data.menu_id,
+        customer_name: data.customer_name,
+        customer_phone: data.customer_phone,
+        customer_email: data.customer_email,
+        delivery_type: data.delivery_type,
+        delivery_address: data.delivery_address,
+        total_cents: totalCents,
+        delivery_fee_cents: deliveryFee,
+        payment_method: settings.payment_method,
+        payment_status: 'unpaid',
+        order_status: 'pending',
+        notes: data.notes,
+        currency: settings.currency,
+      });
+
+      await queryRunner.manager.save(order);
+
+      // Create order items
+      const items = orderItems.map(item =>
+        queryRunner.manager.create(OrderItem, {
+          order_id: order.id,
+          ...item,
+        })
+      );
+
+      await queryRunner.manager.save(items);
+
+      // Commit transaction
+      await queryRunner.commitTransaction();
+
+      // Reload order with items
+      return this.getOrderById(order.id);
+    } catch (error) {
+      // Rollback transaction on error
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      // Release query runner
+      await queryRunner.release();
     }
-
-    // Calculate delivery fee (simplified - no distance calculation in MVP)
-    const deliveryFee = data.delivery_type === 'delivery'
-      ? this.calculateDeliveryFee(settings)
-      : 0;
-
-    // Check minimum order for free delivery
-    if (
-      settings.min_order_free_delivery_cents &&
-      itemsTotal >= settings.min_order_free_delivery_cents
-    ) {
-      // Free delivery applied
-    }
-
-    const totalCents = itemsTotal + deliveryFee;
-
-    // Create order
-    const order = this.orderRepository.create({
-      business_id: menu.business_id,
-      menu_id: data.menu_id,
-      customer_name: data.customer_name,
-      customer_phone: data.customer_phone,
-      customer_email: data.customer_email,
-      delivery_type: data.delivery_type,
-      delivery_address: data.delivery_address,
-      total_cents: totalCents,
-      delivery_fee_cents: deliveryFee,
-      payment_method: settings.payment_method,
-      payment_status: 'unpaid',
-      order_status: 'pending',
-      notes: data.notes,
-      currency: settings.currency,
-    });
-
-    await this.orderRepository.save(order);
-
-    // Create order items
-    const items = orderItems.map(item =>
-      this.orderItemRepository.create({
-        order_id: order.id,
-        ...item,
-      })
-    );
-
-    await this.orderItemRepository.save(items);
-
-    // Reload order with items
-    return this.getOrderById(order.id);
   }
 
   async getOrderById(orderId: string): Promise<Order> {

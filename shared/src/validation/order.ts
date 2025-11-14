@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const OrderItemSchema = z.object({
   dish_id: z.string().uuid('Invalid dish ID'),
-  quantity: z.number().int().min(1, 'Quantity must be at least 1'),
+  quantity: z.number().int().min(1, 'Quantity must be at least 1').max(100, 'Maximum quantity is 100'),
 });
 
 export const OrderCreateSchema = z.object({
@@ -15,13 +15,24 @@ export const OrderCreateSchema = z.object({
     errorMap: () => ({ message: 'Choose pickup or delivery' })
   }),
   delivery_address: z.string().max(1000).optional(),
-  items: z.array(OrderItemSchema).min(1, 'Order must have at least one item'),
+  items: z.array(OrderItemSchema).min(1, 'Order must have at least one item').max(50, 'Maximum 50 items per order'),
   notes: z.string().max(500).optional(),
 }).refine(
   data => data.delivery_type === 'pickup' || data.delivery_address,
   {
     message: 'Delivery address required for delivery orders',
     path: ['delivery_address']
+  }
+).refine(
+  data => {
+    // Check for duplicate dish IDs
+    const dishIds = data.items.map(item => item.dish_id);
+    const uniqueDishIds = new Set(dishIds);
+    return dishIds.length === uniqueDishIds.size;
+  },
+  {
+    message: 'Duplicate dishes found. Please combine quantities for the same dish.',
+    path: ['items']
   }
 );
 
