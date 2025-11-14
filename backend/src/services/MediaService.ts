@@ -7,6 +7,18 @@ export class MediaService {
   private bucketName: string;
 
   constructor() {
+    // Security: Require S3/MinIO credentials - no defaults for production
+    const accessKey = process.env.S3_ACCESS_KEY;
+    const secretKey = process.env.S3_SECRET_KEY;
+
+    if (!accessKey || !secretKey) {
+      // Allow defaults only in development mode
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('CRITICAL SECURITY ERROR: S3_ACCESS_KEY and S3_SECRET_KEY must be set in production');
+      }
+      console.warn('WARNING: Using default S3 credentials. This is only safe in development!');
+    }
+
     const endpoint = process.env.S3_ENDPOINT || 'localhost:9000';
     const [host, portStr] = endpoint.replace(/^https?:\/\//, '').split(':');
     const port = portStr ? parseInt(portStr, 10) : 9000;
@@ -15,8 +27,8 @@ export class MediaService {
       endPoint: host,
       port,
       useSSL: process.env.S3_USE_SSL === 'true',
-      accessKey: process.env.S3_ACCESS_KEY || 'minioadmin',
-      secretKey: process.env.S3_SECRET_KEY || 'minioadmin',
+      accessKey: accessKey || 'minioadmin',
+      secretKey: secretKey || 'minioadmin',
     });
 
     this.bucketName = process.env.S3_BUCKET || 'menumaker-images';
@@ -105,13 +117,22 @@ export class MediaService {
     return `${protocol}://${endpoint}/${this.bucketName}/${fileName}`;
   }
 
-  async deleteFile(fileUrl: string): Promise<void> {
+  async deleteFile(fileUrl: string, userId: string): Promise<void> {
     try {
-      // Extract filename from URL
-      const fileName = fileUrl.split('/').pop();
-      if (!fileName) {
-        throw new Error('Invalid file URL');
+      // Security: Validate that the URL belongs to this bucket and is properly formatted
+      const expectedPrefix = this.getPublicUrl('');
+      if (!fileUrl.startsWith(expectedPrefix)) {
+        throw new Error('Invalid file URL: does not belong to this storage bucket');
       }
+
+      // Extract filename from URL (after bucket name)
+      const fileName = fileUrl.replace(expectedPrefix, '');
+      if (!fileName || fileName.includes('..') || fileName.includes('/')) {
+        throw new Error('Invalid file URL: potential path traversal detected');
+      }
+
+      // TODO: Add database check to verify file ownership by userId
+      // For now, we validate the URL format to prevent path traversal
 
       await this.minioClient.removeObject(this.bucketName, fileName);
     } catch (error) {

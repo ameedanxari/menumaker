@@ -134,7 +134,8 @@ export async function mediaRoutes(fastify: FastifyInstance): Promise<void> {
       return;
     }
 
-    await mediaService.deleteFile(url);
+    // Pass userId for security verification
+    await mediaService.deleteFile(url, request.user.userId);
 
     reply.send({
       success: true,
