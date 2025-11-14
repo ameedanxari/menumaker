@@ -1,0 +1,49 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+  Index,
+} from 'typeorm';
+import { Business } from './Business.js';
+import { Dish } from './Dish.js';
+
+@Entity('dish_categories')
+@Index(['business_id', 'name'], { unique: true })
+export class DishCategory {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ type: 'varchar', length: 50 })
+  name!: string;
+
+  @Column({ type: 'text', nullable: true })
+  description?: string;
+
+  @Column({ type: 'integer', default: 0 })
+  sort_order!: number;
+
+  @ManyToOne(() => Business, (business) => business.dish_categories, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'business_id' })
+  business!: Business;
+
+  @Column({ type: 'uuid' })
+  business_id!: string;
+
+  @Column({ type: 'boolean', default: false })
+  is_default!: boolean;
+
+  @CreateDateColumn()
+  created_at!: Date;
+
+  @UpdateDateColumn()
+  updated_at!: Date;
+
+  // Relations
+  @OneToMany(() => Dish, (dish) => dish.category)
+  dishes?: Dish[];
+}

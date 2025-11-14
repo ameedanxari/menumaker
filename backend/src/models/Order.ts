@@ -1,0 +1,92 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+  Index,
+} from 'typeorm';
+import { Business } from './Business.js';
+import { Menu } from './Menu.js';
+import { OrderItem } from './OrderItem.js';
+import { OrderNotification } from './OrderNotification.js';
+
+@Entity('orders')
+@Index(['business_id', 'order_status'])
+@Index(['created_at'])
+export class Order {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @ManyToOne(() => Business, (business) => business.orders, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'business_id' })
+  business!: Business;
+
+  @Column({ type: 'uuid' })
+  business_id!: string;
+
+  @ManyToOne(() => Menu, (menu) => menu.orders)
+  @JoinColumn({ name: 'menu_id' })
+  menu!: Menu;
+
+  @Column({ type: 'uuid' })
+  menu_id!: string;
+
+  @Column({ type: 'varchar', length: 255 })
+  customer_name!: string;
+
+  @Column({ type: 'varchar', length: 20 })
+  customer_phone!: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  customer_email?: string;
+
+  @Column({ type: 'varchar' })
+  delivery_type!: 'pickup' | 'delivery';
+
+  @Column({ type: 'text', nullable: true })
+  delivery_address?: string;
+
+  @Column({ type: 'integer' })
+  total_cents!: number;
+
+  @Column({ type: 'integer', default: 0 })
+  delivery_fee_cents!: number;
+
+  @Column({ type: 'varchar' })
+  payment_method!: string;
+
+  @Column({ type: 'varchar', default: 'unpaid' })
+  payment_status!: 'unpaid' | 'paid';
+
+  @Column({ type: 'varchar', default: 'pending' })
+  order_status!: 'pending' | 'confirmed' | 'ready' | 'fulfilled' | 'cancelled';
+
+  @Column({ type: 'text', nullable: true })
+  notes?: string;
+
+  @Column({ type: 'varchar', length: 3, default: 'INR' })
+  currency!: string;
+
+  @CreateDateColumn()
+  created_at!: Date;
+
+  @UpdateDateColumn()
+  updated_at!: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  fulfilled_at?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  anonymized_at?: Date;
+
+  // Relations
+  @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
+  items?: OrderItem[];
+
+  @OneToMany(() => OrderNotification, (notification) => notification.order)
+  notifications?: OrderNotification[];
+}
