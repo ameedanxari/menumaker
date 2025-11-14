@@ -19,6 +19,7 @@ import { paymentRoutes } from './routes/payments.js';
 import { subscriptionRoutes } from './routes/subscriptions.js';
 import whatsappRoutes from './routes/whatsapp.js';
 import ocrRoutes from './routes/ocr.js';
+import referralRoutes from './routes/referrals.js';
 
 // Load environment variables
 dotenv.config();
@@ -209,6 +210,7 @@ async function registerRoutes() {
   await fastify.register(subscriptionRoutes, { prefix: '/api/v1/subscriptions' });
   await fastify.register(whatsappRoutes, { prefix: '/api/v1/whatsapp' });
   await fastify.register(ocrRoutes, { prefix: '/api/v1/ocr' });
+  await fastify.register(referralRoutes, { prefix: '/api/v1/referrals' });
 
   // 404 handler
   fastify.setNotFoundHandler((request, reply) => {
