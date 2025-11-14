@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 import { AppDataSource } from './config/database.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authRoutes } from './routes/auth.js';
+import { businessRoutes } from './routes/businesses.js';
 
 // Load environment variables
 dotenv.config();
@@ -79,6 +80,7 @@ async function registerRoutes() {
 
   // API routes
   await fastify.register(authRoutes, { prefix: '/api/v1/auth' });
+  await fastify.register(businessRoutes, { prefix: '/api/v1/businesses' });
 
   // 404 handler
   fastify.setNotFoundHandler((request, reply) => {
