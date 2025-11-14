@@ -304,6 +304,38 @@ class ApiClient {
     const response = await this.client.get(`/reports/dashboard?${params.toString()}`);
     return response.data;
   }
+
+  // Payment endpoints
+  async createPaymentIntent(orderId: string) {
+    const response = await this.client.post('/payments/create-intent', { orderId });
+    return response.data;
+  }
+
+  async getPaymentById(paymentId: string) {
+    const response = await this.client.get(`/payments/${paymentId}`);
+    return response.data;
+  }
+
+  async createRefund(paymentId: string, options?: {
+    amount?: number;
+    reason?: 'duplicate' | 'fraudulent' | 'requested_by_customer';
+  }) {
+    const response = await this.client.post(`/payments/${paymentId}/refund`, options);
+    return response.data;
+  }
+
+  async getBusinessPaymentStats(businessId: string, filters?: {
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const params = new URLSearchParams();
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    const response = await this.client.get(
+      `/payments/business/${businessId}/stats?${params.toString()}`
+    );
+    return response.data;
+  }
 }
 
 export const api = new ApiClient();
