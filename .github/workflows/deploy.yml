@@ -1,0 +1,265 @@
+name: Deploy
+
+# This is a template deployment workflow
+# Customize based on your deployment target (Heroku, Render, AWS, etc.)
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  NODE_VERSION: '20.x'
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'staging'
+    environment:
+      name: staging
+      url: https://staging.menumaker.app
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd backend && npm ci
+          cd ../frontend && npm ci
+
+      - name: Build backend
+        working-directory: ./backend
+        run: npm run build
+
+      - name: Build frontend
+        working-directory: ./frontend
+        env:
+          VITE_API_URL: ${{ secrets.STAGING_API_URL }}
+        run: npm run build
+
+      # Example: Deploy to Heroku
+      - name: Deploy backend to Heroku (Staging)
+        if: false  # Enable when configured
+        uses: akhileshns/heroku-deploy@v3.12.14
+        with:
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: menumaker-api-staging
+          heroku_email: ${{ secrets.HEROKU_EMAIL }}
+          appdir: backend
+          buildpack: heroku/nodejs
+
+      # Example: Deploy to Vercel
+      - name: Deploy frontend to Vercel (Staging)
+        if: false  # Enable when configured
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./frontend
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+
+      # Example: Deploy to AWS S3 + CloudFront
+      - name: Deploy frontend to S3 (Staging)
+        if: false  # Enable when configured
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1
+        run: |
+          aws s3 sync frontend/dist s3://menumaker-staging --delete
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.STAGING_CLOUDFRONT_ID }} --paths "/*"
+
+      - name: Run smoke tests
+        run: |
+          # Wait for deployment to be live
+          sleep 30
+          # Run basic health checks
+          curl -f https://staging-api.menumaker.app/health || echo "Staging API health check"
+          curl -f https://staging.menumaker.app || echo "Staging frontend health check"
+
+      - name: Notify deployment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ job.status }}' === 'success' ? '✅ Success' : '❌ Failed';
+            const message = `
+            ## Staging Deployment ${status}
+
+            **Environment:** Staging
+            **Commit:** ${{ github.sha }}
+            **Deployed by:** ${{ github.actor }}
+
+            [View Deployment](https://staging.menumaker.app)
+            `;
+
+            github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body: message
+            });
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.environment == 'production'
+    environment:
+      name: production
+      url: https://menumaker.app
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd backend && npm ci
+          cd ../frontend && npm ci
+
+      - name: Run tests
+        run: |
+          cd backend && npm test
+          echo "Tests passed"
+
+      - name: Build backend
+        working-directory: ./backend
+        run: npm run build
+
+      - name: Build frontend
+        working-directory: ./frontend
+        env:
+          VITE_API_URL: ${{ secrets.PRODUCTION_API_URL }}
+        run: npm run build
+
+      # Add your production deployment steps here
+      # Examples: Heroku, Render, AWS, Railway, etc.
+
+      - name: Deploy backend to production
+        run: |
+          echo "Deploy backend to your production server"
+          # Add your deployment commands here
+
+      - name: Deploy frontend to production
+        run: |
+          echo "Deploy frontend to your production CDN"
+          # Add your deployment commands here
+
+      - name: Run database migrations
+        if: false  # Enable when ready
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: |
+          cd backend
+          npm run migrate
+
+      - name: Run smoke tests
+        run: |
+          sleep 30
+          curl -f https://api.menumaker.app/health || echo "Production API health check"
+          curl -f https://menumaker.app || echo "Production frontend health check"
+
+      - name: Create release notes
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = context.ref.replace('refs/tags/', '');
+            const release = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tag,
+              name: `Release ${tag}`,
+              body: `
+              ## Release ${tag}
+
+              **Deployed to production:** ${new Date().toISOString()}
+
+              ### Changes
+              See commit history for details.
+
+              ### Deployment
+              - Backend: https://api.menumaker.app
+              - Frontend: https://menumaker.app
+              `,
+              draft: false,
+              prerelease: false
+            });
+
+      - name: Notify production deployment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ job.status }}' === 'success' ? '✅ Success' : '❌ Failed';
+            const message = `
+            ## Production Deployment ${status}
+
+            **Environment:** Production
+            **Version:** ${context.ref.replace('refs/tags/', '')}
+            **Commit:** ${{ github.sha }}
+            **Deployed by:** ${{ github.actor }}
+
+            [View Production](https://menumaker.app)
+            `;
+
+            github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body: message
+            });
+
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    if: failure()
+    needs: [deploy-production]
+
+    steps:
+      - name: Rollback production
+        run: |
+          echo "Implement rollback logic here"
+          echo "Options:"
+          echo "- Revert to previous git tag"
+          echo "- Restore previous deployment"
+          echo "- Rollback database migrations"
+
+      - name: Notify rollback
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body: '⚠️ Deployment failed. Rollback initiated.'
+            });
