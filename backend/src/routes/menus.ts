@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { MenuService } from '../services/MenuService.js';
+import { ReferralService } from '../services/ReferralService.js';
 import { validateSchema } from '../utils/validation.js';
 import { MenuCreateSchema, MenuUpdateSchema, MenuPublishSchema } from '@menumaker/shared';
 import { authenticate, optionalAuth } from '../middleware/auth.js';
@@ -127,6 +128,12 @@ export async function menuRoutes(fastify: FastifyInstance): Promise<void> {
     const data = validateSchema(MenuPublishSchema, request.body);
 
     const menu = await menuService.publishMenu(id, request.user!.userId, data);
+
+    // Trigger referral reward on first menu published (Phase 2.5)
+    ReferralService.triggerRewardOnFirstMenu(request.user!.userId).catch((error) => {
+      // Log but don't fail menu publish if reward fails
+      console.error('Failed to trigger referral reward:', error);
+    });
 
     reply.send({
       success: true,

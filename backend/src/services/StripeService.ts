@@ -4,6 +4,7 @@ import { Payment } from '../models/Payment.js';
 import { Order } from '../models/Order.js';
 import { AppDataSource } from '../config/database.js';
 import { logMetric } from '../utils/logger.js';
+import { WhatsAppService } from './WhatsAppService.js';
 
 /**
  * Stripe service for handling all payment operations
@@ -195,6 +196,20 @@ export class StripeService {
         businessId: payment.business_id,
         orderId: payment.order_id,
       });
+    }
+
+    // Send WhatsApp notification to seller (async, non-blocking)
+    if (order) {
+      const fullOrder = await this.orderRepository.findOne({
+        where: { id: order.id },
+        relations: ['items', 'items.dish', 'business'],
+      });
+
+      if (fullOrder) {
+        WhatsAppService.notifySellerPaymentReceived(fullOrder).catch(error => {
+          console.error('Failed to send WhatsApp payment notification:', error);
+        });
+      }
     }
 
     console.log(`Payment succeeded: ${paymentIntent.id}`);

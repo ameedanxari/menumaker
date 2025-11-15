@@ -57,6 +57,25 @@ export class BusinessSettings {
   @Column({ type: 'boolean', default: true })
   enable_customer_notes!: boolean;
 
+  // WhatsApp Notification Settings (Phase 2.3)
+  @Column({ type: 'boolean', default: false })
+  whatsapp_enabled!: boolean;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  whatsapp_phone_number?: string;
+
+  @Column({ type: 'boolean', default: true })
+  whatsapp_notify_new_order!: boolean;
+
+  @Column({ type: 'boolean', default: true })
+  whatsapp_notify_order_update!: boolean;
+
+  @Column({ type: 'boolean', default: true })
+  whatsapp_notify_payment!: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  whatsapp_customer_notifications!: boolean;
+
   @CreateDateColumn()
   created_at!: Date;
 

@@ -7,6 +7,7 @@ import { Menu } from '../models/Menu.js';
 import { Dish } from '../models/Dish.js';
 import { AppDataSource } from '../config/database.js';
 import { OrderCreateInput, OrderUpdateInput } from '@menumaker/shared';
+import { WhatsAppService } from './WhatsAppService.js';
 
 export class OrderService {
   private orderRepository: Repository<Order>;
@@ -248,7 +249,15 @@ export class OrderService {
       await queryRunner.commitTransaction();
 
       // Reload order with items
-      return this.getOrderById(order.id);
+      const createdOrder = await this.getOrderById(order.id);
+
+      // Send WhatsApp notification to seller (async, non-blocking)
+      WhatsAppService.notifySellerNewOrder(createdOrder).catch(error => {
+        console.error('Failed to send WhatsApp notification:', error);
+        // Don't throw - notification failure shouldn't fail order creation
+      });
+
+      return createdOrder;
     } catch (error) {
       // Rollback transaction on error
       await queryRunner.rollbackTransaction();
