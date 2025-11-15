@@ -1,0 +1,279 @@
+# MenuMaker Android App
+
+Native Android application for MenuMaker - Restaurant Menu Management & Ordering System.
+
+## 📱 Overview
+
+MenuMaker Android app provides a native mobile experience for sellers and customers with:
+- **Offline-first architecture** - Work without internet, sync when online
+- **Material Design 3** - Modern UI with dynamic theming
+- **Push notifications** - Real-time order updates via FCM
+- **Biometric authentication** - Face/fingerprint unlock
+- **100% Kotlin** - Modern, type-safe code
+- **Jetpack Compose** - Declarative UI framework
+
+## 🏗️ Architecture
+
+### Technology Stack
+
+- **Language**: Kotlin 1.9+
+- **UI**: Jetpack Compose + Material Design 3
+- **Architecture**: MVVM (Model-View-ViewModel)
+- **Dependency Injection**: Hilt
+- **Networking**: Retrofit + OkHttp
+- **Local Database**: Room
+- **Async**: Kotlin Coroutines + Flow
+- **Navigation**: Jetpack Navigation Compose
+- **Image Loading**: Coil
+- **Notifications**: Firebase Cloud Messaging
+- **Background Work**: WorkManager
+
+### Project Structure
+
+```
+android/
+├── app/
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── kotlin/com/menumaker/
+│   │   │   │   ├── di/                  # Dependency Injection
+│   │   │   │   │   ├── NetworkModule.kt
+│   │   │   │   │   ├── DatabaseModule.kt
+│   │   │   │   │   └── RepositoryModule.kt
+│   │   │   │   ├── ui/
+│   │   │   │   │   ├── theme/           # Material 3 Theme
+│   │   │   │   │   ├── screens/         # Compose Screens
+│   │   │   │   │   │   ├── auth/        # Login, Signup
+│   │   │   │   │   │   ├── seller/      # Dashboard, Orders
+│   │   │   │   │   │   └── customer/    # Marketplace
+│   │   │   │   │   ├── components/      # Reusable UI
+│   │   │   │   │   └── navigation/      # Nav Graph
+│   │   │   │   ├── data/
+│   │   │   │   │   ├── remote/          # API Service
+│   │   │   │   │   │   ├── api/
+│   │   │   │   │   │   └── models/
+│   │   │   │   │   ├── local/           # Room Database
+│   │   │   │   │   │   ├── db/
+│   │   │   │   │   │   ├── entities/
+│   │   │   │   │   │   └── datastore/
+│   │   │   │   │   └── repository/      # Repositories
+│   │   │   │   ├── viewmodel/           # ViewModels
+│   │   │   │   ├── services/            # FCM, Background
+│   │   │   │   ├── workers/             # WorkManager
+│   │   │   │   └── utils/               # Helpers
+│   │   │   └── res/                     # Resources
+│   │   ├── test/                        # Unit Tests
+│   │   └── androidTest/                 # Instrumentation Tests
+│   ├── build.gradle.kts
+│   └── proguard-rules.pro
+├── build.gradle.kts
+├── settings.gradle.kts
+└── README.md
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Android Studio Hedgehog (2023.1.1) or later
+- JDK 17
+- Android SDK 34
+- Minimum Android 11 (API 30)
+
+### Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/ameedanxari/menumaker.git
+   cd menumaker/android
+   ```
+
+2. **Configure Firebase**
+   - Download `google-services.json` from Firebase Console
+   - Place it in `android/app/`
+   - Update project configuration with your Firebase project
+
+3. **Configure backend API**
+   - Edit `local.properties` or set environment variable:
+     ```
+     API_BASE_URL=http://10.0.2.2:3001/api/v1
+     ```
+   - For physical device, use your machine's IP address
+
+4. **Build & Run**
+   ```bash
+   ./gradlew assembleDebug
+   ./gradlew installDebug
+   ```
+
+   Or use Android Studio:
+   - Open `android/` folder
+   - Click Run ▶️
+
+## 🧪 Testing
+
+### Unit Tests
+```bash
+./gradlew test
+```
+
+### Instrumentation Tests
+```bash
+./gradlew connectedAndroidTest
+```
+
+### Code Coverage
+```bash
+./gradlew testDebugUnitTestCoverage
+```
+
+## 📦 Building
+
+### Debug Build
+```bash
+./gradlew assembleDebug
+```
+
+### Release Build
+```bash
+./gradlew assembleRelease
+```
+
+Output: `app/build/outputs/apk/release/app-release.apk`
+
+### Bundle for Play Store
+```bash
+./gradlew bundleRelease
+```
+
+Output: `app/build/outputs/bundle/release/app-release.aab`
+
+## 🔐 Security
+
+- **JWT Tokens**: Stored in encrypted DataStore
+- **HTTPS**: All API calls use TLS 1.3
+- **ProGuard**: Code obfuscation in release builds
+- **Certificate Pinning**: Optional (configure in NetworkModule)
+- **Biometric Auth**: Android Keystore for secure storage
+
+## 📱 Features
+
+### Phase 1 - Core Features
+- ✅ User authentication (email/password)
+- ✅ Seller dashboard with order stats
+- ✅ Order list and detail views
+- ✅ Menu and dish management
+- ✅ Offline support with Room caching
+
+### Phase 2 - Growth Features
+- 🔄 WhatsApp order notifications
+- 🔄 OCR menu import (camera)
+- 🔄 Subscription management
+- 🔄 Re-order functionality
+
+### Phase 3 - Scale Features
+- 🔄 Multi-language support (Hindi, Tamil)
+- 🔄 Payment processor integration
+- 🔄 Marketplace discovery
+- 🔄 Reviews and ratings
+
+### Android-Specific
+- ✅ Material You dynamic theming
+- ✅ Firebase Cloud Messaging
+- ✅ Background sync with WorkManager
+- 🔄 Home screen widgets
+- 🔄 Google Assistant shortcuts
+
+## 🎨 Design
+
+### Material Design 3
+- Dynamic color from system wallpaper (Android 12+)
+- Dark mode support
+- Consistent spacing (4dp grid)
+- Typography scales
+- Elevation and shadows
+
+### Theme Colors
+- Primary: Orange (#FF9800)
+- Secondary: Blue (#2196F3)
+- Error: Red (#F44336)
+- Success: Green (#4CAF50)
+
+## 🔧 Configuration
+
+### Build Variants
+- **debug**: Development build with logging
+- **release**: Production build with ProGuard
+
+### Environment Variables
+Set in `local.properties`:
+```properties
+API_BASE_URL=https://api.menumaker.app/api/v1
+FIREBASE_PROJECT_ID=menumaker-prod
+```
+
+## 📊 Performance
+
+### Targets
+- **Cold start**: < 2.5 seconds
+- **Memory**: < 180 MB (typical usage)
+- **APK size**: < 50 MB
+- **Battery**: < 6% per hour (active use)
+
+### Optimization
+- Lazy loading with Jetpack Navigation
+- Image caching with Coil
+- Database queries optimized with indices
+- Background work batched via WorkManager
+
+## 🐛 Debugging
+
+### Enable Debug Logging
+```kotlin
+// In NetworkModule.kt
+level = HttpLoggingInterceptor.Level.BODY
+```
+
+### View Database
+Use Android Studio Database Inspector:
+- Tools → Database Inspector
+- Select running app
+- View Room database tables
+
+### Network Traffic
+Use Android Studio Network Profiler:
+- View → Tool Windows → Profiler
+- Select app
+- Click Network tab
+
+## 📝 CI/CD
+
+### GitHub Actions
+Workflow: `.github/workflows/android-ci.yml`
+
+- Runs on push to `claude/android-*` branches
+- Builds debug APK
+- Runs unit tests
+- Uploads build artifacts
+
+## 📄 License
+
+MIT License - see [LICENSE](../LICENSE)
+
+## 🙏 Support
+
+- **Issues**: [GitHub Issues](https://github.com/ameedanxari/menumaker/issues)
+- **Documentation**: See parent [README](../README.md)
+- **Backend API**: See [backend documentation](../backend/README.md)
+
+## 🎯 Roadmap
+
+- [ ] Phase 2 feature implementation
+- [ ] Phase 3 feature implementation
+- [ ] Widget implementation
+- [ ] Wear OS companion app
+- [ ] Android Auto integration
+
+---
+
+**Built with Kotlin + Jetpack Compose for Android 11+**

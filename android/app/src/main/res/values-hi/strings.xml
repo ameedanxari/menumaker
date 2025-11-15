@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MenuMaker</string>
+    <string name="sign_in">साइन इन करें</string>
+    <string name="sign_up">साइन अप करें</string>
+    <string name="email">ईमेल</string>
+    <string name="password">पासवर्ड</string>
+    <string name="nav_dashboard">डैशबोर्ड</string>
+    <string name="nav_orders">ऑर्डर</string>
+    <string name="nav_menu">मेनू</string>
+    <string name="nav_marketplace">मार्केटप्लेस</string>
+    <string name="save">सहेजें</string>
+    <string name="cancel">रद्द करें</string>
+    <string name="loading">लोड हो रहा है…</string>
+</resources>

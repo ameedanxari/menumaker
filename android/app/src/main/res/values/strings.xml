@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MenuMaker</string>
+
+    <!-- Authentication -->
+    <string name="sign_in">Sign In</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="dont_have_account">Don\'t have an account?</string>
+    <string name="already_have_account">Already have an account?</string>
+
+    <!-- Navigation -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_orders">Orders</string>
+    <string name="nav_menu">Menu</string>
+    <string name="nav_marketplace">Marketplace</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- Common -->
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="loading">Loading…</string>
+    <string name="error_occurred">An error occurred</string>
+    <string name="retry">Retry</string>
+
+    <!-- Business -->
+    <string name="business_name">Business Name</string>
+    <string name="business_description">Description</string>
+
+    <!-- Menu -->
+    <string name="add_dish">Add Dish</string>
+    <string name="dish_name">Dish Name</string>
+    <string name="dish_price">Price</string>
+    <string name="dish_description">Description</string>
+
+    <!-- Orders -->
+    <string name="new_order">New Order</string>
+    <string name="order_total">Total</string>
+    <string name="order_status">Status</string>
+    <string name="mark_fulfilled">Mark Fulfilled</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_orders">Orders</string>
+    <string name="notification_channel_orders_desc">Notifications for new orders</string>
+</resources>

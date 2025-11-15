@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Colors (Orange - matching web) -->
+    <color name="primary_50">#FFF3E0</color>
+    <color name="primary_100">#FFE0B2</color>
+    <color name="primary_200">#FFCC80</color>
+    <color name="primary_300">#FFB74D</color>
+    <color name="primary_400">#FFA726</color>
+    <color name="primary_500">#FF9800</color>
+    <color name="primary_600">#FB8C00</color>
+    <color name="primary_700">#F57C00</color>
+    <color name="primary_800">#EF6C00</color>
+    <color name="primary_900">#E65100</color>
+
+    <!-- Secondary Colors (Blue) -->
+    <color name="secondary_50">#E3F2FD</color>
+    <color name="secondary_500">#2196F3</color>
+    <color name="secondary_700">#1976D2</color>
+
+    <!-- Neutral Colors -->
+    <color name="neutral_50">#FAFAFA</color>
+    <color name="neutral_100">#F5F5F5</color>
+    <color name="neutral_200">#EEEEEE</color>
+    <color name="neutral_300">#E0E0E0</color>
+    <color name="neutral_400">#BDBDBD</color>
+    <color name="neutral_500">#9E9E9E</color>
+    <color name="neutral_600">#757575</color>
+    <color name="neutral_700">#616161</color>
+    <color name="neutral_800">#424242</color>
+    <color name="neutral_900">#212121</color>
+
+    <!-- Semantic Colors -->
+    <color name="success_500">#4CAF50</color>
+    <color name="error_500">#F44336</color>
+    <color name="warning_500">#FFC107</color>
+
+    <!-- Background -->
+    <color name="background_light">#FFFFFF</color>
+    <color name="background_dark">#121212</color>
+
+    <!-- Surface -->
+    <color name="surface_light">#FFFFFF</color>
+    <color name="surface_dark">#1E1E1E</color>
+</resources>

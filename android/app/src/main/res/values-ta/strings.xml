@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MenuMaker</string>
+    <string name="sign_in">உள்நுழைக</string>
+    <string name="sign_up">பதிவு செய்க</string>
+    <string name="email">மின்னஞ்சல்</string>
+    <string name="password">கடவுச்சொல்</string>
+    <string name="nav_dashboard">டாஷ்போர்டு</string>
+    <string name="nav_orders">ஆர்டர்கள்</string>
+    <string name="nav_menu">மெனு</string>
+    <string name="nav_marketplace">சந்தை</string>
+    <string name="save">சேமி</string>
+    <string name="cancel">ரத்துசெய்</string>
+    <string name="loading">ஏற்றுகிறது…</string>
+</resources>
