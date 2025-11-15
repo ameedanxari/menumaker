@@ -1,21 +1,9 @@
 package com.menumaker.di
 
 import com.menumaker.data.local.datastore.TokenDataStore
-import com.menumaker.data.local.db.dao.BusinessDao
-import com.menumaker.data.local.db.dao.DishDao
-import com.menumaker.data.local.db.dao.MenuDao
-import com.menumaker.data.local.db.dao.OrderDao
+import com.menumaker.data.local.db.dao.*
 import com.menumaker.data.remote.api.ApiService
-import com.menumaker.data.repository.AuthRepository
-import com.menumaker.data.repository.AuthRepositoryImpl
-import com.menumaker.data.repository.BusinessRepository
-import com.menumaker.data.repository.BusinessRepositoryImpl
-import com.menumaker.data.repository.DishRepository
-import com.menumaker.data.repository.DishRepositoryImpl
-import com.menumaker.data.repository.MenuRepository
-import com.menumaker.data.repository.MenuRepositoryImpl
-import com.menumaker.data.repository.OrderRepository
-import com.menumaker.data.repository.OrderRepositoryImpl
+import com.menumaker.data.repository.*
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -70,4 +58,48 @@ object RepositoryModule {
     ): OrderRepository {
         return OrderRepositoryImpl(apiService, orderDao)
     }
+
+    @Provides
+    @Singleton
+    fun provideCouponRepository(
+        apiService: ApiService,
+        couponDao: CouponDao
+    ): CouponRepository = CouponRepositoryImpl(apiService, couponDao)
+
+    @Provides
+    @Singleton
+    fun provideCartRepository(
+        cartDao: CartDao
+    ): CartRepository = CartRepositoryImpl(cartDao)
+
+    @Provides
+    @Singleton
+    fun provideMarketplaceRepository(
+        apiService: ApiService
+    ): MarketplaceRepository = MarketplaceRepositoryImpl(apiService)
+
+    @Provides
+    @Singleton
+    fun providePaymentRepository(
+        apiService: ApiService
+    ): PaymentRepository = PaymentRepositoryImpl(apiService)
+
+    @Provides
+    @Singleton
+    fun provideReviewRepository(
+        apiService: ApiService,
+        reviewDao: ReviewDao
+    ): ReviewRepository = ReviewRepositoryImpl(apiService, reviewDao)
+
+    @Provides
+    @Singleton
+    fun provideReferralRepository(
+        apiService: ApiService
+    ): ReferralRepository = ReferralRepositoryImpl(apiService)
+
+    @Provides
+    @Singleton
+    fun provideIntegrationRepository(
+        apiService: ApiService
+    ): IntegrationRepository = IntegrationRepositoryImpl(apiService)
 }

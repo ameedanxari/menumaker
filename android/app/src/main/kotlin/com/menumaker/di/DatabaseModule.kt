@@ -55,4 +55,16 @@ object DatabaseModule {
     fun provideOrderDao(database: MenuMakerDatabase): OrderDao {
         return database.orderDao()
     }
+
+    @Provides
+    @Singleton
+    fun provideCouponDao(database: MenuMakerDatabase) = database.couponDao()
+
+    @Provides
+    @Singleton
+    fun provideReviewDao(database: MenuMakerDatabase) = database.reviewDao()
+
+    @Provides
+    @Singleton
+    fun provideCartDao(database: MenuMakerDatabase) = database.cartDao()
 }

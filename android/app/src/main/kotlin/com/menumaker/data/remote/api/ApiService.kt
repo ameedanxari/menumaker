@@ -81,4 +81,91 @@ interface ApiService {
 
     @DELETE("orders/{id}")
     suspend fun deleteOrder(@Path("id") id: String): Response<Unit>
+
+    // Payment Processors
+    @GET("payment-processors")
+    suspend fun getPaymentProcessors(
+        @Query("business_id") businessId: String
+    ): Response<PaymentProcessorListResponse>
+
+    @POST("payment-processors/connect")
+    suspend fun connectPaymentProcessor(
+        @Body request: Map<String, String>
+    ): Response<PaymentProcessorResponse>
+
+    @DELETE("payment-processors/{id}")
+    suspend fun disconnectPaymentProcessor(@Path("id") id: String): Response<Unit>
+
+    // Payouts
+    @GET("payouts")
+    suspend fun getPayouts(
+        @Query("business_id") businessId: String
+    ): Response<PayoutListResponse>
+
+    @POST("payouts/schedule")
+    suspend fun updatePayoutSchedule(
+        @Body schedule: Map<String, Any>
+    ): Response<PayoutListResponse>
+
+    // Coupons
+    @GET("coupons")
+    suspend fun getCoupons(
+        @Query("business_id") businessId: String
+    ): Response<CouponListResponse>
+
+    @GET("coupons/{id}")
+    suspend fun getCouponById(@Path("id") id: String): Response<CouponResponse>
+
+    @POST("coupons")
+    suspend fun createCoupon(@Body coupon: Map<String, Any>): Response<CouponResponse>
+
+    @PATCH("coupons/{id}")
+    suspend fun updateCoupon(
+        @Path("id") id: String,
+        @Body updates: Map<String, Any>
+    ): Response<CouponResponse>
+
+    @DELETE("coupons/{id}")
+    suspend fun deleteCoupon(@Path("id") id: String): Response<Unit>
+
+    // Reviews
+    @GET("reviews")
+    suspend fun getReviews(
+        @Query("business_id") businessId: String
+    ): Response<ReviewListResponse>
+
+    @POST("reviews")
+    suspend fun createReview(@Body review: Map<String, Any>): Response<ReviewResponse>
+
+    // Marketplace
+    @GET("marketplace/sellers")
+    suspend fun searchSellers(
+        @Query("latitude") latitude: Double?,
+        @Query("longitude") longitude: Double?,
+        @Query("cuisine") cuisine: String?,
+        @Query("rating_min") ratingMin: Double?,
+        @Query("distance_km") distanceKm: Double?
+    ): Response<MarketplaceResponse>
+
+    @GET("marketplace/sellers/{id}")
+    suspend fun getSellerById(@Path("id") id: String): Response<BusinessResponse>
+
+    // Referrals
+    @GET("referrals/stats")
+    suspend fun getReferralStats(): Response<ReferralStatsResponse>
+
+    // Integrations
+    @GET("integrations")
+    suspend fun getIntegrations(
+        @Query("business_id") businessId: String
+    ): Response<IntegrationListResponse>
+
+    @POST("pos/connect")
+    suspend fun connectPOS(@Body request: Map<String, String>): Response<PaymentProcessorResponse>
+
+    @POST("delivery/connect")
+    suspend fun connectDelivery(@Body request: Map<String, String>): Response<PaymentProcessorResponse>
+
+    @DELETE("integrations/{id}")
+    suspend fun disconnectIntegration(@Path("id") id: String): Response<Unit>
 }
