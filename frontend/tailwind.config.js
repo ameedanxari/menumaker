@@ -1,4 +1,4 @@
-import designTokens from './src/design-tokens.json';
+import designTokens from './design-tokens.json';
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -12,16 +12,24 @@ export default {
       // Colors from design tokens
       colors: {
         primary: designTokens.colors.primary,
+        secondary: designTokens.colors.secondary,
         neutral: designTokens.colors.neutral,
         success: designTokens.colors.success,
         warning: designTokens.colors.warning,
         error: designTokens.colors.error,
-        info: designTokens.colors.info,
+        // Semantic colors
+        text: designTokens.colors.semantic.text,
+        bg: designTokens.colors.semantic.background,
+        border: designTokens.colors.semantic.border,
+        surface: designTokens.colors.semantic.surface,
+        // Dark mode colors
+        dark: designTokens.colors.dark,
       },
 
       // Typography
       fontFamily: {
         sans: designTokens.typography.fontFamily.sans.split(', '),
+        serif: designTokens.typography.fontFamily.serif.split(', '),
         mono: designTokens.typography.fontFamily.mono.split(', '),
       },
       fontSize: designTokens.typography.fontSize,
@@ -35,15 +43,21 @@ export default {
       // Border radius
       borderRadius: designTokens.borderRadius,
 
+      // Border width
+      borderWidth: designTokens.borderWidth,
+
       // Box shadows
-      boxShadow: designTokens.shadows,
+      boxShadow: designTokens.boxShadow,
 
       // Transitions
       transitionDuration: designTokens.transitions.duration,
-      transitionTimingFunction: designTokens.transitions.timing,
+      transitionTimingFunction: designTokens.transitions.easing,
 
       // Z-index
       zIndex: designTokens.zIndex,
+
+      // Opacity
+      opacity: designTokens.opacity,
 
       // Breakpoints (screens)
       screens: designTokens.breakpoints,
