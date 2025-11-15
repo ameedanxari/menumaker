@@ -20,6 +20,8 @@ import { subscriptionRoutes } from './routes/subscriptions.js';
 import whatsappRoutes from './routes/whatsapp.js';
 import ocrRoutes from './routes/ocr.js';
 import referralRoutes from './routes/referrals.js';
+import gdprRoutes from './routes/gdpr.js';
+import reorderRoutes from './routes/reorder.js';
 
 // Load environment variables
 dotenv.config();
@@ -211,6 +213,8 @@ async function registerRoutes() {
   await fastify.register(whatsappRoutes, { prefix: '/api/v1/whatsapp' });
   await fastify.register(ocrRoutes, { prefix: '/api/v1/ocr' });
   await fastify.register(referralRoutes, { prefix: '/api/v1/referrals' });
+  await fastify.register(gdprRoutes, { prefix: '/api/v1/gdpr' });
+  await fastify.register(reorderRoutes, { prefix: '/api/v1/reorder' });
 
   // 404 handler
   fastify.setNotFoundHandler((request, reply) => {
