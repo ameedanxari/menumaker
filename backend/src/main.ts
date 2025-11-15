@@ -24,6 +24,7 @@ import { reviewRoutes } from './routes/reviews.js'; // Phase 3: Review & Complai
 import { marketplaceRoutes } from './routes/marketplace.js'; // Phase 3: Marketplace & Seller Discovery
 import { posRoutes } from './routes/pos.js'; // Phase 3: POS System Integration
 import { deliveryRoutes } from './routes/delivery.js'; // Phase 3: Delivery Partner Integration
+import { couponRoutes } from './routes/coupons.js'; // Phase 3: Promotions & Coupons
 import { subscriptionRoutes } from './routes/subscriptions.js';
 import whatsappRoutes from './routes/whatsapp.js';
 import ocrRoutes from './routes/ocr.js';
@@ -226,6 +227,7 @@ async function registerRoutes() {
   await fastify.register(marketplaceRoutes, { prefix: '/api/v1/marketplace' }); // Phase 3: Marketplace & Seller Discovery
   await fastify.register(posRoutes, { prefix: '/api/v1/pos' }); // Phase 3: POS System Integration
   await fastify.register(deliveryRoutes, { prefix: '/api/v1/delivery' }); // Phase 3: Delivery Partner Integration
+  await fastify.register(couponRoutes, { prefix: '/api/v1/coupons' }); // Phase 3: Promotions & Coupons
   await fastify.register(subscriptionRoutes, { prefix: '/api/v1/subscriptions' });
   await fastify.register(whatsappRoutes, { prefix: '/api/v1/whatsapp' });
   await fastify.register(ocrRoutes, { prefix: '/api/v1/ocr' });
