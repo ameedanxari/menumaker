@@ -19,6 +19,7 @@ import { paymentRoutes } from './routes/payments.js';
 import { paymentProcessorRoutes } from './routes/paymentProcessors.js'; // Phase 3: Multi-processor support
 import { payoutRoutes } from './routes/payouts.js'; // Phase 3: Automated Payouts
 import { taxReportRoutes } from './routes/taxReports.js'; // Phase 3: Tax Compliance & Reporting
+import { i18nRoutes } from './routes/i18n.js'; // Phase 3: Multi-Language Support
 import { subscriptionRoutes } from './routes/subscriptions.js';
 import whatsappRoutes from './routes/whatsapp.js';
 import ocrRoutes from './routes/ocr.js';
@@ -216,6 +217,7 @@ async function registerRoutes() {
   await fastify.register(paymentProcessorRoutes, { prefix: '/api/v1/payment-processors' }); // Phase 3: Multi-processor support
   await fastify.register(payoutRoutes, { prefix: '/api/v1/payouts' }); // Phase 3: Automated Payouts
   await fastify.register(taxReportRoutes, { prefix: '/api/v1/tax' }); // Phase 3: Tax Compliance & Reporting
+  await fastify.register(i18nRoutes, { prefix: '/api/v1/i18n' }); // Phase 3: Multi-Language Support
   await fastify.register(subscriptionRoutes, { prefix: '/api/v1/subscriptions' });
   await fastify.register(whatsappRoutes, { prefix: '/api/v1/whatsapp' });
   await fastify.register(ocrRoutes, { prefix: '/api/v1/ocr' });

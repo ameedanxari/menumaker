@@ -32,6 +32,20 @@ export class Dish {
   @Column({ type: 'text' })
   description!: string;
 
+  /**
+   * Translations for dish name (Phase 3.3 - i18n)
+   * Format: { "hi": "पनीर बटर मसाला", "ta": "பனீர் பட்டர் மசாலா", "ar": "بانير بتر ماسالا" }
+   */
+  @Column({ type: 'jsonb', nullable: true })
+  name_translations?: Record<string, string>;
+
+  /**
+   * Translations for dish description (Phase 3.3 - i18n)
+   * Format: { "hi": "स्वादिष्ट पनीर करी", "ta": "சுவையான பனீர் கறி", "ar": "كاري لذيذ" }
+   */
+  @Column({ type: 'jsonb', nullable: true })
+  description_translations?: Record<string, string>;
+
   @Column({ type: 'integer' })
   price_cents!: number;
 

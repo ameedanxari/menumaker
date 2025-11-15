@@ -134,6 +134,47 @@ export class BusinessSettings {
   @Column({ type: 'text', nullable: true })
   invoice_terms?: string;
 
+  // Multi-Language & Internationalization (Phase 3.3)
+  /**
+   * Default locale for seller UI and public menu
+   * Supported: en (English), hi (Hindi), ta (Tamil), ar (Arabic)
+   */
+  @Column({ type: 'varchar', length: 5, default: 'en' })
+  default_locale!: string;
+
+  /**
+   * Enabled locales for public menu translations
+   * Array of locale codes: ['en', 'hi', 'ta']
+   */
+  @Column({ type: 'simple-array', default: 'en' })
+  supported_locales!: string[];
+
+  /**
+   * Enable RTL (Right-to-Left) layout for Arabic/Hebrew
+   */
+  @Column({ type: 'boolean', default: false })
+  rtl_enabled!: boolean;
+
+  /**
+   * Date format preference (locale-specific)
+   * Examples: 'DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD'
+   */
+  @Column({ type: 'varchar', length: 20, default: 'DD/MM/YYYY' })
+  date_format!: string;
+
+  /**
+   * Time format preference (12h or 24h)
+   */
+  @Column({ type: 'varchar', length: 5, default: '24h' })
+  time_format!: '12h' | '24h';
+
+  /**
+   * Currency display format
+   * Examples: 'symbol' (₹), 'code' (INR), 'name' (Rupees)
+   */
+  @Column({ type: 'varchar', length: 10, default: 'symbol' })
+  currency_display!: 'symbol' | 'code' | 'name';
+
   @CreateDateColumn()
   created_at!: Date;
 
