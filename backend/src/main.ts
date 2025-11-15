@@ -22,6 +22,7 @@ import { taxReportRoutes } from './routes/taxReports.js'; // Phase 3: Tax Compli
 import { i18nRoutes } from './routes/i18n.js'; // Phase 3: Multi-Language Support
 import { reviewRoutes } from './routes/reviews.js'; // Phase 3: Review & Complaint Workflow
 import { marketplaceRoutes } from './routes/marketplace.js'; // Phase 3: Marketplace & Seller Discovery
+import { posRoutes } from './routes/pos.js'; // Phase 3: POS System Integration
 import { subscriptionRoutes } from './routes/subscriptions.js';
 import whatsappRoutes from './routes/whatsapp.js';
 import ocrRoutes from './routes/ocr.js';
@@ -222,6 +223,7 @@ async function registerRoutes() {
   await fastify.register(i18nRoutes, { prefix: '/api/v1/i18n' }); // Phase 3: Multi-Language Support
   await fastify.register(reviewRoutes, { prefix: '/api/v1/reviews' }); // Phase 3: Review & Complaint Workflow
   await fastify.register(marketplaceRoutes, { prefix: '/api/v1/marketplace' }); // Phase 3: Marketplace & Seller Discovery
+  await fastify.register(posRoutes, { prefix: '/api/v1/pos' }); // Phase 3: POS System Integration
   await fastify.register(subscriptionRoutes, { prefix: '/api/v1/subscriptions' });
   await fastify.register(whatsappRoutes, { prefix: '/api/v1/whatsapp' });
   await fastify.register(ocrRoutes, { prefix: '/api/v1/ocr' });
