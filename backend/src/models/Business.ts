@@ -50,6 +50,13 @@ export class Business {
   @Column({ type: 'text', nullable: true })
   description?: string;
 
+  // Phase 3: Admin Backend - Moderation Fields
+  @Column({ type: 'boolean', default: true })
+  is_published!: boolean; // Can be set to false by admin (suspension)
+
+  @Column({ type: 'timestamp', nullable: true })
+  deleted_at?: Date; // Soft delete timestamp (when user is banned)
+
   @CreateDateColumn()
   created_at!: Date;
 

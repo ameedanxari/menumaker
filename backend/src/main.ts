@@ -22,6 +22,7 @@ import ocrRoutes from './routes/ocr.js';
 import referralRoutes from './routes/referrals.js';
 import gdprRoutes from './routes/gdpr.js';
 import reorderRoutes from './routes/reorder.js';
+import adminRoutes from './routes/admin.js';
 
 // Load environment variables
 dotenv.config();
@@ -215,6 +216,7 @@ async function registerRoutes() {
   await fastify.register(referralRoutes, { prefix: '/api/v1/referrals' });
   await fastify.register(gdprRoutes, { prefix: '/api/v1/gdpr' });
   await fastify.register(reorderRoutes, { prefix: '/api/v1/reorder' });
+  await fastify.register(adminRoutes, { prefix: '/api/v1/admin' }); // Phase 3: Admin Backend Platform
 
   // 404 handler
   fastify.setNotFoundHandler((request, reply) => {
