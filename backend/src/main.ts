@@ -16,12 +16,23 @@ import { orderRoutes } from './routes/orders.js';
 import { mediaRoutes } from './routes/media.js';
 import { reportRoutes } from './routes/reports.js';
 import { paymentRoutes } from './routes/payments.js';
+import { paymentProcessorRoutes } from './routes/paymentProcessors.js'; // Phase 3: Multi-processor support
+import { payoutRoutes } from './routes/payouts.js'; // Phase 3: Automated Payouts
+import { taxReportRoutes } from './routes/taxReports.js'; // Phase 3: Tax Compliance & Reporting
+import { i18nRoutes } from './routes/i18n.js'; // Phase 3: Multi-Language Support
+import { reviewRoutes } from './routes/reviews.js'; // Phase 3: Review & Complaint Workflow
+import { marketplaceRoutes } from './routes/marketplace.js'; // Phase 3: Marketplace & Seller Discovery
+import { posRoutes } from './routes/pos.js'; // Phase 3: POS System Integration
+import { deliveryRoutes } from './routes/delivery.js'; // Phase 3: Delivery Partner Integration
+import { couponRoutes } from './routes/coupons.js'; // Phase 3: Promotions & Coupons
+import { enhancedReferralRoutes } from './routes/enhancedReferrals.js'; // Phase 3: Enhanced Referral & Viral Features
 import { subscriptionRoutes } from './routes/subscriptions.js';
 import whatsappRoutes from './routes/whatsapp.js';
 import ocrRoutes from './routes/ocr.js';
 import referralRoutes from './routes/referrals.js';
 import gdprRoutes from './routes/gdpr.js';
 import reorderRoutes from './routes/reorder.js';
+import adminRoutes from './routes/admin.js';
 
 // Load environment variables
 dotenv.config();
@@ -209,12 +220,23 @@ async function registerRoutes() {
   await fastify.register(mediaRoutes, { prefix: '/api/v1/media' });
   await fastify.register(reportRoutes, { prefix: '/api/v1/reports' });
   await fastify.register(paymentRoutes, { prefix: '/api/v1/payments' });
+  await fastify.register(paymentProcessorRoutes, { prefix: '/api/v1/payment-processors' }); // Phase 3: Multi-processor support
+  await fastify.register(payoutRoutes, { prefix: '/api/v1/payouts' }); // Phase 3: Automated Payouts
+  await fastify.register(taxReportRoutes, { prefix: '/api/v1/tax' }); // Phase 3: Tax Compliance & Reporting
+  await fastify.register(i18nRoutes, { prefix: '/api/v1/i18n' }); // Phase 3: Multi-Language Support
+  await fastify.register(reviewRoutes, { prefix: '/api/v1/reviews' }); // Phase 3: Review & Complaint Workflow
+  await fastify.register(marketplaceRoutes, { prefix: '/api/v1/marketplace' }); // Phase 3: Marketplace & Seller Discovery
+  await fastify.register(posRoutes, { prefix: '/api/v1/pos' }); // Phase 3: POS System Integration
+  await fastify.register(deliveryRoutes, { prefix: '/api/v1/delivery' }); // Phase 3: Delivery Partner Integration
+  await fastify.register(couponRoutes, { prefix: '/api/v1/coupons' }); // Phase 3: Promotions & Coupons
+  await fastify.register(enhancedReferralRoutes, { prefix: '/api/v1' }); // Phase 3: Enhanced Referral & Viral Features
   await fastify.register(subscriptionRoutes, { prefix: '/api/v1/subscriptions' });
   await fastify.register(whatsappRoutes, { prefix: '/api/v1/whatsapp' });
   await fastify.register(ocrRoutes, { prefix: '/api/v1/ocr' });
   await fastify.register(referralRoutes, { prefix: '/api/v1/referrals' });
   await fastify.register(gdprRoutes, { prefix: '/api/v1/gdpr' });
   await fastify.register(reorderRoutes, { prefix: '/api/v1/reorder' });
+  await fastify.register(adminRoutes, { prefix: '/api/v1/admin' }); // Phase 3: Admin Backend Platform
 
   // 404 handler
   fastify.setNotFoundHandler((request, reply) => {

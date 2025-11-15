@@ -40,6 +40,22 @@ export class User {
   @Column({ type: 'varchar', length: 12, nullable: true })
   referred_by_code?: string; // Track who referred this user
 
+  // Phase 3: Admin Backend - Suspension & Ban Fields
+  @Column({ type: 'timestamp', nullable: true })
+  suspended_until?: Date; // If set, user is suspended until this date
+
+  @Column({ type: 'text', nullable: true })
+  suspension_reason?: string; // Reason for suspension
+
+  @Column({ type: 'boolean', default: false })
+  is_banned!: boolean; // Permanent ban flag
+
+  @Column({ type: 'text', nullable: true })
+  ban_reason?: string; // Reason for ban
+
+  @Column({ type: 'timestamp', nullable: true })
+  banned_at?: Date; // When user was banned
+
   // Relations
   @OneToOne(() => Business, (business) => business.owner)
   business?: Business;
