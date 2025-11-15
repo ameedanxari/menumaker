@@ -20,6 +20,13 @@ const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
 const PublicMenuPage = lazy(() => import('./pages/PublicMenuPage'));
 
+// Phase 3 Pages
+const PaymentProcessorsPage = lazy(() => import('./pages/PaymentProcessorsPage'));
+const PayoutsPage = lazy(() => import('./pages/PayoutsPage'));
+const IntegrationsPage = lazy(() => import('./pages/IntegrationsPage'));
+const CouponsPage = lazy(() => import('./pages/CouponsPage'));
+const ReferralsPage = lazy(() => import('./pages/ReferralsPage'));
+
 // Loading fallback component
 function PageLoader() {
   return (
@@ -74,6 +81,12 @@ function AppContent() {
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/subscription" element={<SubscriptionPage />} />
+            {/* Phase 3 Routes */}
+            <Route path="/payments" element={<PaymentProcessorsPage />} />
+            <Route path="/payouts" element={<PayoutsPage />} />
+            <Route path="/integrations" element={<IntegrationsPage />} />
+            <Route path="/coupons" element={<CouponsPage />} />
+            <Route path="/referrals" element={<ReferralsPage />} />
           </Route>
 
           {/* Redirect root to dashboard or login */}

@@ -247,17 +247,6 @@ jobs:
         working-directory: ./frontend
         run: npx playwright install --with-deps chromium
 
-      - name: Run database migrations
-        working-directory: ./backend
-        env:
-          NODE_ENV: test
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_NAME: menumaker_test
-          DB_USER: menumaker_test
-          DB_PASSWORD: test_password
-        run: npm run migrate || echo "Migration step (if needed)"
-
       - name: Start backend server
         working-directory: ./backend
         env:
