@@ -1,12 +1,10 @@
-name: Android CI
+name: Android CI (Legacy)
+
+# NOTE: This workflow is superseded by smart-ci.yml for PR-based builds
+# Kept for manual testing and backwards compatibility
 
 on:
-  push:
-    branches:
-      - 'claude/android-**'
-      - main
-    paths:
-      - 'android/**'
+  workflow_dispatch:  # Manual trigger only
   pull_request:
     branches:
       - main
