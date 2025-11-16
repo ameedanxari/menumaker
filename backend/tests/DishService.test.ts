@@ -124,7 +124,7 @@ describe('DishService', () => {
       mockBusinessRepository.findOne.mockResolvedValue({ id: businessId, owner_id: userId });
       mockDishRepository.find.mockResolvedValue(mockDishes);
 
-      const result = await dishService.getDishesByBusiness(businessId, userId);
+      const result = await dishService.getBusinessDishes(businessId);
 
       expect(mockDishRepository.find).toHaveBeenCalledWith({
         where: { business_id: businessId },
@@ -214,7 +214,7 @@ describe('DishService', () => {
       mockCategoryRepository.create.mockReturnValue(mockCategory);
       mockCategoryRepository.save.mockResolvedValue(mockCategory);
 
-      const result = await dishService.createDishCategory(businessId, userId, categoryName);
+      const result = await dishService.createCategory(businessId, userId, categoryName);
 
       expect(result.name).toBe(categoryName);
     });
@@ -234,7 +234,7 @@ describe('DishService', () => {
       mockBusinessRepository.findOne.mockResolvedValue({ id: businessId, owner_id: userId });
       mockCategoryRepository.find.mockResolvedValue(mockCategories);
 
-      const result = await dishService.getCategoriesByBusiness(businessId, userId);
+      const result = await dishService.getBusinessCategories(businessId);
 
       expect(mockCategoryRepository.find).toHaveBeenCalledWith({
         where: { business_id: businessId },
