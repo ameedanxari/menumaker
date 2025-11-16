@@ -81,7 +81,7 @@ interface BusinessState {
   reset: () => void;
 }
 
-export const useBusinessStore = create<BusinessState>((set, get) => ({
+export const useBusinessStore = create<BusinessState>((set, _get) => ({
   currentBusiness: null,
   businesses: [],
   settings: null,

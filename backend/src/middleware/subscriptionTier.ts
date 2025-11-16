@@ -13,7 +13,8 @@ export async function checkSubscriptionLimits(
     const subscriptionService = new SubscriptionService();
 
     // Get business ID from request body or params
-    const businessId = (request.body as any)?.business_id || request.params?.businessId;
+    const body = request.body as Record<string, unknown>;
+    const businessId = (body?.business_id as string) || (request.params as Record<string, string>)?.businessId;
 
     if (!businessId) {
       // If no business ID, let the route handler deal with validation

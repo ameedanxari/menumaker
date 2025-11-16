@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { useBusinessStore } from '../stores/businessStore';
-import { PaymentModal } from '../components/payments/PaymentModal';
 import {
   Check,
   X,
@@ -62,8 +61,6 @@ export default function SubscriptionPage() {
   const [error, setError] = useState('');
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [isSubscribing, setIsSubscribing] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();

@@ -48,7 +48,7 @@ interface OrderState {
   reset: () => void;
 }
 
-export const useOrderStore = create<OrderState>((set, get) => ({
+export const useOrderStore = create<OrderState>((set, _get) => ({
   orders: [],
   isLoading: false,
   error: null,

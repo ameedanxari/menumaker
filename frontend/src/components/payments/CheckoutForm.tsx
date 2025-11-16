@@ -15,7 +15,7 @@ interface CheckoutFormProps {
  * Uses Stripe Elements for secure card payment
  */
 export function CheckoutForm({
-  clientSecret,
+  clientSecret: _clientSecret,
   amount,
   currency,
   onSuccess,
