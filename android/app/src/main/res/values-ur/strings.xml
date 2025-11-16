@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MenuMaker</string>
+
+    <!-- Authentication -->
+    <string name="sign_in">سائن ان</string>
+    <string name="sign_up">سائن اپ</string>
+    <string name="email">ای میل</string>
+    <string name="password">پاس ورڈ</string>
+    <string name="forgot_password">پاس ورڈ بھول گئے؟</string>
+    <string name="dont_have_account">اکاؤنٹ نہیں ہے؟</string>
+    <string name="already_have_account">پہلے سے اکاؤنٹ ہے؟</string>
+
+    <!-- Navigation -->
+    <string name="nav_dashboard">ڈیش بورڈ</string>
+    <string name="nav_orders">آرڈرز</string>
+    <string name="nav_menu">مینو</string>
+    <string name="nav_marketplace">مارکیٹ پلیس</string>
+    <string name="nav_profile">پروفائل</string>
+
+    <!-- Common -->
+    <string name="save">محفوظ کریں</string>
+    <string name="cancel">منسوخ کریں</string>
+    <string name="delete">حذف کریں</string>
+    <string name="edit">ترمیم کریں</string>
+    <string name="loading">لوڈ ہو رہا ہے…</string>
+    <string name="error_occurred">ایک خرابی پیش آگئی</string>
+    <string name="retry">دوبارہ کوشش کریں</string>
+
+    <!-- Business -->
+    <string name="business_name">کاروبار کا نام</string>
+    <string name="business_description">تفصیل</string>
+
+    <!-- Menu -->
+    <string name="add_dish">ڈش شامل کریں</string>
+    <string name="dish_name">ڈش کا نام</string>
+    <string name="dish_price">قیمت</string>
+    <string name="dish_description">تفصیل</string>
+
+    <!-- Orders -->
+    <string name="new_order">نیا آرڈر</string>
+    <string name="order_total">کل</string>
+    <string name="order_status">حیثیت</string>
+    <string name="mark_fulfilled">مکمل نشان زد کریں</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_orders">آرڈرز</string>
+    <string name="notification_channel_orders_desc">نئے آرڈرز کے لیے اطلاعات</string>
+</resources>

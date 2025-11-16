@@ -1,0 +1,170 @@
+/* MenuMaker iOS App - Arabic Localization */
+
+/* App Name */
+"app_name" = "MenuMaker";
+
+/* Authentication */
+"sign_in" = "تسجيل الدخول";
+"sign_up" = "إنشاء حساب";
+"email" = "البريد الإلكتروني";
+"password" = "كلمة المرور";
+"forgot_password" = "هل نسيت كلمة المرور؟";
+"dont_have_account" = "ليس لديك حساب؟";
+"already_have_account" = "لديك حساب بالفعل؟";
+"name" = "الاسم";
+"phone" = "الهاتف";
+
+/* Navigation */
+"nav_dashboard" = "لوحة التحكم";
+"nav_orders" = "الطلبات";
+"nav_menu" = "القائمة";
+"nav_marketplace" = "السوق";
+"nav_profile" = "الملف الشخصي";
+"nav_more" = "المزيد";
+"nav_cart" = "سلة التسوق";
+
+/* Common */
+"save" = "حفظ";
+"cancel" = "إلغاء";
+"delete" = "حذف";
+"edit" = "تعديل";
+"loading" = "جاري التحميل...";
+"error_occurred" = "حدث خطأ";
+"retry" = "إعادة المحاولة";
+"ok" = "موافق";
+"done" = "تم";
+"close" = "إغلاق";
+"search" = "بحث";
+"filter" = "تصفية";
+"sort" = "ترتيب";
+"refresh" = "تحديث";
+"logout" = "تسجيل الخروج";
+
+/* Business */
+"business_name" = "اسم العمل";
+"business_description" = "الوصف";
+"create_business" = "إنشاء عمل تجاري";
+"my_business" = "عملي";
+"business_logo" = "شعار العمل";
+"business_slug" = "معرف العمل";
+
+/* Menu */
+"add_dish" = "إضافة طبق";
+"dish_name" = "اسم الطبق";
+"dish_price" = "السعر";
+"dish_description" = "الوصف";
+"dish_category" = "الفئة";
+"vegetarian" = "نباتي";
+"available" = "متاح";
+"unavailable" = "غير متاح";
+"add_to_cart" = "أضف إلى السلة";
+"view_menu" = "عرض القائمة";
+
+/* Orders */
+"new_order" = "طلب جديد";
+"order_total" = "المجموع";
+"order_status" = "الحالة";
+"mark_fulfilled" = "تحديد كمكتمل";
+"order_pending" = "قيد الانتظار";
+"order_confirmed" = "مؤكد";
+"order_ready" = "جاهز";
+"order_fulfilled" = "مكتمل";
+"order_cancelled" = "ملغى";
+"customer_name" = "اسم العميل";
+"customer_phone" = "هاتف العميل";
+"customer_email" = "بريد العميل الإلكتروني";
+"order_items" = "عناصر الطلب";
+
+/* Cart */
+"cart" = "سلة التسوق";
+"cart_empty" = "سلة التسوق فارغة";
+"checkout" = "إتمام الطلب";
+"subtotal" = "المجموع الفرعي";
+"quantity" = "الكمية";
+"remove_from_cart" = "إزالة من السلة";
+
+/* Coupons */
+"coupons" = "كوبونات الخصم";
+"create_coupon" = "إنشاء كوبون";
+"coupon_code" = "رمز الكوبون";
+"discount" = "الخصم";
+"valid_from" = "صالح من";
+"valid_until" = "صالح حتى";
+"apply_coupon" = "تطبيق الكوبون";
+
+/* Payments */
+"payment_methods" = "طرق الدفع";
+"add_payment_method" = "إضافة طريقة دفع";
+"payment_processor" = "معالج الدفع";
+"configure_payment" = "تكوين الدفع";
+
+/* Marketplace */
+"marketplace" = "السوق";
+"browse_restaurants" = "تصفح المطاعم";
+"popular_dishes" = "الأطباق الشائعة";
+"nearby_restaurants" = "المطاعم القريبة";
+
+/* Reviews */
+"reviews" = "التقييمات";
+"write_review" = "كتابة تقييم";
+"rating" = "التقييم";
+"review_text" = "نص التقييم";
+
+/* Referrals */
+"referrals" = "الإحالات";
+"referral_code" = "رمز الإحالة";
+"share_referral" = "مشاركة رمز الإحالة";
+"referral_earnings" = "أرباح الإحالة";
+
+/* Integrations */
+"integrations" = "التكاملات";
+"connect_service" = "ربط الخدمة";
+"payment_gateway" = "بوابة الدفع";
+"delivery_partner" = "شريك التوصيل";
+
+/* Notifications */
+"notification_channel_orders" = "الطلبات";
+"notification_channel_orders_desc" = "إشعارات للطلبات الجديدة";
+"enable_notifications" = "تفعيل الإشعارات";
+"notification_settings" = "إعدادات الإشعارات";
+
+/* Settings */
+"settings" = "الإعدادات";
+"account_settings" = "إعدادات الحساب";
+"app_settings" = "إعدادات التطبيق";
+"language" = "اللغة";
+"theme" = "المظهر";
+"privacy" = "الخصوصية";
+"terms" = "شروط الخدمة";
+"help" = "المساعدة";
+"about" = "حول";
+
+/* Errors */
+"error_invalid_email" = "عنوان البريد الإلكتروني غير صالح";
+"error_invalid_password" = "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل";
+"error_login_failed" = "فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.";
+"error_signup_failed" = "فشل إنشاء الحساب. يرجى المحاولة مرة أخرى.";
+"error_network" = "خطأ في الشبكة. يرجى التحقق من اتصالك.";
+"error_unknown" = "حدث خطأ غير معروف";
+"error_unauthorized" = "غير مصرح. يرجى تسجيل الدخول مرة أخرى.";
+"error_server" = "خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقًا.";
+
+/* Success Messages */
+"success_login" = "تم تسجيل الدخول بنجاح";
+"success_signup" = "تم إنشاء الحساب بنجاح";
+"success_saved" = "تم الحفظ بنجاح";
+"success_deleted" = "تم الحذف بنجاح";
+"success_order_placed" = "تم تقديم الطلب بنجاح";
+
+/* Camera & OCR */
+"camera_permission" = "مطلوب إذن الكاميرا";
+"scan_menu" = "مسح القائمة";
+"take_photo" = "التقاط صورة";
+"choose_from_library" = "اختر من المكتبة";
+"processing_image" = "جاري معالجة الصورة...";
+
+/* Biometric */
+"biometric_login" = "تسجيل الدخول بالبيومترية";
+"enable_biometric" = "تفعيل تسجيل الدخول بالبيومترية";
+"face_id" = "معرف الوجه";
+"touch_id" = "معرف اللمس";

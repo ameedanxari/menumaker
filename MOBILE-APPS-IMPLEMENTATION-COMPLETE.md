@@ -66,6 +66,8 @@ Both apps implement **full feature parity** across all three phases (MVP, Growth
 5. **Multi-language Support**
    - English (primary)
    - Hindi (हिन्दी)
+   - Urdu (اردو) - with RTL support
+   - Arabic (العربية) - with RTL support
    - Tamil (தமிழ்)
 
 ### Technology Stack
@@ -137,7 +139,9 @@ Both apps implement **full feature parity** across all three phases (MVP, Growth
 
 5. **Localization** (3 Languages)
    - **English**: 170 localized strings
-   - **Hindi (हिन्दी)**: 170 localized strings
+   - **Hindi (हिन्दी)
+   - Urdu (اردو) - with RTL support
+   - Arabic (العربية) - with RTL support**: 170 localized strings
    - **Tamil (தமிழ்)**: 170 localized strings
    - Type-safe localization with `.localized` extension
 
