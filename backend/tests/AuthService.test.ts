@@ -1,12 +1,14 @@
 import { jest, describe, beforeEach, it, expect } from '@jest/globals';
-import type { Mock } from 'jest-mock';
 import { AuthService } from '../src/services/AuthService';
 import { AppDataSource } from '../src/config/database';
 import bcrypt from 'bcrypt';
 
 // Mock dependencies
 jest.mock('../src/config/database');
-jest.mock('bcrypt');
+jest.mock('bcrypt', () => ({
+  hash: jest.fn(),
+  compare: jest.fn(),
+}));
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -35,7 +37,7 @@ describe('AuthService', () => {
       const hashedPassword = 'hashed_password';
 
       mockUserRepository.findOne.mockResolvedValue(null);
-      (bcrypt.hash as unknown as Mock).mockResolvedValue(hashedPassword);
+      (bcrypt.hash as jest.MockedFunction<typeof bcrypt.hash>).mockResolvedValue(hashedPassword as never);
 
       const mockUser = {
         id: 'user-id',
@@ -92,7 +94,7 @@ describe('AuthService', () => {
       };
 
       mockUserRepository.findOne.mockResolvedValue(mockUser);
-      (bcrypt.compare as unknown as Mock).mockResolvedValue(true);
+      (bcrypt.compare as jest.MockedFunction<typeof bcrypt.compare>).mockResolvedValue(true as never);
 
       const result = await authService.login(email, password);
 
@@ -119,7 +121,7 @@ describe('AuthService', () => {
       };
 
       mockUserRepository.findOne.mockResolvedValue(mockUser);
-      (bcrypt.compare as unknown as Mock).mockResolvedValue(false);
+      (bcrypt.compare as jest.MockedFunction<typeof bcrypt.compare>).mockResolvedValue(false as never);
 
       await expect(authService.login('test@example.com', 'wrongpassword')).rejects.toThrow(
         'Invalid credentials'

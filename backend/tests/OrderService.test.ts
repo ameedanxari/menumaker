@@ -57,7 +57,7 @@ describe('OrderService', () => {
     }) as any;
 
     // Mock transaction
-    AppDataSource.transaction = jest.fn().mockImplementation(async (callback) => {
+    AppDataSource.transaction = jest.fn().mockImplementation(async (callback: any) => {
       const mockManager = {
         getRepository: (entity: any) => {
           if (entity === Order) return mockOrderRepository;
@@ -65,7 +65,7 @@ describe('OrderService', () => {
           return {};
         },
       };
-      return callback(mockManager);
+      return await callback(mockManager);
     }) as any;
 
     orderService = new OrderService();
