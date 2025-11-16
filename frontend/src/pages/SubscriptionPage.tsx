@@ -120,20 +120,11 @@ export default function SubscriptionPage() {
       });
 
       if (response.success) {
-        const { subscription, clientSecret } = response.data;
-
-        // If there's a client secret, show payment modal
-        if (clientSecret && tier !== 'free') {
-          // For paid tiers, we need to create a temporary order for payment
-          // In production, you might handle this differently
-          setShowPaymentModal(true);
-          // Store subscription ID to complete after payment
-          setPendingOrderId(subscription.id);
-        } else {
-          // Free tier or trial - subscription is active immediately
-          await fetchData();
-          setSelectedTier(null);
-        }
+        // Subscription created successfully
+        // For paid tiers with clientSecret, payment flow would be handled here
+        // Currently subscriptions are activated immediately (trial period)
+        await fetchData();
+        setSelectedTier(null);
       }
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to create subscription');
