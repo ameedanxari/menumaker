@@ -23,6 +23,7 @@ describe('DishService', () => {
       find: jest.fn(),
       findOne: jest.fn(),
       delete: jest.fn(),
+      remove: jest.fn(),
     };
 
     mockCategoryRepository = {
@@ -70,13 +71,14 @@ describe('DishService', () => {
       };
 
       mockBusinessRepository.findOne.mockResolvedValue(mockBusiness);
+      mockCategoryRepository.findOne.mockResolvedValue(null); // No category for basic dish
       mockDishRepository.create.mockReturnValue(mockDish);
       mockDishRepository.save.mockResolvedValue(mockDish);
 
       const result = await dishService.createDish(businessId, userId, dishData);
 
       expect(mockBusinessRepository.findOne).toHaveBeenCalledWith({
-        where: { id: businessId, owner_id: userId },
+        where: { id: businessId },
       });
       expect(mockDishRepository.create).toHaveBeenCalledWith({
         business_id: businessId,
@@ -90,7 +92,7 @@ describe('DishService', () => {
 
       await expect(
         dishService.createDish('business-id', 'user-id', { name: 'Pizza', description: 'Delicious pizza', price_cents: 1000 })
-      ).rejects.toThrow('Unauthorized');
+      ).rejects.toThrow('Business not found');
     });
 
     it('should create dish with category', async () => {
@@ -101,7 +103,14 @@ describe('DishService', () => {
         category_id: 'category-id',
       };
 
+      const mockCategory = {
+        id: 'category-id',
+        business_id: 'business-id',
+        name: 'Salads',
+      };
+
       mockBusinessRepository.findOne.mockResolvedValue({ id: 'business-id', owner_id: 'user-id' });
+      mockCategoryRepository.findOne.mockResolvedValue(mockCategory);
       mockDishRepository.create.mockReturnValue({ id: 'dish-id', ...dishData });
       mockDishRepository.save.mockResolvedValue({ id: 'dish-id', ...dishData });
 
@@ -129,7 +138,7 @@ describe('DishService', () => {
       expect(mockDishRepository.find).toHaveBeenCalledWith({
         where: { business_id: businessId },
         relations: ['category'],
-        order: { created_at: 'DESC' },
+        order: { created_at: 'DESC', position: 'ASC' },
       });
       expect(result).toHaveLength(2);
     });
@@ -152,7 +161,13 @@ describe('DishService', () => {
         price_cents: 1299,
       };
 
+      const mockBusiness = {
+        id: 'business-id',
+        owner_id: userId,
+      };
+
       mockDishRepository.findOne.mockResolvedValue(mockDish);
+      mockBusinessRepository.findOne.mockResolvedValue(mockBusiness);
       mockDishRepository.save.mockResolvedValue({
         ...mockDish,
         ...updateData,
@@ -160,6 +175,10 @@ describe('DishService', () => {
 
       const result = await dishService.updateDish(dishId, userId, updateData);
 
+      expect(mockDishRepository.findOne).toHaveBeenCalledWith({
+        where: { id: dishId },
+        relations: ['category', 'common_dish'],
+      });
       expect(result.name).toBe('Updated Pizza');
       expect(result.price_cents).toBe(1499);
     });
@@ -174,7 +193,7 @@ describe('DishService', () => {
 
       await expect(
         dishService.updateDish('dish-id', 'user-id', { name: 'New Name' })
-      ).rejects.toThrow('Unauthorized');
+      ).rejects.toThrow('You do not have permission to update this dish');
     });
   });
 
@@ -185,15 +204,26 @@ describe('DishService', () => {
 
       const mockDish = {
         id: dishId,
+        business_id: 'business-id',
         business: { owner_id: userId },
       };
 
+      const mockBusiness = {
+        id: 'business-id',
+        owner_id: userId,
+      };
+
       mockDishRepository.findOne.mockResolvedValue(mockDish);
-      mockDishRepository.delete.mockResolvedValue({ affected: 1 });
+      mockBusinessRepository.findOne.mockResolvedValue(mockBusiness);
+      mockDishRepository.remove.mockResolvedValue(mockDish);
 
       await dishService.deleteDish(dishId, userId);
 
-      expect(mockDishRepository.delete).toHaveBeenCalledWith(dishId);
+      expect(mockDishRepository.findOne).toHaveBeenCalledWith({
+        where: { id: dishId },
+        relations: ['category', 'common_dish'],
+      });
+      expect(mockDishRepository.remove).toHaveBeenCalledWith(mockDish);
     });
   });
 
@@ -207,10 +237,11 @@ describe('DishService', () => {
         id: 'category-id',
         business_id: businessId,
         name: categoryName,
-        display_order: 0,
+        sort_order: 0,
       };
 
       mockBusinessRepository.findOne.mockResolvedValue({ id: businessId, owner_id: userId });
+      mockCategoryRepository.find.mockResolvedValue([]); // No existing categories
       mockCategoryRepository.create.mockReturnValue(mockCategory);
       mockCategoryRepository.save.mockResolvedValue(mockCategory);
 

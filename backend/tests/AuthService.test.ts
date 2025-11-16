@@ -5,10 +5,7 @@ import bcrypt from 'bcrypt';
 
 // Mock dependencies
 jest.mock('../src/config/database');
-jest.mock('bcrypt', () => ({
-  hash: jest.fn(),
-  compare: jest.fn(),
-}));
+jest.mock('bcrypt');
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -27,6 +24,11 @@ describe('AuthService', () => {
 
     // Set up the mock implementation
     AppDataSource.getRepository = jest.fn().mockReturnValue(mockUserRepository) as any;
+
+    // Setup bcrypt mocks
+    (bcrypt.hash as any) = jest.fn();
+    (bcrypt.compare as any) = jest.fn();
+
     authService = new AuthService();
   });
 
@@ -37,7 +39,7 @@ describe('AuthService', () => {
       const hashedPassword = 'hashed_password';
 
       mockUserRepository.findOne.mockResolvedValue(null);
-      (bcrypt.hash as jest.MockedFunction<typeof bcrypt.hash>).mockResolvedValue(hashedPassword as never);
+      (bcrypt.hash as any).mockResolvedValue(hashedPassword);
 
       const mockUser = {
         id: 'user-id',
@@ -67,7 +69,7 @@ describe('AuthService', () => {
       const email = 'existing@example.com';
       mockUserRepository.findOne.mockResolvedValue({ email });
 
-      await expect(authService.signup(email, 'password')).rejects.toThrow('User already exists');
+      await expect(authService.signup(email, 'password')).rejects.toThrow('User with this email already exists');
     });
 
     it('should throw error for invalid email format', async () => {
@@ -94,11 +96,14 @@ describe('AuthService', () => {
       };
 
       mockUserRepository.findOne.mockResolvedValue(mockUser);
-      (bcrypt.compare as jest.MockedFunction<typeof bcrypt.compare>).mockResolvedValue(true as never);
+      (bcrypt.compare as any).mockResolvedValue(true);
 
       const result = await authService.login(email, password);
 
-      expect(mockUserRepository.findOne).toHaveBeenCalledWith({ where: { email } });
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith({
+        where: { email },
+        relations: ['business'],
+      });
       expect(bcrypt.compare).toHaveBeenCalledWith(password, hashedPassword);
       expect(result.user).toEqual(expect.objectContaining({ email }));
       expect(result.tokens).toHaveProperty('accessToken');
@@ -109,7 +114,7 @@ describe('AuthService', () => {
       mockUserRepository.findOne.mockResolvedValue(null);
 
       await expect(authService.login('nonexistent@example.com', 'password')).rejects.toThrow(
-        'Invalid credentials'
+        'Invalid email or password'
       );
     });
 
@@ -121,10 +126,10 @@ describe('AuthService', () => {
       };
 
       mockUserRepository.findOne.mockResolvedValue(mockUser);
-      (bcrypt.compare as jest.MockedFunction<typeof bcrypt.compare>).mockResolvedValue(false as never);
+      (bcrypt.compare as any).mockResolvedValue(false);
 
       await expect(authService.login('test@example.com', 'wrongpassword')).rejects.toThrow(
-        'Invalid credentials'
+        'Invalid email or password'
       );
     });
   });
@@ -142,7 +147,10 @@ describe('AuthService', () => {
 
       const result = await authService.getCurrentUser('user-id');
 
-      expect(mockUserRepository.findOne).toHaveBeenCalledWith({ where: { id: 'user-id' } });
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'user-id' },
+        relations: ['business'],
+      });
       expect(result).toEqual(mockUser);
     });
 

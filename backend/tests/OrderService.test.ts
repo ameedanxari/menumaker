@@ -7,6 +7,7 @@ import { OrderItem } from '../src/models/OrderItem';
 import { Business } from '../src/models/Business';
 import { BusinessSettings } from '../src/models/BusinessSettings';
 import { Dish } from '../src/models/Dish';
+import { Menu } from '../src/models/Menu';
 
 // Mock dependencies
 jest.mock('../src/config/database');
@@ -18,6 +19,8 @@ describe('OrderService', () => {
   let mockBusinessRepository: any;
   let mockSettingsRepository: any;
   let mockDishRepository: any;
+  let mockMenuRepository: any;
+  let mockQueryRunner: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -60,9 +63,13 @@ describe('OrderService', () => {
       findOne: jest.fn(),
     };
 
+    mockMenuRepository = {
+      findOne: jest.fn(),
+    };
+
     // Mock query runner for transactions
     // @ts-ignore - Mock typing
-    const mockQueryRunner = {
+    mockQueryRunner = {
       // @ts-ignore
       connect: jest.fn().mockResolvedValue(undefined),
       // @ts-ignore
@@ -74,10 +81,26 @@ describe('OrderService', () => {
       // @ts-ignore
       release: jest.fn().mockResolvedValue(undefined),
       manager: {
-        findOne: jest.fn(),
+        findOne: jest.fn().mockImplementation((entity, options) => {
+          if (entity === Menu) return mockMenuRepository.findOne(options);
+          if (entity === Business) return mockBusinessRepository.findOne(options);
+          if (entity === BusinessSettings) return mockSettingsRepository.findOne(options);
+          if (entity === Dish) return mockDishRepository.findOne(options);
+          return null;
+        }),
+        // @ts-ignore
+        findByIds: jest.fn().mockResolvedValue([]),
         create: jest.fn(),
         save: jest.fn(),
-        getRepository: jest.fn(),
+        getRepository: jest.fn().mockImplementation((entity) => {
+          if (entity === Order) return mockOrderRepository;
+          if (entity === OrderItem) return mockOrderItemRepository;
+          if (entity === Business) return mockBusinessRepository;
+          if (entity === BusinessSettings) return mockSettingsRepository;
+          if (entity === Dish) return mockDishRepository;
+          if (entity === Menu) return mockMenuRepository;
+          return {};
+        }),
       },
     } as any;
 
@@ -88,6 +111,7 @@ describe('OrderService', () => {
       if (entity === Business) return mockBusinessRepository;
       if (entity === BusinessSettings) return mockSettingsRepository;
       if (entity === Dish) return mockDishRepository;
+      if (entity === Menu) return mockMenuRepository;
       return {};
     }) as any;
 
@@ -150,11 +174,24 @@ describe('OrderService', () => {
         is_available: true,
       };
 
+      const mockMenu = {
+        id: 'menu-id',
+        business_id: 'business-id',
+        business: mockBusiness,
+        is_active: true,
+        status: 'published',
+      };
+
       mockBusinessRepository.findOne.mockResolvedValue(mockBusiness);
       mockSettingsRepository.findOne.mockResolvedValue(mockSettings);
+      mockMenuRepository.findOne.mockResolvedValue(mockMenu);
       mockDishRepository.findOne
         .mockResolvedValueOnce(mockDish1)
         .mockResolvedValueOnce(mockDish2);
+
+      // Mock findByIds for the query runner manager
+      // @ts-ignore
+      mockQueryRunner.manager.findByIds = jest.fn().mockResolvedValue([mockDish1, mockDish2]);
 
       const mockOrder = {
         id: 'order-id',
@@ -205,9 +242,24 @@ describe('OrderService', () => {
         is_available: true,
       };
 
-      mockBusinessRepository.findOne.mockResolvedValue({ id: 'business-id' });
+      const mockBusiness = { id: 'business-id', name: 'Test Restaurant' };
+
+      const mockMenu = {
+        id: 'menu-id',
+        business_id: 'business-id',
+        business: mockBusiness,
+        is_active: true,
+        status: 'published',
+      };
+
+      mockBusinessRepository.findOne.mockResolvedValue(mockBusiness);
       mockSettingsRepository.findOne.mockResolvedValue(mockSettings);
+      mockMenuRepository.findOne.mockResolvedValue(mockMenu);
       mockDishRepository.findOne.mockResolvedValue(mockDish);
+
+      // Mock findByIds for the query runner manager
+      // @ts-ignore
+      mockQueryRunner.manager.findByIds = jest.fn().mockResolvedValue([mockDish]);
 
       const mockOrder = {
         id: 'order-id',
@@ -243,8 +295,19 @@ describe('OrderService', () => {
         is_available: false,
       };
 
-      mockBusinessRepository.findOne.mockResolvedValue({ id: 'business-id' });
+      const mockBusiness = { id: 'business-id', name: 'Test Restaurant' };
+
+      const mockMenu = {
+        id: 'menu-id',
+        business_id: 'business-id',
+        business: mockBusiness,
+        is_active: true,
+        status: 'published',
+      };
+
+      mockBusinessRepository.findOne.mockResolvedValue(mockBusiness);
       mockSettingsRepository.findOne.mockResolvedValue({});
+      mockMenuRepository.findOne.mockResolvedValue(mockMenu);
       mockDishRepository.findOne.mockResolvedValue(mockDish);
 
       await expect(orderService.createOrder(orderData)).rejects.toThrow();
@@ -267,8 +330,19 @@ describe('OrderService', () => {
         pickup_enabled: true,
       };
 
-      mockBusinessRepository.findOne.mockResolvedValue({ id: 'business-id' });
+      const mockBusiness = { id: 'business-id', name: 'Test Restaurant' };
+
+      const mockMenu = {
+        id: 'menu-id',
+        business_id: 'business-id',
+        business: mockBusiness,
+        is_active: true,
+        status: 'published',
+      };
+
+      mockBusinessRepository.findOne.mockResolvedValue(mockBusiness);
       mockSettingsRepository.findOne.mockResolvedValue(mockSettings);
+      mockMenuRepository.findOne.mockResolvedValue(mockMenu);
 
       await expect(orderService.createOrder(orderData)).rejects.toThrow();
     });
