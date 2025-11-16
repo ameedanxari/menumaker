@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 /// Marketplace repository
 @MainActor

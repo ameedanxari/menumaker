@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 /// Business repository
 @MainActor
