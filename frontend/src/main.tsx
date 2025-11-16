@@ -12,7 +12,7 @@ const queryClient = new QueryClient({
     queries: {
       // Caching strategy: stale-while-revalidate
       staleTime: 5 * 60 * 1000, // 5 minutes - data is fresh
-      cacheTime: 30 * 60 * 1000, // 30 minutes - cache persists
+      gcTime: 30 * 60 * 1000, // 30 minutes - cache persists (renamed from cacheTime in v5)
 
       // Refetch behavior
       refetchOnWindowFocus: false, // Don't refetch on window focus
