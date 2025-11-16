@@ -6,6 +6,7 @@ import {
   ManyToOne,
   JoinColumn,
   Index,
+  Relation,
 } from 'typeorm';
 import { Order } from './Order.js';
 import { User } from './User.js';
@@ -18,7 +19,7 @@ export class OrderNotification {
 
   @ManyToOne(() => Order, (order) => order.notifications, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'order_id' })
-  order!: Order;
+  order!: Relation<Order>;
 
   @Column({ type: 'uuid' })
   order_id!: string;
@@ -47,7 +48,7 @@ export class OrderNotification {
   // Relations
   @ManyToOne(() => User, (user) => user.notifications, { nullable: true })
   @JoinColumn({ name: 'user_id' })
-  user?: User;
+  user?: Relation<User>;
 
   @Column({ type: 'uuid', nullable: true })
   user_id?: string;

@@ -14,7 +14,7 @@ export class BusinessService {
     this.settingsRepository = AppDataSource.getRepository(BusinessSettings);
   }
 
-  async createBusiness(userId: string, data: BusinessCreateInput): Promise<Business> {
+  async createBusiness(userId: string, data: Omit<BusinessCreateInput, 'primary_color' | 'locale' | 'timezone'> & { primary_color?: string; locale?: string; timezone?: string }): Promise<Business> {
     // Check if user already has a business
     const existingBusiness = await this.businessRepository.findOne({
       where: { owner_id: userId },

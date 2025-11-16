@@ -1,6 +1,4 @@
 import Anthropic from '@anthropic-ai/sdk';
-import fs from 'fs/promises';
-import path from 'path';
 
 // Environment variables
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';

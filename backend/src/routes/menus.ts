@@ -26,7 +26,11 @@ export async function menuRoutes(fastify: FastifyInstance): Promise<void> {
       return;
     }
 
-    const menu = await menuService.createMenu(businessId, request.user!.userId, data);
+    const menu = await menuService.createMenu(businessId, request.user!.userId, {
+      ...data,
+      start_date: typeof data.start_date === 'string' ? new Date(data.start_date) : data.start_date,
+      end_date: typeof data.end_date === 'string' ? new Date(data.end_date) : data.end_date,
+    });
 
     reply.status(201).send({
       success: true,
@@ -112,7 +116,11 @@ export async function menuRoutes(fastify: FastifyInstance): Promise<void> {
     const { id } = request.params as { id: string };
     const data = validateSchema(MenuUpdateSchema, request.body);
 
-    const menu = await menuService.updateMenu(id, request.user!.userId, data);
+    const menu = await menuService.updateMenu(id, request.user!.userId, {
+      ...data,
+      start_date: data.start_date ? (typeof data.start_date === 'string' ? new Date(data.start_date) : data.start_date) : undefined,
+      end_date: data.end_date ? (typeof data.end_date === 'string' ? new Date(data.end_date) : data.end_date) : undefined,
+    });
 
     reply.send({
       success: true,

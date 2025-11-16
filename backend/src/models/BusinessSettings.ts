@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   OneToOne,
   JoinColumn,
+  Relation,
 } from 'typeorm';
 import { Business } from './Business.js';
 
@@ -16,7 +17,7 @@ export class BusinessSettings {
 
   @OneToOne(() => Business, (business) => business.settings, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'business_id' })
-  business!: Business;
+  business!: Relation<Business>;
 
   @Column({ type: 'uuid' })
   business_id!: string;

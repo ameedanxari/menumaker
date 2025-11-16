@@ -201,7 +201,7 @@ export class PhonePeService implements IPaymentProcessorService {
         Buffer.from(base64Response, 'base64').toString('utf-8')
       );
 
-      const { merchantTransactionId, transactionId, amount, state, responseCode } =
+      const { merchantTransactionId, transactionId, state, responseCode } =
         decodedResponse.data;
 
       let payment: Payment | null = null;

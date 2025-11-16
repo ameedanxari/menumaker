@@ -1,4 +1,4 @@
-import { Repository, Between, MoreThan, LessThan, IsNull, In } from 'typeorm';
+import { Repository, LessThan, IsNull, In, Between } from 'typeorm';
 import { AppDataSource } from '../config/database.js';
 import { Payout, PayoutStatus, PayoutFrequency } from '../models/Payout.js';
 import { PayoutSchedule } from '../models/PayoutSchedule.js';
@@ -296,20 +296,22 @@ export class PayoutService {
         }
         break;
 
-      case 'weekly':
+      case 'weekly': {
         // Next occurrence of weekly_day_of_week
         const targetDay = schedule.weekly_day_of_week || 1; // Default Monday
         const currentDay = nextDate.getDay();
         const daysUntilTarget = (targetDay - currentDay + 7) % 7 || 7;
         nextDate.setDate(nextDate.getDate() + daysUntilTarget);
         break;
+      }
 
-      case 'monthly':
+      case 'monthly': {
         // Next occurrence of monthly_day_of_month
         const targetDate = Math.min(schedule.monthly_day_of_month || 1, 28);
         nextDate.setMonth(nextDate.getMonth() + 1);
         nextDate.setDate(targetDate);
         break;
+      }
     }
 
     nextDate.setHours(0, 0, 0, 0);

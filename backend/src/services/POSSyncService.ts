@@ -35,36 +35,36 @@ export interface IPOSService {
 export class SquarePOSService implements IPOSService {
   provider: POSProvider = 'square';
 
-  async createOrder(order: Order, integration: POSIntegration): Promise<{
+  async createOrder(_order: Order, _integration: POSIntegration): Promise<{
     success: boolean;
     pos_order_id?: string;
     error?: string;
   }> {
     try {
       // Build Square order payload
-      const lineItems = order.items?.map((item) => ({
-        name: item.dish_name,
-        quantity: item.quantity.toString(),
-        base_price_money: {
-          amount: item.unit_price_cents,
-          currency: order.currency,
-        },
-        note: item.special_instructions || undefined,
-      })) || [];
+      // const lineItems = order.items?.map((item) => ({
+      //   name: item.dish_name,
+      //   quantity: item.quantity.toString(),
+      //   base_price_money: {
+      //     amount: item.unit_price_cents,
+      //     currency: order.currency,
+      //   },
+      //   note: item.special_instructions || undefined,
+      // })) || [];
 
-      const payload = {
-        idempotency_key: order.id, // Use order ID for idempotency
-        order: {
-          location_id: integration.location_id,
-          line_items: lineItems,
-          customer_id: integration.sync_customer_info ? order.customer_id : undefined,
-          reference_id: order.id,
-          metadata: {
-            source: 'MenuMaker',
-            menumaker_order_id: order.id,
-          },
-        },
-      };
+      // const payload = {
+      //   idempotency_key: order.id, // Use order ID for idempotency
+      //   order: {
+      //     location_id: integration.location_id,
+      //     line_items: lineItems,
+      //     customer_id: integration.sync_customer_info ? order.customer_id : undefined,
+      //     reference_id: order.id,
+      //     metadata: {
+      //       source: 'MenuMaker',
+      //       menumaker_order_id: order.id,
+      //     },
+      //   },
+      // };
 
       // Call Square API (stubbed - would use actual Square SDK)
       // const response = await fetch('https://connect.squareup.com/v2/orders', {
@@ -90,7 +90,7 @@ export class SquarePOSService implements IPOSService {
     }
   }
 
-  async refreshAccessToken(integration: POSIntegration): Promise<{
+  async refreshAccessToken(_integration: POSIntegration): Promise<{
     access_token: string;
     refresh_token?: string;
     expires_at?: Date;
@@ -117,7 +117,7 @@ export class SquarePOSService implements IPOSService {
 export class DinePOSService implements IPOSService {
   provider: POSProvider = 'dine';
 
-  async createOrder(order: Order, integration: POSIntegration): Promise<{
+  async createOrder(_order: Order, _integration: POSIntegration): Promise<{
     success: boolean;
     pos_order_id?: string;
     error?: string;
@@ -129,7 +129,7 @@ export class DinePOSService implements IPOSService {
     };
   }
 
-  async refreshAccessToken(integration: POSIntegration): Promise<{
+  async refreshAccessToken(_integration: POSIntegration): Promise<{
     access_token: string;
     refresh_token?: string;
     expires_at?: Date;
@@ -144,7 +144,7 @@ export class DinePOSService implements IPOSService {
 export class ZohoPOSService implements IPOSService {
   provider: POSProvider = 'zoho';
 
-  async createOrder(order: Order, integration: POSIntegration): Promise<{
+  async createOrder(_order: Order, _integration: POSIntegration): Promise<{
     success: boolean;
     pos_order_id?: string;
     error?: string;
@@ -156,7 +156,7 @@ export class ZohoPOSService implements IPOSService {
     };
   }
 
-  async refreshAccessToken(integration: POSIntegration): Promise<{
+  async refreshAccessToken(_integration: POSIntegration): Promise<{
     access_token: string;
     refresh_token?: string;
     expires_at?: Date;

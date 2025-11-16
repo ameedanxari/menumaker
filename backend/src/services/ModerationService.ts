@@ -258,13 +258,13 @@ export class ModerationService {
       const reporter = flag.reporter;
       if (reporter) {
         // Count how many false flags this user has submitted
-        const falseFlags = await this.flagRepo.count({
-          where: {
-            reporter_id: reporter.id,
-            status: 'rejected',
-            // This is a simplification; in production, track false flags separately
-          },
-        });
+        // const falseFlags = await this.flagRepo.count({
+        //   where: {
+        //     reporter_id: reporter.id,
+        //     status: 'rejected',
+        //     // This is a simplification; in production, track false flags separately
+        //   },
+        // });
 
         // TODO: Warn or ban reporter if too many false flags
         // if (falseFlags >= this.AUTO_BAN_THRESHOLD) {

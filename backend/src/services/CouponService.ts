@@ -1,4 +1,4 @@
-import { Repository, Between, MoreThan, LessThan } from 'typeorm';
+import { Repository, Between, LessThan } from 'typeorm';
 import { AppDataSource } from '../config/database.js';
 import {
   Coupon,
@@ -346,7 +346,7 @@ export class CouponService {
    * Get public coupons (for menu display)
    */
   async getPublicCoupons(businessId: string): Promise<Coupon[]> {
-    const now = new Date();
+    // const now = new Date(); // TODO: Add date filtering if needed
 
     return this.couponRepository.find({
       where: {
@@ -546,7 +546,7 @@ export class CouponService {
    * Get active automatic promotions
    */
   async getActivePromotions(businessId: string): Promise<AutomaticPromotion[]> {
-    const now = new Date();
+    // const now = new Date(); // TODO: Add date filtering if needed
 
     return this.promotionRepository.find({
       where: {

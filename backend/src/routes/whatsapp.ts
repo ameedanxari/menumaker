@@ -186,7 +186,6 @@ export default async function whatsappRoutes(fastify: FastifyInstance) {
           return reply.send({
             success: true,
             message: 'Test message sent successfully! Check your WhatsApp.',
-            message_id: result.messageId,
           });
         } else {
           return reply.status(500).send({

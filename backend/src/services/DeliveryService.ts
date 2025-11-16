@@ -67,32 +67,32 @@ export class SwiggyDeliveryService implements IDeliveryService {
   }> {
     try {
       // Build Swiggy delivery request
-      const payload = {
-        merchant_id: integration.partner_account_id,
-        order_id: order.id,
-        pickup_address: {
-          // Would get from Business entity
-          name: 'Business Name',
-          phone: '9876543210',
-          address: 'Business Address',
-          latitude: 0,
-          longitude: 0,
-        },
-        drop_address: {
-          name: order.customer_name,
-          phone: order.customer_phone,
-          address: order.delivery_address || '',
-          instructions: order.delivery_instructions || '',
-        },
-        package_details: {
-          weight_kg: 1.0,
-          dimensions: { length: 30, width: 30, height: 15 },
-          description: 'Food order',
-          value_cents: order.total_price_cents,
-        },
-        service_type: integration.settings?.service_type || 'standard',
-        pickup_instructions: integration.pickup_instructions,
-      };
+      // const payload = {
+      //   merchant_id: integration.partner_account_id,
+      //   order_id: order.id,
+      //   pickup_address: {
+      //     // Would get from Business entity
+      //     name: 'Business Name',
+      //     phone: '9876543210',
+      //     address: 'Business Address',
+      //     latitude: 0,
+      //     longitude: 0,
+      //   },
+      //   drop_address: {
+      //     name: order.customer_name,
+      //     phone: order.customer_phone,
+      //     address: order.delivery_address || '',
+      //     instructions: order.delivery_instructions || '',
+      //   },
+      //   package_details: {
+      //     weight_kg: 1.0,
+      //     dimensions: { length: 30, width: 30, height: 15 },
+      //     description: 'Food order',
+      //     value_cents: order.total_price_cents,
+      //   },
+      //   service_type: integration.settings?.service_type || 'standard',
+      //   pickup_instructions: integration.pickup_instructions,
+      // };
 
       // Call Swiggy API (stubbed - would use actual Swiggy SDK)
       // const response = await fetch('https://api.swiggy.com/v1/delivery/create', {
@@ -125,15 +125,15 @@ export class SwiggyDeliveryService implements IDeliveryService {
     }
   }
 
-  async cancelDelivery(deliveryPartnerId: string, integration: DeliveryIntegration): Promise<{
+  async cancelDelivery(_deliveryPartnerId: string, _integration: DeliveryIntegration): Promise<{
     success: boolean;
     error?: string;
   }> {
     try {
       // Call Swiggy cancellation API
-      // const response = await fetch(`https://api.swiggy.com/v1/delivery/${deliveryPartnerId}/cancel`, {
+      // const response = await fetch(`https://api.swiggy.com/v1/delivery/${_deliveryPartnerId}/cancel`, {
       //   method: 'POST',
-      //   headers: { 'Authorization': `Bearer ${integration.api_key}` },
+      //   headers: { 'Authorization': `Bearer ${_integration.api_key}` },
       // });
 
       return { success: true };
@@ -145,7 +145,7 @@ export class SwiggyDeliveryService implements IDeliveryService {
     }
   }
 
-  async getDeliveryStatus(deliveryPartnerId: string, integration: DeliveryIntegration): Promise<{
+  async getDeliveryStatus(deliveryPartnerId: string, _integration: DeliveryIntegration): Promise<{
     status: DeliveryStatus;
     delivery_person_name?: string;
     delivery_person_phone?: string;
@@ -205,14 +205,14 @@ export class ZomatoDeliveryService implements IDeliveryService {
     }
   }
 
-  async cancelDelivery(deliveryPartnerId: string, integration: DeliveryIntegration): Promise<{
+  async cancelDelivery(_deliveryPartnerId: string, _integration: DeliveryIntegration): Promise<{
     success: boolean;
     error?: string;
   }> {
     return { success: true };
   }
 
-  async getDeliveryStatus(deliveryPartnerId: string, integration: DeliveryIntegration): Promise<{
+  async getDeliveryStatus(deliveryPartnerId: string, _integration: DeliveryIntegration): Promise<{
     status: DeliveryStatus;
     delivery_person_name?: string;
     delivery_person_phone?: string;
@@ -266,14 +266,14 @@ export class DunzoDeliveryService implements IDeliveryService {
     }
   }
 
-  async cancelDelivery(deliveryPartnerId: string, integration: DeliveryIntegration): Promise<{
+  async cancelDelivery(_deliveryPartnerId: string, _integration: DeliveryIntegration): Promise<{
     success: boolean;
     error?: string;
   }> {
     return { success: true };
   }
 
-  async getDeliveryStatus(deliveryPartnerId: string, integration: DeliveryIntegration): Promise<{
+  async getDeliveryStatus(deliveryPartnerId: string, _integration: DeliveryIntegration): Promise<{
     status: DeliveryStatus;
     delivery_person_name?: string;
     delivery_person_phone?: string;

@@ -16,7 +16,7 @@ export class DishService {
     this.categoryRepository = AppDataSource.getRepository(DishCategory);
   }
 
-  async createDish(businessId: string, userId: string, data: DishCreateInput): Promise<Dish> {
+  async createDish(businessId: string, userId: string, data: Omit<DishCreateInput, 'currency' | 'allergen_tags' | 'image_urls' | 'is_available' | 'position'> & { currency?: string; allergen_tags?: string[]; image_urls?: string[]; is_available?: boolean; position?: number }): Promise<Dish> {
     // Verify business ownership
     const business = await this.businessRepository.findOne({
       where: { id: businessId },

@@ -77,6 +77,7 @@ describe('OrderService', () => {
     it('should create order with items and calculate totals', async () => {
       const orderData = {
         business_id: 'business-id',
+        menu_id: 'menu-id',
         customer_name: 'John Doe',
         customer_phone: '+1234567890',
         delivery_type: 'pickup' as const,
@@ -147,6 +148,7 @@ describe('OrderService', () => {
     it('should calculate delivery fee for delivery orders', async () => {
       const orderData = {
         business_id: 'business-id',
+        menu_id: 'menu-id',
         customer_name: 'Jane Doe',
         customer_phone: '+1234567890',
         delivery_type: 'delivery' as const,
@@ -192,6 +194,7 @@ describe('OrderService', () => {
     it('should throw error if dish is not available', async () => {
       const orderData = {
         business_id: 'business-id',
+        menu_id: 'menu-id',
         customer_name: 'John Doe',
         customer_phone: '+1234567890',
         delivery_type: 'pickup' as const,
@@ -214,6 +217,7 @@ describe('OrderService', () => {
     it('should throw error if delivery is not enabled', async () => {
       const orderData = {
         business_id: 'business-id',
+        menu_id: 'menu-id',
         customer_name: 'John Doe',
         customer_phone: '+1234567890',
         delivery_type: 'delivery' as const,
@@ -268,7 +272,7 @@ describe('OrderService', () => {
     it('should filter orders by status', async () => {
       const businessId = 'business-id';
       const userId = 'user-id';
-      const status = 'pending';
+      const filters = { status: 'pending' };
 
       mockBusinessRepository.findOne.mockResolvedValue({
         id: businessId,
@@ -276,10 +280,10 @@ describe('OrderService', () => {
       });
       mockOrderRepository.find.mockResolvedValue([]);
 
-      await orderService.getBusinessOrders(businessId, userId, status);
+      await orderService.getBusinessOrders(businessId, userId, filters);
 
       expect(mockOrderRepository.find).toHaveBeenCalledWith({
-        where: { business_id: businessId, order_status: status },
+        where: { business_id: businessId, order_status: 'pending' },
         relations: ['items', 'items.dish'],
         order: { created_at: 'DESC' },
       });

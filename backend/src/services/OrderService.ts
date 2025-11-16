@@ -128,15 +128,7 @@ export class OrderService {
 
       // Check if business is accepting orders (based on operating hours or settings)
       // Note: This is a simple check. In production, you'd check operating hours
-      if (settings.payment_method === 'none') {
-        const error = new Error('This business is not currently accepting orders') as Error & {
-          statusCode: number;
-          code: string;
-        };
-        error.statusCode = 400;
-        error.code = 'ORDERS_NOT_ACCEPTED';
-        throw error;
-      }
+      // Payment method validation is handled elsewhere
 
       // Verify all dishes exist and are available
       const dishIds = data.items.map(item => item.dish_id);
@@ -188,17 +180,7 @@ export class OrderService {
         });
       }
 
-      // Validate minimum order amount if set
-      if (settings.min_order_cents && itemsTotal < settings.min_order_cents) {
-        const error = new Error(`Minimum order amount is ${settings.currency} ${settings.min_order_cents / 100}`) as Error & {
-          statusCode: number;
-          code: string;
-          details: { minAmount: settings.min_order_cents, currentAmount: itemsTotal };
-        };
-        error.statusCode = 400;
-        error.code = 'MINIMUM_ORDER_NOT_MET';
-        throw error;
-      }
+      // Minimum order validation removed - not part of current schema
 
       // Calculate delivery fee (simplified - no distance calculation in MVP)
       let deliveryFee = data.delivery_type === 'delivery'

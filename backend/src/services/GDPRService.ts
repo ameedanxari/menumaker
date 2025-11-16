@@ -57,7 +57,7 @@ export class GDPRService {
     }
 
     // Determine consent values based on method
-    let essential = true; // Always true
+    const essential = true; // Always true
     let analytics = false;
     let marketing = false;
 

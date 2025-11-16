@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { CouponService } from '../services/CouponService.js';
 import { authenticate } from '../middleware/auth.js';
-import { DiscountType, UsageLimitType, ApplicableToType, CouponStatus } from '../models/Coupon.js';
+import { CouponStatus } from '../models/Coupon.js';
 
 const couponService = new CouponService();
 

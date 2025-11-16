@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import { FastifyInstance} from 'fastify';
 import { SubscriptionService } from '../services/SubscriptionService.js';
 import { authenticate } from '../middleware/auth.js';
 import { SubscriptionTier, SUBSCRIPTION_TIERS } from '../models/Subscription.js';
@@ -36,59 +36,55 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
    */
   fastify.get('/current', {
     preHandler: authenticate,
-  }, async (request, reply) => {
-    try {
-      // Get business from auth middleware
-      const businessId = request.user!.businessId;
+  }, async (request, reply) => {    // Get business from auth middleware
+    const businessId = request.user!.businessId;
 
-      if (!businessId) {
-        reply.status(400).send({
-          success: false,
-          error: {
-            code: 'NO_BUSINESS',
-            message: 'User has no business associated',
-          },
-        });
-        return;
-      }
-
-      const subscription = await subscriptionService.getSubscription(businessId);
-
-      if (!subscription) {
-        reply.status(404).send({
-          success: false,
-          error: {
-            code: 'SUBSCRIPTION_NOT_FOUND',
-            message: 'No subscription found for this business',
-          },
-        });
-        return;
-      }
-
-      const tierConfig = subscription.getTierConfig();
-
-      reply.send({
-        success: true,
-        data: {
-          subscription: {
-            id: subscription.id,
-            tier: subscription.tier,
-            status: subscription.status,
-            isActive: subscription.isActive(),
-            isInTrial: subscription.isInTrial(),
-            currentPeriodStart: subscription.current_period_start,
-            currentPeriodEnd: subscription.current_period_end,
-            cancelAtPeriodEnd: subscription.cancel_at_period_end,
-            trialEnd: subscription.trial_end,
-            features: tierConfig.features,
-            price: tierConfig.price,
-            currency: tierConfig.currency,
-          },
+    if (!businessId) {
+      reply.status(400).send({
+        success: false,
+        error: {
+          code: 'NO_BUSINESS',
+          message: 'User has no business associated',
         },
       });
-    } catch (error) {
-      throw error;
+      return;
     }
+
+    const subscription = await subscriptionService.getSubscription(businessId);
+
+    if (!subscription) {
+      reply.status(404).send({
+        success: false,
+        error: {
+          code: 'SUBSCRIPTION_NOT_FOUND',
+          message: 'No subscription found for this business',
+        },
+      });
+      return;
+    }
+
+    const tierConfig = subscription.getTierConfig();
+
+    reply.send({
+      success: true,
+      data: {
+        subscription: {
+          id: subscription.id,
+          tier: subscription.tier,
+          status: subscription.status,
+          isActive: subscription.isActive(),
+          isInTrial: subscription.isInTrial(),
+          currentPeriodStart: subscription.current_period_start,
+          currentPeriodEnd: subscription.current_period_end,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end,
+          trialEnd: subscription.trial_end,
+          features: tierConfig.features,
+          price: tierConfig.price,
+          currency: tierConfig.currency,
+        },
+      },
+    });
+
   });
 
   /**
@@ -115,54 +111,49 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
         },
       });
       return;
-    }
+    }    const businessId = request.user!.businessId;
 
-    try {
-      const businessId = request.user!.businessId;
-
-      if (!businessId) {
-        reply.status(400).send({
-          success: false,
-          error: {
-            code: 'NO_BUSINESS',
-            message: 'User has no business associated',
-          },
-        });
-        return;
-      }
-
-      const { subscription, clientSecret } = await subscriptionService.createSubscription(
-        businessId,
-        tier,
-        { trialDays, email }
-      );
-
-      // Log security event
-      logSecurityEvent(request.log, `Subscription created/upgraded: ${tier}`, {
-        requestId: request.id,
-        userId: request.user!.userId,
-        businessId,
-        tier,
-        severity: 'low',
-      });
-
-      reply.send({
-        success: true,
-        data: {
-          subscription: {
-            id: subscription.id,
-            tier: subscription.tier,
-            status: subscription.status,
-            currentPeriodStart: subscription.current_period_start,
-            currentPeriodEnd: subscription.current_period_end,
-            trialEnd: subscription.trial_end,
-          },
-          clientSecret, // For payment confirmation if needed
+    if (!businessId) {
+      reply.status(400).send({
+        success: false,
+        error: {
+          code: 'NO_BUSINESS',
+          message: 'User has no business associated',
         },
       });
-    } catch (error) {
-      throw error;
+      return;
     }
+
+    const { subscription, clientSecret } = await subscriptionService.createSubscription(
+      businessId,
+      tier,
+      { trialDays, email }
+    );
+
+    // Log security event
+    logSecurityEvent(request.log, `Subscription created/upgraded: ${tier}`, {
+      requestId: request.id,
+      userId: request.user!.userId,
+      businessId,
+      tier,
+      severity: 'low',
+    });
+
+    reply.send({
+      success: true,
+      data: {
+        subscription: {
+          id: subscription.id,
+          tier: subscription.tier,
+          status: subscription.status,
+          currentPeriodStart: subscription.current_period_start,
+          currentPeriodEnd: subscription.current_period_end,
+          trialEnd: subscription.trial_end,
+        },
+        clientSecret, // For payment confirmation if needed
+      },
+    });
+
   });
 
   /**
@@ -173,50 +164,45 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
   fastify.post('/cancel', {
     preHandler: authenticate,
   }, async (request, reply) => {
-    const { immediate } = request.body as { immediate?: boolean };
+    const { immediate } = request.body as { immediate?: boolean };    const businessId = request.user!.businessId;
 
-    try {
-      const businessId = request.user!.businessId;
-
-      if (!businessId) {
-        reply.status(400).send({
-          success: false,
-          error: {
-            code: 'NO_BUSINESS',
-            message: 'User has no business associated',
-          },
-        });
-        return;
-      }
-
-      const subscription = await subscriptionService.cancelSubscription(businessId, {
-        immediate,
-      });
-
-      // Log security event
-      logSecurityEvent(request.log, `Subscription canceled: ${subscription.tier}`, {
-        requestId: request.id,
-        userId: request.user!.userId,
-        businessId,
-        immediate,
-        severity: 'medium',
-      });
-
-      reply.send({
-        success: true,
-        data: {
-          subscription: {
-            id: subscription.id,
-            tier: subscription.tier,
-            status: subscription.status,
-            cancelAtPeriodEnd: subscription.cancel_at_period_end,
-            canceledAt: subscription.canceled_at,
-          },
+    if (!businessId) {
+      reply.status(400).send({
+        success: false,
+        error: {
+          code: 'NO_BUSINESS',
+          message: 'User has no business associated',
         },
       });
-    } catch (error) {
-      throw error;
+      return;
     }
+
+    const subscription = await subscriptionService.cancelSubscription(businessId, {
+      immediate,
+    });
+
+    // Log security event
+    logSecurityEvent(request.log, `Subscription canceled: ${subscription.tier}`, {
+      requestId: request.id,
+      userId: request.user!.userId,
+      businessId,
+      immediate,
+      severity: 'medium',
+    });
+
+    reply.send({
+      success: true,
+      data: {
+        subscription: {
+          id: subscription.id,
+          tier: subscription.tier,
+          status: subscription.status,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end,
+          canceledAt: subscription.canceled_at,
+        },
+      },
+    });
+
   });
 
   /**
@@ -226,45 +212,41 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
    */
   fastify.post('/resume', {
     preHandler: authenticate,
-  }, async (request, reply) => {
-    try {
-      const businessId = request.user!.businessId;
+  }, async (request, reply) => {    const businessId = request.user!.businessId;
 
-      if (!businessId) {
-        reply.status(400).send({
-          success: false,
-          error: {
-            code: 'NO_BUSINESS',
-            message: 'User has no business associated',
-          },
-        });
-        return;
-      }
-
-      const subscription = await subscriptionService.resumeSubscription(businessId);
-
-      // Log security event
-      logSecurityEvent(request.log, `Subscription resumed: ${subscription.tier}`, {
-        requestId: request.id,
-        userId: request.user!.userId,
-        businessId,
-        severity: 'low',
-      });
-
-      reply.send({
-        success: true,
-        data: {
-          subscription: {
-            id: subscription.id,
-            tier: subscription.tier,
-            status: subscription.status,
-            cancelAtPeriodEnd: subscription.cancel_at_period_end,
-          },
+    if (!businessId) {
+      reply.status(400).send({
+        success: false,
+        error: {
+          code: 'NO_BUSINESS',
+          message: 'User has no business associated',
         },
       });
-    } catch (error) {
-      throw error;
+      return;
     }
+
+    const subscription = await subscriptionService.resumeSubscription(businessId);
+
+    // Log security event
+    logSecurityEvent(request.log, `Subscription resumed: ${subscription.tier}`, {
+      requestId: request.id,
+      userId: request.user!.userId,
+      businessId,
+      severity: 'low',
+    });
+
+    reply.send({
+      success: true,
+      data: {
+        subscription: {
+          id: subscription.id,
+          tier: subscription.tier,
+          status: subscription.status,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        },
+      },
+    });
+
   });
 
   /**
@@ -286,31 +268,26 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
         },
       });
       return;
-    }
+    }    const businessId = request.user!.businessId;
 
-    try {
-      const businessId = request.user!.businessId;
-
-      if (!businessId) {
-        reply.status(400).send({
-          success: false,
-          error: {
-            code: 'NO_BUSINESS',
-            message: 'User has no business associated',
-          },
-        });
-        return;
-      }
-
-      const portalUrl = await subscriptionService.createPortalSession(businessId, returnUrl);
-
-      reply.send({
-        success: true,
-        data: { portalUrl },
+    if (!businessId) {
+      reply.status(400).send({
+        success: false,
+        error: {
+          code: 'NO_BUSINESS',
+          message: 'User has no business associated',
+        },
       });
-    } catch (error) {
-      throw error;
+      return;
     }
+
+    const portalUrl = await subscriptionService.createPortalSession(businessId, returnUrl);
+
+    reply.send({
+      success: true,
+      data: { portalUrl },
+    });
+
   });
 
   /**
@@ -320,30 +297,26 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
    */
   fastify.get('/usage', {
     preHandler: authenticate,
-  }, async (request, reply) => {
-    try {
-      const businessId = request.user!.businessId;
+  }, async (request, reply) => {    const businessId = request.user!.businessId;
 
-      if (!businessId) {
-        reply.status(400).send({
-          success: false,
-          error: {
-            code: 'NO_BUSINESS',
-            message: 'User has no business associated',
-          },
-        });
-        return;
-      }
-
-      const usage = await subscriptionService.checkOrderLimit(businessId);
-
-      reply.send({
-        success: true,
-        data: { usage },
+    if (!businessId) {
+      reply.status(400).send({
+        success: false,
+        error: {
+          code: 'NO_BUSINESS',
+          message: 'User has no business associated',
+        },
       });
-    } catch (error) {
-      throw error;
+      return;
     }
+
+    const usage = await subscriptionService.checkOrderLimit(businessId);
+
+    reply.send({
+      success: true,
+      data: { usage },
+    });
+
   });
 
   /**
@@ -367,41 +340,36 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
         },
       });
       return;
+    }    const rawBody = (request as any).rawBody || request.body;
+
+    // Construct and verify webhook event
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET_SUBSCRIPTIONS;
+    if (!webhookSecret) {
+      throw new Error('STRIPE_WEBHOOK_SECRET_SUBSCRIPTIONS not configured');
     }
 
-    try {
-      const rawBody = (request as any).rawBody || request.body;
+    const stripe = (subscriptionService as any).stripe;
+    const event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
 
-      // Construct and verify webhook event
-      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET_SUBSCRIPTIONS;
-      if (!webhookSecret) {
-        throw new Error('STRIPE_WEBHOOK_SECRET_SUBSCRIPTIONS not configured');
-      }
+    // Process subscription event
+    await subscriptionService.handleSubscriptionWebhook(event);
 
-      const stripe = (subscriptionService as any).stripe;
-      const event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+    // Log webhook processing
+    logSecurityEvent(request.log, `Subscription webhook processed: ${event.type}`, {
+      requestId: request.id,
+      method: request.method,
+      path: request.url,
+      severity: 'low',
+    });
 
-      // Process subscription event
-      await subscriptionService.handleSubscriptionWebhook(event);
+    reply.send({
+      success: true,
+      data: {
+        processed: true,
+        eventType: event.type,
+        eventId: event.id,
+      },
+    });
 
-      // Log webhook processing
-      logSecurityEvent(request.log, `Subscription webhook processed: ${event.type}`, {
-        requestId: request.id,
-        method: request.method,
-        path: request.url,
-        severity: 'low',
-      });
-
-      reply.send({
-        success: true,
-        data: {
-          processed: true,
-          eventType: event.type,
-          eventId: event.id,
-        },
-      });
-    } catch (error) {
-      throw error;
-    }
   });
 }

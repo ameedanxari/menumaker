@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  Relation,
 } from 'typeorm';
 import { Order } from './Order.js';
 import { Dish } from './Dish.js';
@@ -16,14 +17,14 @@ export class OrderItem {
 
   @ManyToOne(() => Order, (order) => order.items, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'order_id' })
-  order!: Order;
+  order!: Relation<Order>;
 
   @Column({ type: 'uuid' })
   order_id!: string;
 
   @ManyToOne(() => Dish)
   @JoinColumn({ name: 'dish_id' })
-  dish!: Dish;
+  dish!: Relation<Dish>;
 
   @Column({ type: 'uuid' })
   dish_id!: string;

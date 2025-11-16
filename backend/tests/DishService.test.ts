@@ -90,13 +90,14 @@ describe('DishService', () => {
       mockBusinessRepository.findOne.mockResolvedValue(null);
 
       await expect(
-        dishService.createDish('business-id', 'user-id', { name: 'Pizza', price_cents: 1000 })
+        dishService.createDish('business-id', 'user-id', { name: 'Pizza', description: 'Delicious pizza', price_cents: 1000 })
       ).rejects.toThrow('Unauthorized');
     });
 
     it('should create dish with category', async () => {
       const dishData = {
         name: 'Caesar Salad',
+        description: 'Fresh Caesar salad',
         price_cents: 899,
         category_id: 'category-id',
       };

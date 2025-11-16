@@ -7,6 +7,7 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  Relation,
 } from 'typeorm';
 import { Business } from './Business.js';
 import { CommonDish } from './CommonDish.js';
@@ -21,7 +22,7 @@ export class Dish {
 
   @ManyToOne(() => Business, (business) => business.dishes, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'business_id' })
-  business!: Business;
+  business!: Relation<Business>;
 
   @Column({ type: 'uuid' })
   business_id!: string;
@@ -70,7 +71,7 @@ export class Dish {
   // Reference to common dish template
   @ManyToOne(() => CommonDish, { nullable: true })
   @JoinColumn({ name: 'common_dish_id' })
-  common_dish?: CommonDish;
+  common_dish?: Relation<CommonDish>;
 
   @Column({ type: 'uuid', nullable: true })
   common_dish_id?: string;
@@ -78,7 +79,7 @@ export class Dish {
   // Reference to user-defined category
   @ManyToOne(() => DishCategory, (category) => category.dishes, { nullable: true })
   @JoinColumn({ name: 'category_id' })
-  category?: DishCategory;
+  category?: Relation<DishCategory>;
 
   @Column({ type: 'uuid', nullable: true })
   category_id?: string;
@@ -91,8 +92,8 @@ export class Dish {
 
   // Relations
   @OneToMany(() => MenuItem, (item) => item.dish, { cascade: true })
-  menu_items?: MenuItem[];
+  menu_items?: Relation<MenuItem[]>;
 
   @OneToMany(() => OrderItem, (item) => item.dish)
-  order_items?: OrderItem[];
+  order_items?: Relation<OrderItem[]>;
 }

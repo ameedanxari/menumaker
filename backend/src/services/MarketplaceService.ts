@@ -1,4 +1,4 @@
-import { Repository, ILike, In, MoreThanOrEqual } from 'typeorm';
+import { Repository, MoreThanOrEqual } from 'typeorm';
 import { AppDataSource } from '../config/database.js';
 import {
   MarketplaceSettings,
@@ -450,7 +450,7 @@ export class MarketplaceService {
   async getAnalytics(
     businessId: string,
     startDate: Date,
-    endDate: Date
+    _endDate: Date
   ): Promise<MarketplaceAnalytics[]> {
     return this.analyticsRepository.find({
       where: {

@@ -8,113 +8,105 @@ export async function mediaRoutes(fastify: FastifyInstance): Promise<void> {
   // POST /media/upload - Upload image (authenticated)
   fastify.post('/upload', {
     preHandler: authenticate,
-  }, async (request, reply) => {
-    try {
-      // Get file from multipart request
-      const data = await request.file();
+  }, async (request, reply) => {    // Get file from multipart request
+    const data = await request.file();
 
-      if (!data) {
-        reply.status(400).send({
-          success: false,
-          error: {
-            code: 'NO_FILE',
-            message: 'No file provided',
-          },
-        });
-        return;
-      }
-
-      // Validate file
-      mediaService.validateImageFile(data.mimetype, 0); // Size validation happens during buffer read
-
-      // Read file buffer
-      const buffer = await data.toBuffer();
-
-      // Validate file size with actual buffer
-      mediaService.validateImageFile(data.mimetype, buffer.length);
-
-      // Upload file
-      const url = await mediaService.uploadFile(
-        buffer,
-        data.filename,
-        data.mimetype
-      );
-
-      reply.send({
-        success: true,
-        data: {
-          url,
-          filename: data.filename,
-          mimeType: data.mimetype,
-          size: buffer.length,
+    if (!data) {
+      reply.status(400).send({
+        success: false,
+        error: {
+          code: 'NO_FILE',
+          message: 'No file provided',
         },
       });
-    } catch (error) {
-      throw error;
+      return;
     }
+
+    // Validate file
+    mediaService.validateImageFile(data.mimetype, 0); // Size validation happens during buffer read
+
+    // Read file buffer
+    const buffer = await data.toBuffer();
+
+    // Validate file size with actual buffer
+    mediaService.validateImageFile(data.mimetype, buffer.length);
+
+    // Upload file
+    const url = await mediaService.uploadFile(
+      buffer,
+      data.filename,
+      data.mimetype
+    );
+
+    reply.send({
+      success: true,
+      data: {
+        url,
+        filename: data.filename,
+        mimeType: data.mimetype,
+        size: buffer.length,
+      },
+    });
+
   });
 
   // POST /media/upload-multiple - Upload multiple images (authenticated)
   fastify.post('/upload-multiple', {
     preHandler: authenticate,
-  }, async (request, reply) => {
-    try {
-      const parts = request.parts();
-      const uploadedFiles: Array<{
-        url: string;
-        filename: string;
-        mimeType: string;
-        size: number;
-      }> = [];
+  }, async (request, reply) => {    const parts = request.parts();
+    const uploadedFiles: Array<{
+      url: string;
+      filename: string;
+      mimeType: string;
+      size: number;
+    }> = [];
 
-      for await (const part of parts) {
-        if (part.type === 'file') {
-          // Validate file
-          mediaService.validateImageFile(part.mimetype, 0);
+    for await (const part of parts) {
+      if (part.type === 'file') {
+        // Validate file
+        mediaService.validateImageFile(part.mimetype, 0);
 
-          // Read file buffer
-          const buffer = await part.toBuffer();
+        // Read file buffer
+        const buffer = await part.toBuffer();
 
-          // Validate file size
-          mediaService.validateImageFile(part.mimetype, buffer.length);
+        // Validate file size
+        mediaService.validateImageFile(part.mimetype, buffer.length);
 
-          // Upload file
-          const url = await mediaService.uploadFile(
-            buffer,
-            part.filename,
-            part.mimetype
-          );
+        // Upload file
+        const url = await mediaService.uploadFile(
+          buffer,
+          part.filename,
+          part.mimetype
+        );
 
-          uploadedFiles.push({
-            url,
-            filename: part.filename,
-            mimeType: part.mimetype,
-            size: buffer.length,
-          });
-        }
-      }
-
-      if (uploadedFiles.length === 0) {
-        reply.status(400).send({
-          success: false,
-          error: {
-            code: 'NO_FILES',
-            message: 'No files provided',
-          },
+        uploadedFiles.push({
+          url,
+          filename: part.filename,
+          mimeType: part.mimetype,
+          size: buffer.length,
         });
-        return;
       }
+    }
 
-      reply.send({
-        success: true,
-        data: {
-          files: uploadedFiles,
-          count: uploadedFiles.length,
+    if (uploadedFiles.length === 0) {
+      reply.status(400).send({
+        success: false,
+        error: {
+          code: 'NO_FILES',
+          message: 'No files provided',
         },
       });
-    } catch (error) {
-      throw error;
+      return;
     }
+
+    reply.send({
+      success: true,
+      data: {
+        files: uploadedFiles,
+        count: uploadedFiles.length,
+      },
+    });
+
   });
 
   // DELETE /media - Delete image (authenticated)

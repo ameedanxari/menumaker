@@ -3,7 +3,7 @@ import { SupportTicket } from '../models/SupportTicket.js';
 import { AdminUser } from '../models/AdminUser.js';
 import { AuditLog } from '../models/AuditLog.js';
 import { User } from '../models/User.js';
-import { MoreThan, LessThan, In } from 'typeorm';
+import { MoreThan, In } from 'typeorm';
 
 /**
  * SupportTicketService - Customer Support & Ticket Management

@@ -1,4 +1,4 @@
-import { Repository, Between, MoreThan } from 'typeorm';
+import { Repository, MoreThan } from 'typeorm';
 import { AppDataSource } from '../config/database.js';
 import {
   CustomerReferral,
@@ -697,7 +697,7 @@ export class ViralService {
   /**
    * Generate WhatsApp share message
    */
-  generateWhatsAppShare(referralCode: string, businessName: string): {
+  generateWhatsAppShare(referralCode: string, _businessName: string): {
     message: string;
     share_url: string;
   } {

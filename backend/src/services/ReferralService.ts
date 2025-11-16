@@ -182,7 +182,7 @@ export class ReferralService {
     }
 
     try {
-      const { referral_code, referee_id, referee_email, referee_phone, signup_ip } = params;
+      const { referral_code, referee_id, referee_email, referee_phone } = params;
 
       const referralRepo = AppDataSource.getRepository(Referral);
       const userRepo = AppDataSource.getRepository(User);

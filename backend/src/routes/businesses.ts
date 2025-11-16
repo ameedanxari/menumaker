@@ -30,6 +30,7 @@ export async function businessRoutes(fastify: FastifyInstance): Promise<void> {
     const business = await businessService.getBusinessById(id);
 
     // Don't return owner details in public view
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { owner, ...businessData } = business;
 
     reply.send({
@@ -45,6 +46,7 @@ export async function businessRoutes(fastify: FastifyInstance): Promise<void> {
     const business = await businessService.getBusinessBySlug(slug);
 
     // Don't return owner details in public view
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { owner, ...businessData } = business;
 
     reply.send({

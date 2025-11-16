@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   OneToOne,
   OneToMany,
+  Relation,
 } from 'typeorm';
 import { Business } from './Business.js';
 import { OrderNotification } from './OrderNotification.js';
@@ -64,8 +65,8 @@ export class User {
 
   // Relations
   @OneToOne(() => Business, (business) => business.owner)
-  business?: Business;
+  business?: Relation<Business>;
 
   @OneToMany(() => OrderNotification, (notification) => notification.user)
-  notifications?: OrderNotification[];
+  notifications?: Relation<OrderNotification[]>;
 }
