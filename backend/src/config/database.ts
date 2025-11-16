@@ -41,13 +41,11 @@ import { ContentFlag } from '../models/ContentFlag.js';
 import { AuditLog } from '../models/AuditLog.js';
 
 // Review & Marketplace entities
-import { Review, ReviewResponse, ReviewReport } from '../models/Review.js';
+import { Review, ReviewResponse } from '../models/Review.js';
 import {
   MarketplaceSettings,
-  SellerProfile,
-  SellerImpression,
-  FeaturedSeller,
-  SellerCategory
+  MarketplaceAnalytics,
+  CustomerFavorite
 } from '../models/Marketplace.js';
 
 // POS Integration entities
@@ -123,13 +121,10 @@ export const AppDataSource = new DataSource({
     // Review System
     Review,
     ReviewResponse,
-    ReviewReport,
     // Marketplace
     MarketplaceSettings,
-    SellerProfile,
-    SellerImpression,
-    FeaturedSeller,
-    SellerCategory,
+    MarketplaceAnalytics,
+    CustomerFavorite,
     // POS Integration
     POSIntegration,
     POSSyncLog,
