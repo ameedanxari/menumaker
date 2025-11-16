@@ -1,4 +1,4 @@
-import { AppDataSource } from '../data-source.js';
+import { AppDataSource } from '../config/database.js';
 import { ContentFlag } from '../models/ContentFlag.js';
 import { AuditLog } from '../models/AuditLog.js';
 import { User } from '../models/User.js';

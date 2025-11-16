@@ -34,6 +34,24 @@ export class OrderItem {
   @Column({ type: 'integer' })
   price_at_purchase_cents!: number;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  dish_name?: string;
+
   @CreateDateColumn()
   created_at!: Date;
+
+  // Aliases for legacy code compatibility
+  get price_cents(): number {
+    return this.price_at_purchase_cents;
+  }
+  set price_cents(value: number) {
+    this.price_at_purchase_cents = value;
+  }
+
+  get unit_price_cents(): number {
+    return this.price_at_purchase_cents;
+  }
+  set unit_price_cents(value: number) {
+    this.price_at_purchase_cents = value;
+  }
 }

@@ -1,4 +1,4 @@
-import { AppDataSource } from '../data-source.js';
+import { AppDataSource } from '../config/database.js';
 import { User } from '../models/User.js';
 import { Business } from '../models/Business.js';
 import { Order } from '../models/Order.js';

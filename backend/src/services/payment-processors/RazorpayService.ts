@@ -366,7 +366,7 @@ export class RazorpayService implements IPaymentProcessorService {
 
       return {
         status,
-        amount: razorpayPayment.amount,
+        amount: typeof razorpayPayment.amount === 'string' ? parseInt(razorpayPayment.amount, 10) : razorpayPayment.amount,
         metadata: {
           method: razorpayPayment.method,
           email: razorpayPayment.email,

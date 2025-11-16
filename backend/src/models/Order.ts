@@ -35,6 +35,9 @@ export class Order {
   @Column({ type: 'uuid' })
   menu_id!: string;
 
+  @Column({ type: 'uuid', nullable: true })
+  customer_id?: string;
+
   @Column({ type: 'varchar', length: 255 })
   customer_name!: string;
 
@@ -60,16 +63,35 @@ export class Order {
   payment_method!: string;
 
   @Column({ type: 'varchar', default: 'unpaid' })
-  payment_status!: 'unpaid' | 'paid';
+  payment_status!: 'unpaid' | 'paid' | 'failed';
 
   @Column({ type: 'varchar', default: 'pending' })
   order_status!: 'pending' | 'confirmed' | 'ready' | 'fulfilled' | 'cancelled';
+
+  // Alias for order_status to support legacy code
+  get status(): 'pending' | 'confirmed' | 'ready' | 'fulfilled' | 'cancelled' {
+    return this.order_status;
+  }
+  set status(value: 'pending' | 'confirmed' | 'ready' | 'fulfilled' | 'cancelled') {
+    this.order_status = value;
+  }
+
+  // Alias for total_cents to support legacy code
+  get total_amount_cents(): number {
+    return this.total_cents;
+  }
+  set total_amount_cents(value: number) {
+    this.total_cents = value;
+  }
 
   @Column({ type: 'text', nullable: true })
   notes?: string;
 
   @Column({ type: 'varchar', length: 3, default: 'INR' })
   currency!: string;
+
+  @Column({ type: 'jsonb', nullable: true })
+  metadata?: Record<string, any>;
 
   @CreateDateColumn()
   created_at!: Date;

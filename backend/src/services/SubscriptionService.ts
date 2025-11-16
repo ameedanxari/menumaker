@@ -23,7 +23,7 @@ export class SubscriptionService {
     }
 
     this.stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2024-11-20.acacia',
+      apiVersion: '2024-11-20.acacia' as any,
       typescript: true,
     });
 
@@ -150,8 +150,8 @@ export class SubscriptionService {
       subscription.status = stripeSubscription.status === 'trialing' ? 'trialing' : 'incomplete';
       subscription.stripe_subscription_id = stripeSubscription.id;
       subscription.stripe_price_id = tierConfig.priceId;
-      subscription.current_period_start = new Date(stripeSubscription.current_period_start * 1000);
-      subscription.current_period_end = new Date(stripeSubscription.current_period_end * 1000);
+      subscription.current_period_start = new Date((stripeSubscription as any).current_period_start * 1000);
+      subscription.current_period_end = new Date((stripeSubscription as any).current_period_end * 1000);
 
       if (stripeSubscription.trial_start && stripeSubscription.trial_end) {
         subscription.trial_start = new Date(stripeSubscription.trial_start * 1000);
@@ -318,8 +318,8 @@ export class SubscriptionService {
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
         localSubscription.status = subscription.status as any;
-        localSubscription.current_period_start = new Date(subscription.current_period_start * 1000);
-        localSubscription.current_period_end = new Date(subscription.current_period_end * 1000);
+        localSubscription.current_period_start = new Date((subscription as any).current_period_start * 1000);
+        localSubscription.current_period_end = new Date((subscription as any).current_period_end * 1000);
         localSubscription.cancel_at_period_end = subscription.cancel_at_period_end;
 
         if (subscription.canceled_at) {

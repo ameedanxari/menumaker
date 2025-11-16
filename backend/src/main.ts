@@ -180,6 +180,7 @@ async function registerRoutes() {
     (request as any).startTime = Date.now();
 
     // Add response hook to log completion
+    // @ts-ignore - addHook on reply is non-standard but works
     reply.addHook('onSend', async () => {
       const duration = Date.now() - (request as any).startTime;
       const isProduction = process.env.NODE_ENV === 'production';

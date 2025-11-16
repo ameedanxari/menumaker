@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import jwt from 'jsonwebtoken';
-import { AppDataSource } from '../data-source.js';
+import { AppDataSource } from '../config/database.js';
 import { AdminUser } from '../models/AdminUser.js';
 
 /**
