@@ -22,11 +22,25 @@ describe('OrderService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
+    // Mock query builder
+    // @ts-ignore - Mock typing
+    const mockQueryBuilder = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      // @ts-ignore
+      getMany: jest.fn().mockResolvedValue([]),
+      // @ts-ignore
+      getOne: jest.fn().mockResolvedValue(null),
+    } as any;
+
     mockOrderRepository = {
       create: jest.fn(),
       save: jest.fn(),
       find: jest.fn(),
       findOne: jest.fn(),
+      createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
     };
 
     mockOrderItemRepository = {
@@ -46,6 +60,27 @@ describe('OrderService', () => {
       findOne: jest.fn(),
     };
 
+    // Mock query runner for transactions
+    // @ts-ignore - Mock typing
+    const mockQueryRunner = {
+      // @ts-ignore
+      connect: jest.fn().mockResolvedValue(undefined),
+      // @ts-ignore
+      startTransaction: jest.fn().mockResolvedValue(undefined),
+      // @ts-ignore
+      commitTransaction: jest.fn().mockResolvedValue(undefined),
+      // @ts-ignore
+      rollbackTransaction: jest.fn().mockResolvedValue(undefined),
+      // @ts-ignore
+      release: jest.fn().mockResolvedValue(undefined),
+      manager: {
+        findOne: jest.fn(),
+        create: jest.fn(),
+        save: jest.fn(),
+        getRepository: jest.fn(),
+      },
+    } as any;
+
     // Set up the mock implementation
     AppDataSource.getRepository = jest.fn().mockImplementation((entity) => {
       if (entity === Order) return mockOrderRepository;
@@ -55,6 +90,9 @@ describe('OrderService', () => {
       if (entity === Dish) return mockDishRepository;
       return {};
     }) as any;
+
+    // Mock createQueryRunner
+    (AppDataSource as any).createQueryRunner = jest.fn().mockReturnValue(mockQueryRunner);
 
     // Mock transaction
     AppDataSource.transaction = jest.fn().mockImplementation(async (callback: any) => {
