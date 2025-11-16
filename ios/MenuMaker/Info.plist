@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- App Information -->
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>MenuMaker</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+
+	<!-- Privacy - Camera Usage -->
+	<key>NSCameraUsageDescription</key>
+	<string>MenuMaker needs access to your camera to capture photos of your dishes and menu items for your restaurant listings.</string>
+
+	<!-- Privacy - Photo Library -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>MenuMaker needs access to your photo library to select and upload images of your dishes and menu items.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>MenuMaker needs permission to save photos of your dishes to your photo library.</string>
+
+	<!-- Privacy - Location -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>MenuMaker uses your location to help customers find your restaurant and calculate delivery distances.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>MenuMaker uses your location to provide real-time order tracking and delivery updates.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>MenuMaker uses your location to help customers find your restaurant and provide real-time delivery tracking.</string>
+
+	<!-- Privacy - Notifications -->
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>MenuMaker sends you notifications about new orders, customer reviews, and important updates about your restaurant.</string>
+
+	<!-- Privacy - Contacts (if used for customer management) -->
+	<key>NSContactsUsageDescription</key>
+	<string>MenuMaker may access your contacts to help you quickly add customer information and manage orders.</string>
+
+	<!-- Privacy - Face ID -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>MenuMaker uses Face ID to securely authenticate you and protect your restaurant account.</string>
+
+	<!-- Privacy - Bluetooth (if used for payment terminals) -->
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>MenuMaker uses Bluetooth to connect with payment terminals and receipt printers for your restaurant.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>MenuMaker uses Bluetooth to connect with payment terminals and receipt printers.</string>
+
+	<!-- Privacy - Microphone (if voice features added) -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>MenuMaker may use your microphone for voice-based order taking or customer support features.</string>
+
+	<!-- Privacy - Calendar (for reservation features) -->
+	<key>NSCalendarsUsageDescription</key>
+	<string>MenuMaker can add reservations and special events to your calendar to help you manage your restaurant schedule.</string>
+
+	<!-- Privacy - Network Usage -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>MenuMaker uses your local network to discover and connect with POS systems and printers in your restaurant.</string>
+
+	<!-- Background Modes -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+		<string>processing</string>
+	</array>
+
+	<!-- Required device capabilities -->
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>armv7</string>
+	</array>
+
+	<!-- Supported interface orientations -->
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+
+	<!-- Scene Configuration -->
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<true/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+
+	<!-- Launch Screen -->
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIImageName</key>
+		<string>LaunchImage</string>
+		<key>UIColorName</key>
+		<string>LaunchScreenBackground</string>
+	</dict>
+
+	<!-- App Transport Security -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+
+	<!-- App Category -->
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.food-and-drink</string>
+
+	<!-- Document Types (for importing menus) -->
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>PDF Document</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.adobe.pdf</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>CSV Document</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.comma-separated-values-text</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- URL Schemes (for deep linking) -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.creatrixe.menumaker</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>menumaker</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- Exported UTIs -->
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>MenuMaker Menu</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.creatrixe.menumaker.menu</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>mmenu</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+
+	<!-- Keychain Access Groups -->
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)com.creatrixe.menumaker</string>
+	</array>
+
+	<!-- App Clip (if adding App Clip support later) -->
+	<key>NSAppClip</key>
+	<dict>
+		<key>NSAppClipRequestEphemeralUserNotification</key>
+		<true/>
+		<key>NSAppClipRequestLocationConfirmation</key>
+		<false/>
+	</dict>
+
+	<!-- iTunes File Sharing -->
+	<key>UIFileSharingEnabled</key>
+	<false/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+
+	<!-- Status Bar -->
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleDefault</string>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<true/>
+
+	<!-- Fonts (if custom fonts are used) -->
+	<key>UIAppFonts</key>
+	<array>
+		<!-- Add custom font files here if needed -->
+	</array>
+</dict>
+</plist>
