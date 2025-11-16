@@ -1,0 +1,170 @@
+/* MenuMaker iOS App - Hindi Localization */
+
+/* App Name */
+"app_name" = "MenuMaker";
+
+/* Authentication */
+"sign_in" = "साइन इन करें";
+"sign_up" = "साइन अप करें";
+"email" = "ईमेल";
+"password" = "पासवर्ड";
+"forgot_password" = "पासवर्ड भूल गए?";
+"dont_have_account" = "खाता नहीं है?";
+"already_have_account" = "पहले से खाता है?";
+"name" = "नाम";
+"phone" = "फोन";
+
+/* Navigation */
+"nav_dashboard" = "डैशबोर्ड";
+"nav_orders" = "ऑर्डर";
+"nav_menu" = "मेनू";
+"nav_marketplace" = "मार्केटप्लेस";
+"nav_profile" = "प्रोफाइल";
+"nav_more" = "और";
+"nav_cart" = "कार्ट";
+
+/* Common */
+"save" = "सहेजें";
+"cancel" = "रद्द करें";
+"delete" = "हटाएं";
+"edit" = "संपादित करें";
+"loading" = "लोड हो रहा है...";
+"error_occurred" = "एक त्रुटि हुई";
+"retry" = "पुनः प्रयास करें";
+"ok" = "ठीक है";
+"done" = "हो गया";
+"close" = "बंद करें";
+"search" = "खोजें";
+"filter" = "फ़िल्टर";
+"sort" = "क्रमबद्ध करें";
+"refresh" = "ताज़ा करें";
+"logout" = "लॉग आउट";
+
+/* Business */
+"business_name" = "व्यवसाय का नाम";
+"business_description" = "विवरण";
+"create_business" = "व्यवसाय बनाएं";
+"my_business" = "मेरा व्यवसाय";
+"business_logo" = "व्यवसाय लोगो";
+"business_slug" = "व्यवसाय स्लग";
+
+/* Menu */
+"add_dish" = "डिश जोड़ें";
+"dish_name" = "डिश का नाम";
+"dish_price" = "कीमत";
+"dish_description" = "विवरण";
+"dish_category" = "श्रेणी";
+"vegetarian" = "शाकाहारी";
+"available" = "उपलब्ध";
+"unavailable" = "अनुपलब्ध";
+"add_to_cart" = "कार्ट में जोड़ें";
+"view_menu" = "मेनू देखें";
+
+/* Orders */
+"new_order" = "नया ऑर्डर";
+"order_total" = "कुल";
+"order_status" = "स्थिति";
+"mark_fulfilled" = "पूर्ण के रूप में चिह्नित करें";
+"order_pending" = "लंबित";
+"order_confirmed" = "पुष्टि की गई";
+"order_ready" = "तैयार";
+"order_fulfilled" = "पूर्ण";
+"order_cancelled" = "रद्द";
+"customer_name" = "ग्राहक का नाम";
+"customer_phone" = "ग्राहक का फोन";
+"customer_email" = "ग्राहक का ईमेल";
+"order_items" = "ऑर्डर आइटम";
+
+/* Cart */
+"cart" = "कार्ट";
+"cart_empty" = "आपकी कार्ट खाली है";
+"checkout" = "चेकआउट";
+"subtotal" = "उप-योग";
+"quantity" = "मात्रा";
+"remove_from_cart" = "कार्ट से हटाएं";
+
+/* Coupons */
+"coupons" = "कूपन";
+"create_coupon" = "कूपन बनाएं";
+"coupon_code" = "कूपन कोड";
+"discount" = "छूट";
+"valid_from" = "से मान्य";
+"valid_until" = "तक मान्य";
+"apply_coupon" = "कूपन लागू करें";
+
+/* Payments */
+"payment_methods" = "भुगतान के तरीके";
+"add_payment_method" = "भुगतान विधि जोड़ें";
+"payment_processor" = "भुगतान प्रोसेसर";
+"configure_payment" = "भुगतान कॉन्फ़िगर करें";
+
+/* Marketplace */
+"marketplace" = "मार्केटप्लेस";
+"browse_restaurants" = "रेस्तरां ब्राउज़ करें";
+"popular_dishes" = "लोकप्रिय व्यंजन";
+"nearby_restaurants" = "आस-पास के रेस्तरां";
+
+/* Reviews */
+"reviews" = "समीक्षाएं";
+"write_review" = "समीक्षा लिखें";
+"rating" = "रेटिंग";
+"review_text" = "समीक्षा पाठ";
+
+/* Referrals */
+"referrals" = "रेफरल";
+"referral_code" = "रेफरल कोड";
+"share_referral" = "रेफरल कोड साझा करें";
+"referral_earnings" = "रेफरल आय";
+
+/* Integrations */
+"integrations" = "एकीकरण";
+"connect_service" = "सेवा कनेक्ट करें";
+"payment_gateway" = "भुगतान गेटवे";
+"delivery_partner" = "डिलीवरी पार्टनर";
+
+/* Notifications */
+"notification_channel_orders" = "ऑर्डर";
+"notification_channel_orders_desc" = "नए ऑर्डर के लिए सूचनाएं";
+"enable_notifications" = "सूचनाएं सक्षम करें";
+"notification_settings" = "सूचना सेटिंग्स";
+
+/* Settings */
+"settings" = "सेटिंग्स";
+"account_settings" = "खाता सेटिंग्स";
+"app_settings" = "ऐप सेटिंग्स";
+"language" = "भाषा";
+"theme" = "थीम";
+"privacy" = "गोपनीयता";
+"terms" = "सेवा की शर्तें";
+"help" = "मदद";
+"about" = "के बारे में";
+
+/* Errors */
+"error_invalid_email" = "अमान्य ईमेल पता";
+"error_invalid_password" = "पासवर्ड कम से कम 6 अक्षर का होना चाहिए";
+"error_login_failed" = "लॉगिन विफल। कृपया अपनी साख जांचें।";
+"error_signup_failed" = "साइन अप विफल। कृपया पुनः प्रयास करें।";
+"error_network" = "नेटवर्क त्रुटि। कृपया अपना कनेक्शन जांचें।";
+"error_unknown" = "एक अज्ञात त्रुटि हुई";
+"error_unauthorized" = "अनधिकृत। कृपया फिर से लॉगिन करें।";
+"error_server" = "सर्वर त्रुटि। कृपया बाद में पुनः प्रयास करें।";
+
+/* Success Messages */
+"success_login" = "सफलतापूर्वक लॉगिन किया गया";
+"success_signup" = "खाता सफलतापूर्वक बनाया गया";
+"success_saved" = "सफलतापूर्वक सहेजा गया";
+"success_deleted" = "सफलतापूर्वक हटाया गया";
+"success_order_placed" = "ऑर्डर सफलतापूर्वक दिया गया";
+
+/* Camera & OCR */
+"camera_permission" = "कैमरा अनुमति आवश्यक";
+"scan_menu" = "मेनू स्कैन करें";
+"take_photo" = "फोटो लें";
+"choose_from_library" = "लाइब्रेरी से चुनें";
+"processing_image" = "छवि संसाधित की जा रही है...";
+
+/* Biometric */
+"biometric_login" = "बायोमेट्रिक से लॉगिन करें";
+"enable_biometric" = "बायोमेट्रिक लॉगिन सक्षम करें";
+"face_id" = "फेस आईडी";
+"touch_id" = "टच आईडी";

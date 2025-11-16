@@ -1,0 +1,184 @@
+import Foundation
+
+// MARK: - Referral Models
+
+struct ReferralStats: Codable {
+    let totalReferrals: Int
+    let successfulReferrals: Int
+    let pendingReferrals: Int
+    let totalEarningsCents: Int
+    let referralCode: String
+    let leaderboardPosition: Int?
+
+    var totalEarnings: Double {
+        Double(totalEarningsCents) / 100.0
+    }
+
+    var formattedEarnings: String {
+        String(format: "₹%.2f", totalEarnings)
+    }
+
+    var successRate: Double {
+        guard totalReferrals > 0 else { return 0 }
+        return Double(successfulReferrals) / Double(totalReferrals) * 100
+    }
+
+    var formattedSuccessRate: String {
+        String(format: "%.1f%%", successRate)
+    }
+
+    var leaderboardDisplay: String {
+        guard let position = leaderboardPosition else {
+            return "Not ranked"
+        }
+        return "#\(position)"
+    }
+}
+
+struct ReferralLeaderboard: Codable, Identifiable {
+    let rank: Int
+    let userName: String
+    let referralCount: Int
+    let earningsCents: Int
+
+    var id: Int { rank }
+
+    var earnings: Double {
+        Double(earningsCents) / 100.0
+    }
+
+    var formattedEarnings: String {
+        String(format: "₹%.2f", earnings)
+    }
+
+    var medalEmoji: String {
+        switch rank {
+        case 1: return "🥇"
+        case 2: return "🥈"
+        case 3: return "🥉"
+        default: return ""
+        }
+    }
+}
+
+struct ReferralStatsResponse: Decodable {
+    let success: Bool
+    let data: ReferralStatsData
+}
+
+struct ReferralStatsData: Decodable {
+    let stats: ReferralStats
+    let leaderboard: [ReferralLeaderboard]
+}
+
+// MARK: - Integration Models
+
+struct Integration: Codable, Identifiable {
+    let id: String
+    let businessId: String
+    let provider: String
+    let type: String
+    let isActive: Bool
+    let lastSyncAt: String?
+    let createdAt: String
+
+    var integrationType: IntegrationType {
+        IntegrationType(rawValue: type) ?? .pos
+    }
+
+    var providerType: IntegrationProvider {
+        IntegrationProvider(rawValue: provider) ?? .other(provider)
+    }
+
+    var displayName: String {
+        providerType.displayName
+    }
+
+    var icon: String {
+        providerType.icon
+    }
+
+    var formattedLastSync: String? {
+        guard let lastSyncAt = lastSyncAt,
+              let date = ISO8601DateFormatter().date(from: lastSyncAt) else {
+            return nil
+        }
+
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+}
+
+struct IntegrationListResponse: Decodable {
+    let success: Bool
+    let data: IntegrationListData
+}
+
+struct IntegrationListData: Decodable {
+    let integrations: [Integration]
+}
+
+// MARK: - Integration Type
+
+enum IntegrationType: String, Codable, CaseIterable {
+    case pos
+    case delivery
+
+    var displayName: String {
+        switch self {
+        case .pos: return "POS System"
+        case .delivery: return "Delivery Service"
+        }
+    }
+}
+
+// MARK: - Integration Provider
+
+enum IntegrationProvider: Codable, Equatable {
+    case petpooja
+    case zomato
+    case swiggy
+    case dunzo
+    case other(String)
+
+    init(rawValue: String) {
+        switch rawValue.lowercased() {
+        case "petpooja": self = .petpooja
+        case "zomato": self = .zomato
+        case "swiggy": self = .swiggy
+        case "dunzo": self = .dunzo
+        default: self = .other(rawValue)
+        }
+    }
+
+    var rawValue: String {
+        switch self {
+        case .petpooja: return "petpooja"
+        case .zomato: return "zomato"
+        case .swiggy: return "swiggy"
+        case .dunzo: return "dunzo"
+        case .other(let value): return value
+        }
+    }
+
+    var displayName: String {
+        switch self {
+        case .petpooja: return "Petpooja"
+        case .zomato: return "Zomato"
+        case .swiggy: return "Swiggy"
+        case .dunzo: return "Dunzo"
+        case .other(let value): return value
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .petpooja: return "cart.fill"
+        case .zomato: return "fork.knife"
+        case .swiggy: return "bag.fill"
+        case .dunzo: return "bicycle"
+        case .other: return "link"
+        }
+    }
+}

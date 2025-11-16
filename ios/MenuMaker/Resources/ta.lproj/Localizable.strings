@@ -1,0 +1,170 @@
+/* MenuMaker iOS App - Tamil Localization */
+
+/* App Name */
+"app_name" = "MenuMaker";
+
+/* Authentication */
+"sign_in" = "உள்நுழைக";
+"sign_up" = "பதிவு செய்க";
+"email" = "மின்னஞ்சல்";
+"password" = "கடவுச்சொல்";
+"forgot_password" = "கடவுச்சொல்லை மறந்துவிட்டீர்களா?";
+"dont_have_account" = "கணக்கு இல்லையா?";
+"already_have_account" = "ஏற்கனவே கணக்கு உள்ளதா?";
+"name" = "பெயர்";
+"phone" = "தொலைபேசி";
+
+/* Navigation */
+"nav_dashboard" = "டாஷ்போர்டு";
+"nav_orders" = "ஆர்டர்கள்";
+"nav_menu" = "மெனு";
+"nav_marketplace" = "சந்தை";
+"nav_profile" = "சுயவிவரம்";
+"nav_more" = "மேலும்";
+"nav_cart" = "வண்டி";
+
+/* Common */
+"save" = "சேமி";
+"cancel" = "ரத்துசெய்";
+"delete" = "நீக்கு";
+"edit" = "திருத்து";
+"loading" = "ஏற்றுகிறது...";
+"error_occurred" = "பிழை ஏற்பட்டது";
+"retry" = "மீண்டும் முயற்சிக்கவும்";
+"ok" = "சரி";
+"done" = "முடிந்தது";
+"close" = "மூடு";
+"search" = "தேடு";
+"filter" = "வடிகட்டு";
+"sort" = "வரிசைப்படுத்து";
+"refresh" = "புதுப்பிக்கவும்";
+"logout" = "வெளியேறு";
+
+/* Business */
+"business_name" = "வணிக பெயர்";
+"business_description" = "விளக்கம்";
+"create_business" = "வணிகம் உருவாக்கு";
+"my_business" = "என் வணிகம்";
+"business_logo" = "வணிக லோகோ";
+"business_slug" = "வணிக ஸ்லக்";
+
+/* Menu */
+"add_dish" = "உணவு சேர்";
+"dish_name" = "உணவு பெயர்";
+"dish_price" = "விலை";
+"dish_description" = "விளக்கம்";
+"dish_category" = "வகை";
+"vegetarian" = "சைவம்";
+"available" = "கிடைக்கும்";
+"unavailable" = "கிடைக்காது";
+"add_to_cart" = "வண்டியில் சேர்";
+"view_menu" = "மெனுவைப் பார்";
+
+/* Orders */
+"new_order" = "புதிய ஆர்டர்";
+"order_total" = "மொத்தம்";
+"order_status" = "நிலை";
+"mark_fulfilled" = "நிறைவேற்றப்பட்டதாக குறி";
+"order_pending" = "நிலுவையில்";
+"order_confirmed" = "உறுதிப்படுத்தப்பட்டது";
+"order_ready" = "தயார்";
+"order_fulfilled" = "நிறைவேற்றப்பட்டது";
+"order_cancelled" = "ரத்து செய்யப்பட்டது";
+"customer_name" = "வாடிக்கையாளர் பெயர்";
+"customer_phone" = "வாடிக்கையாளர் தொலைபேசி";
+"customer_email" = "வாடிக்கையாளர் மின்னஞ்சல்";
+"order_items" = "ஆர்டர் பொருட்கள்";
+
+/* Cart */
+"cart" = "வண்டி";
+"cart_empty" = "உங்கள் வண்டி காலியாக உள்ளது";
+"checkout" = "செக் அவுட்";
+"subtotal" = "துணை மொத்தம்";
+"quantity" = "அளவு";
+"remove_from_cart" = "வண்டியிலிருந்து அகற்று";
+
+/* Coupons */
+"coupons" = "கூப்பன்கள்";
+"create_coupon" = "கூப்பன் உருவாக்கு";
+"coupon_code" = "கூப்பன் குறியீடு";
+"discount" = "தள்ளுபடி";
+"valid_from" = "முதல் செல்லுபடியாகும்";
+"valid_until" = "வரை செல்லுபடியாகும்";
+"apply_coupon" = "கூப்பனைப் பயன்படுத்து";
+
+/* Payments */
+"payment_methods" = "கட்டண முறைகள்";
+"add_payment_method" = "கட்டண முறையைச் சேர்";
+"payment_processor" = "கட்டண செயலி";
+"configure_payment" = "கட்டணத்தை உள்ளமை";
+
+/* Marketplace */
+"marketplace" = "சந்தை";
+"browse_restaurants" = "உணவகங்களை உலாவவும்";
+"popular_dishes" = "பிரபலமான உணவுகள்";
+"nearby_restaurants" = "அருகிலுள்ள உணவகங்கள்";
+
+/* Reviews */
+"reviews" = "மதிப்புரைகள்";
+"write_review" = "மதிப்புரை எழுது";
+"rating" = "மதிப்பீடு";
+"review_text" = "மதிப்புரை உரை";
+
+/* Referrals */
+"referrals" = "பரிந்துரைகள்";
+"referral_code" = "பரிந்துரை குறியீடு";
+"share_referral" = "பரிந்துரை குறியீட்டைப் பகிர்";
+"referral_earnings" = "பரிந்துரை வருமானம்";
+
+/* Integrations */
+"integrations" = "ஒருங்கிணைப்புகள்";
+"connect_service" = "சேவையை இணை";
+"payment_gateway" = "கட்டண நுழைவாயில்";
+"delivery_partner" = "டெலிவரி பார்ட்னர்";
+
+/* Notifications */
+"notification_channel_orders" = "ஆர்டர்கள்";
+"notification_channel_orders_desc" = "புதிய ஆர்டர்களுக்கான அறிவிப்புகள்";
+"enable_notifications" = "அறிவிப்புகளை இயக்கு";
+"notification_settings" = "அறிவிப்பு அமைப்புகள்";
+
+/* Settings */
+"settings" = "அமைப்புகள்";
+"account_settings" = "கணக்கு அமைப்புகள்";
+"app_settings" = "பயன்பாட்டு அமைப்புகள்";
+"language" = "மொழி";
+"theme" = "தீம்";
+"privacy" = "தனியுரிமை";
+"terms" = "சேவை விதிமுறைகள்";
+"help" = "உதவி";
+"about" = "பற்றி";
+
+/* Errors */
+"error_invalid_email" = "தவறான மின்னஞ்சல் முகவரி";
+"error_invalid_password" = "கடவுச்சொல் குறைந்தது 6 எழுத்துகளாக இருக்க வேண்டும்";
+"error_login_failed" = "உள்நுழைவு தோல்வியடைந்தது. உங்கள் நற்சான்றிதழ்களைச் சரிபார்க்கவும்.";
+"error_signup_failed" = "பதிவு தோல்வியடைந்தது. மீண்டும் முயற்சிக்கவும்.";
+"error_network" = "நெட்வொர்க் பிழை. உங்கள் இணைப்பைச் சரிபார்க்கவும்.";
+"error_unknown" = "அறியப்படாத பிழை ஏற்பட்டது";
+"error_unauthorized" = "அங்கீகரிக்கப்படவில்லை. மீண்டும் உள்நுழைக.";
+"error_server" = "சர்வர் பிழை. பின்னர் முயற்சிக்கவும்.";
+
+/* Success Messages */
+"success_login" = "வெற்றிகரமாக உள்நுழைந்தது";
+"success_signup" = "கணக்கு வெற்றிகரமாக உருவாக்கப்பட்டது";
+"success_saved" = "வெற்றிகரமாக சேமிக்கப்பட்டது";
+"success_deleted" = "வெற்றிகரமாக நீக்கப்பட்டது";
+"success_order_placed" = "ஆர்டர் வெற்றிகரமாக வழங்கப்பட்டது";
+
+/* Camera & OCR */
+"camera_permission" = "கேமரா அனுமதி தேவை";
+"scan_menu" = "மெனுவை ஸ்கேன் செய்";
+"take_photo" = "புகைப்படம் எடு";
+"choose_from_library" = "நூலகத்திலிருந்து தேர்வு செய்";
+"processing_image" = "படம் செயலாக்கப்படுகிறது...";
+
+/* Biometric */
+"biometric_login" = "பயோமெட்ரிக் மூலம் உள்நுழைக";
+"enable_biometric" = "பயோமெட்ரிக் உள்நுழைவை இயக்கு";
+"face_id" = "ஃபேஸ் ஐடி";
+"touch_id" = "டச் ஐடி";
