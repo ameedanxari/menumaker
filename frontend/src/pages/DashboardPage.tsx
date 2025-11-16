@@ -9,7 +9,6 @@ import {
   ShoppingBag,
   DollarSign,
   Clock,
-  CheckCircle,
   Loader2,
   ArrowRight,
   BarChart3,

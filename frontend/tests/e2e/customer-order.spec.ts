@@ -506,7 +506,7 @@ test.describe('Customer Order Flow', () => {
 
       // Should show order ID
       await expect(page.locator('[data-testid="order-id"]')).toBeVisible();
-      await expect(page.locator('text=/#\d+|order.*#/i')).toBeVisible();
+      await expect(page.locator('text=/#\\d+|order.*#/i')).toBeVisible();
     });
 
     test('should display order details on confirmation page', async ({ page }) => {

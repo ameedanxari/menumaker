@@ -1,7 +1,11 @@
-name: CI Pipeline
+name: CI Pipeline (Legacy)
 
 on:
-  push:
+# NOTE: This workflow is superseded by smart-ci.yml for PR-based builds
+# Kept for backwards compatibility and can be manually triggered
+
+  workflow_dispatch:  # Manual trigger only
+  push_disabled:
     branches:
       - main
       - 'claude/**'

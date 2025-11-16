@@ -180,7 +180,7 @@ async function registerRoutes() {
     (request as any).startTime = Date.now();
 
     // Add response hook to log completion
-    // @ts-ignore - addHook on reply is non-standard but works
+    // @ts-expect-error - addHook on reply is non-standard but works
     reply.addHook('onSend', async () => {
       const duration = Date.now() - (request as any).startTime;
       const isProduction = process.env.NODE_ENV === 'production';
@@ -257,7 +257,7 @@ async function initializeDatabase() {
     await AppDataSource.initialize();
     fastify.log.info('Database connection established');
   } catch (error) {
-    fastify.log.error('Failed to connect to database:', error);
+    fastify.log.error({ err: error }, 'Failed to connect to database');
     throw error;
   }
 }
@@ -295,7 +295,7 @@ const gracefulShutdown = async (signal: string) => {
     await AppDataSource.destroy();
     process.exit(0);
   } catch (error) {
-    fastify.log.error('Error during shutdown:', error);
+    fastify.log.error({ err: error }, 'Error during shutdown');
     process.exit(1);
   }
 };

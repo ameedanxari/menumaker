@@ -94,7 +94,7 @@ interface MenuState {
   reset: () => void;
 }
 
-export const useMenuStore = create<MenuState>((set, get) => ({
+export const useMenuStore = create<MenuState>((set, _get) => ({
   dishes: [],
   categories: [],
   menus: [],

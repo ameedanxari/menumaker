@@ -7,8 +7,6 @@ import {
   Mail,
   MapPin,
   Clock,
-  CheckCircle,
-  X,
   Loader2,
   Filter,
   Search,

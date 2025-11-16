@@ -1,0 +1,170 @@
+/* MenuMaker iOS App - English Localization */
+
+/* App Name */
+"app_name" = "MenuMaker";
+
+/* Authentication */
+"sign_in" = "Sign In";
+"sign_up" = "Sign Up";
+"email" = "Email";
+"password" = "Password";
+"forgot_password" = "Forgot Password?";
+"dont_have_account" = "Don't have an account?";
+"already_have_account" = "Already have an account?";
+"name" = "Name";
+"phone" = "Phone";
+
+/* Navigation */
+"nav_dashboard" = "Dashboard";
+"nav_orders" = "Orders";
+"nav_menu" = "Menu";
+"nav_marketplace" = "Marketplace";
+"nav_profile" = "Profile";
+"nav_more" = "More";
+"nav_cart" = "Cart";
+
+/* Common */
+"save" = "Save";
+"cancel" = "Cancel";
+"delete" = "Delete";
+"edit" = "Edit";
+"loading" = "Loading...";
+"error_occurred" = "An error occurred";
+"retry" = "Retry";
+"ok" = "OK";
+"done" = "Done";
+"close" = "Close";
+"search" = "Search";
+"filter" = "Filter";
+"sort" = "Sort";
+"refresh" = "Refresh";
+"logout" = "Logout";
+
+/* Business */
+"business_name" = "Business Name";
+"business_description" = "Description";
+"create_business" = "Create Business";
+"my_business" = "My Business";
+"business_logo" = "Business Logo";
+"business_slug" = "Business Slug";
+
+/* Menu */
+"add_dish" = "Add Dish";
+"dish_name" = "Dish Name";
+"dish_price" = "Price";
+"dish_description" = "Description";
+"dish_category" = "Category";
+"vegetarian" = "Vegetarian";
+"available" = "Available";
+"unavailable" = "Unavailable";
+"add_to_cart" = "Add to Cart";
+"view_menu" = "View Menu";
+
+/* Orders */
+"new_order" = "New Order";
+"order_total" = "Total";
+"order_status" = "Status";
+"mark_fulfilled" = "Mark Fulfilled";
+"order_pending" = "Pending";
+"order_confirmed" = "Confirmed";
+"order_ready" = "Ready";
+"order_fulfilled" = "Fulfilled";
+"order_cancelled" = "Cancelled";
+"customer_name" = "Customer Name";
+"customer_phone" = "Customer Phone";
+"customer_email" = "Customer Email";
+"order_items" = "Order Items";
+
+/* Cart */
+"cart" = "Cart";
+"cart_empty" = "Your cart is empty";
+"checkout" = "Checkout";
+"subtotal" = "Subtotal";
+"quantity" = "Quantity";
+"remove_from_cart" = "Remove from Cart";
+
+/* Coupons */
+"coupons" = "Coupons";
+"create_coupon" = "Create Coupon";
+"coupon_code" = "Coupon Code";
+"discount" = "Discount";
+"valid_from" = "Valid From";
+"valid_until" = "Valid Until";
+"apply_coupon" = "Apply Coupon";
+
+/* Payments */
+"payment_methods" = "Payment Methods";
+"add_payment_method" = "Add Payment Method";
+"payment_processor" = "Payment Processor";
+"configure_payment" = "Configure Payment";
+
+/* Marketplace */
+"marketplace" = "Marketplace";
+"browse_restaurants" = "Browse Restaurants";
+"popular_dishes" = "Popular Dishes";
+"nearby_restaurants" = "Nearby Restaurants";
+
+/* Reviews */
+"reviews" = "Reviews";
+"write_review" = "Write a Review";
+"rating" = "Rating";
+"review_text" = "Review Text";
+
+/* Referrals */
+"referrals" = "Referrals";
+"referral_code" = "Referral Code";
+"share_referral" = "Share Referral Code";
+"referral_earnings" = "Referral Earnings";
+
+/* Integrations */
+"integrations" = "Integrations";
+"connect_service" = "Connect Service";
+"payment_gateway" = "Payment Gateway";
+"delivery_partner" = "Delivery Partner";
+
+/* Notifications */
+"notification_channel_orders" = "Orders";
+"notification_channel_orders_desc" = "Notifications for new orders";
+"enable_notifications" = "Enable Notifications";
+"notification_settings" = "Notification Settings";
+
+/* Settings */
+"settings" = "Settings";
+"account_settings" = "Account Settings";
+"app_settings" = "App Settings";
+"language" = "Language";
+"theme" = "Theme";
+"privacy" = "Privacy";
+"terms" = "Terms of Service";
+"help" = "Help";
+"about" = "About";
+
+/* Errors */
+"error_invalid_email" = "Invalid email address";
+"error_invalid_password" = "Password must be at least 6 characters";
+"error_login_failed" = "Login failed. Please check your credentials.";
+"error_signup_failed" = "Sign up failed. Please try again.";
+"error_network" = "Network error. Please check your connection.";
+"error_unknown" = "An unknown error occurred";
+"error_unauthorized" = "Unauthorized. Please login again.";
+"error_server" = "Server error. Please try again later.";
+
+/* Success Messages */
+"success_login" = "Successfully logged in";
+"success_signup" = "Account created successfully";
+"success_saved" = "Saved successfully";
+"success_deleted" = "Deleted successfully";
+"success_order_placed" = "Order placed successfully";
+
+/* Camera & OCR */
+"camera_permission" = "Camera permission required";
+"scan_menu" = "Scan Menu";
+"take_photo" = "Take Photo";
+"choose_from_library" = "Choose from Library";
+"processing_image" = "Processing image...";
+
+/* Biometric */
+"biometric_login" = "Login with Biometrics";
+"enable_biometric" = "Enable Biometric Login";
+"face_id" = "Face ID";
+"touch_id" = "Touch ID";

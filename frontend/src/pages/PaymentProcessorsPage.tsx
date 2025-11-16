@@ -15,8 +15,6 @@ interface PaymentProcessor {
 export default function PaymentProcessorsPage() {
   const [processors, setProcessors] = useState<PaymentProcessor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState<string>('');
 
   useEffect(() => {
     loadProcessors();
