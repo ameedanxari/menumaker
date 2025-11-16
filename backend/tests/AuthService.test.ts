@@ -1,6 +1,5 @@
 import { AuthService } from '../src/services/AuthService';
 import { AppDataSource } from '../src/config/database';
-import { User } from '../src/models/User';
 import bcrypt from 'bcrypt';
 
 // Mock dependencies

@@ -130,7 +130,7 @@ describe('OrderService', () => {
 
       mockOrderRepository.create.mockReturnValue(mockOrder);
       mockOrderRepository.save.mockResolvedValue(mockOrder);
-      mockOrderItemRepository.create.mockImplementation((data) => data);
+      mockOrderItemRepository.create.mockImplementation((data: any) => data);
       mockOrderItemRepository.save.mockResolvedValue({});
 
       const result = await orderService.createOrder(orderData);
@@ -260,7 +260,7 @@ describe('OrderService', () => {
       });
       mockOrderRepository.find.mockResolvedValue(mockOrders);
 
-      const result = await orderService.getOrdersByBusiness(businessId, userId);
+      const result = await orderService.getBusinessOrders(businessId, userId);
 
       expect(result).toHaveLength(2);
     });
@@ -276,7 +276,7 @@ describe('OrderService', () => {
       });
       mockOrderRepository.find.mockResolvedValue([]);
 
-      await orderService.getOrdersByBusiness(businessId, userId, status);
+      await orderService.getBusinessOrders(businessId, userId, status);
 
       expect(mockOrderRepository.find).toHaveBeenCalledWith({
         where: { business_id: businessId, order_status: status },
@@ -286,49 +286,62 @@ describe('OrderService', () => {
     });
   });
 
-  describe('updateOrderStatus', () => {
+  describe('updateOrder', () => {
     it('should update order status', async () => {
       const orderId = 'order-id';
       const userId = 'user-id';
-      const newStatus = 'confirmed';
+      const updateData = { order_status: 'confirmed' as const };
 
       const mockOrder = {
         id: orderId,
         business_id: 'business-id',
         order_status: 'pending',
-        business: { owner_id: userId },
+      };
+
+      const mockBusiness = {
+        id: 'business-id',
+        owner_id: userId,
       };
 
       mockOrderRepository.findOne.mockResolvedValue(mockOrder);
+      mockBusinessRepository.findOne.mockResolvedValue(mockBusiness);
       mockOrderRepository.save.mockResolvedValue({
         ...mockOrder,
-        order_status: newStatus,
+        order_status: updateData.order_status,
       });
 
-      const result = await orderService.updateOrderStatus(orderId, userId, newStatus);
+      const result = await orderService.updateOrder(orderId, userId, updateData);
 
-      expect(result.order_status).toBe(newStatus);
+      expect(result.order_status).toBe('confirmed');
     });
 
     it('should set fulfilled_at when status is fulfilled', async () => {
       const orderId = 'order-id';
       const userId = 'user-id';
+      const updateData = { order_status: 'fulfilled' as const };
 
       const mockOrder = {
         id: orderId,
         business_id: 'business-id',
         order_status: 'ready',
-        business: { owner_id: userId },
+      };
+
+      const mockBusiness = {
+        id: 'business-id',
+        owner_id: userId,
+      };
+
+      const updatedOrder = {
+        ...mockOrder,
+        order_status: 'fulfilled' as const,
+        fulfilled_at: new Date(),
       };
 
       mockOrderRepository.findOne.mockResolvedValue(mockOrder);
-      mockOrderRepository.save.mockResolvedValue({
-        ...mockOrder,
-        order_status: 'fulfilled',
-        fulfilled_at: new Date(),
-      });
+      mockBusinessRepository.findOne.mockResolvedValue(mockBusiness);
+      mockOrderRepository.save.mockResolvedValue(updatedOrder);
 
-      const result = await orderService.updateOrderStatus(orderId, userId, 'fulfilled');
+      const result = await orderService.updateOrder(orderId, userId, updateData);
 
       expect(result.fulfilled_at).toBeDefined();
     });

@@ -12,6 +12,7 @@ export async function requestLogger(
   const startTime = Date.now();
 
   // Add response hook to log when request completes
+  // @ts-ignore - addHook on reply is non-standard but works
   reply.addHook('onSend', async (_request: FastifyRequest, _reply: FastifyReply) => {
     const duration = Date.now() - startTime;
     const context = getRequestContext(request);

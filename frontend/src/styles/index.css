@@ -8,7 +8,7 @@
   }
 
   * {
-    @apply border-border;
+    border-color: theme('colors.border.DEFAULT');
   }
 
   body {

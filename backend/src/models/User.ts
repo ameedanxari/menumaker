@@ -21,6 +21,12 @@ export class User {
   @Column({ type: 'varchar', length: 500 })
   password_hash!: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  full_name?: string;
+
+  @Column({ type: 'varchar', length: 2048, nullable: true })
+  profile_photo_url?: string;
+
   @CreateDateColumn()
   created_at!: Date;
 

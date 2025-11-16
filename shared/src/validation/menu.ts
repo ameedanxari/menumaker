@@ -1,15 +1,17 @@
 import { z } from 'zod';
 
-export const MenuCreateSchema = z.object({
+const MenuBaseSchema = z.object({
   title: z.string().min(1, 'Menu title required').max(255),
   start_date: z.string().or(z.date()).transform((val) => new Date(val)),
   end_date: z.string().or(z.date()).transform((val) => new Date(val)),
-}).refine(data => data.end_date > data.start_date, {
+});
+
+export const MenuCreateSchema = MenuBaseSchema.refine(data => data.end_date > data.start_date, {
   message: 'End date must be after start date',
   path: ['end_date'],
 });
 
-export const MenuUpdateSchema = MenuCreateSchema.partial();
+export const MenuUpdateSchema = MenuBaseSchema.partial();
 
 export const MenuItemSchema = z.object({
   dish_id: z.string().uuid('Invalid dish ID'),

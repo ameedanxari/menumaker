@@ -159,10 +159,11 @@ export class OrderService {
         const error = new Error(`The following dishes are currently unavailable: ${dishNames}`) as Error & {
           statusCode: number;
           code: string;
-          details: { unavailableDishes: unavailableDishes.map(d => ({ id: d.id, name: d.name })) };
+          details?: { unavailableDishes: Array<{ id: string; name: string }> };
         };
         error.statusCode = 400;
         error.code = 'DISHES_UNAVAILABLE';
+        error.details = { unavailableDishes: unavailableDishes.map(d => ({ id: d.id, name: d.name })) };
         throw error;
       }
 

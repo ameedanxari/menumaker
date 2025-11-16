@@ -58,6 +58,9 @@ export class Dish {
   @Column({ type: 'simple-array', default: '' })
   image_urls!: string[];
 
+  @Column({ type: 'jsonb', nullable: true })
+  metadata?: Record<string, any>;
+
   @Column({ type: 'boolean', default: true })
   is_available!: boolean;
 

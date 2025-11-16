@@ -119,42 +119,33 @@ describe('BusinessService', () => {
     });
   });
 
-  describe('getBusinessesByUser', () => {
-    it('should return all businesses for a user', async () => {
+  describe('getUserBusiness', () => {
+    it('should return business for a user', async () => {
       const userId = 'user-id';
-      const mockBusinesses = [
-        {
-          id: 'business-1',
-          owner_id: userId,
-          name: 'Restaurant 1',
-          settings: {},
-        },
-        {
-          id: 'business-2',
-          owner_id: userId,
-          name: 'Restaurant 2',
-          settings: {},
-        },
-      ];
+      const mockBusiness = {
+        id: 'business-1',
+        owner_id: userId,
+        name: 'Restaurant 1',
+        settings: {},
+      };
 
-      mockBusinessRepository.find.mockResolvedValue(mockBusinesses);
+      mockBusinessRepository.findOne.mockResolvedValue(mockBusiness);
 
-      const result = await businessService.getBusinessesByUser(userId);
+      const result = await businessService.getUserBusiness(userId);
 
-      expect(mockBusinessRepository.find).toHaveBeenCalledWith({
+      expect(mockBusinessRepository.findOne).toHaveBeenCalledWith({
         where: { owner_id: userId },
         relations: ['settings'],
       });
-      expect(result).toHaveLength(2);
-      expect(result).toEqual(mockBusinesses);
+      expect(result).toEqual(mockBusiness);
     });
 
-    it('should return empty array if user has no businesses', async () => {
-      mockBusinessRepository.find.mockResolvedValue([]);
+    it('should return null if user has no businesses', async () => {
+      mockBusinessRepository.findOne.mockResolvedValue(null);
 
-      const result = await businessService.getBusinessesByUser('user-id');
+      const result = await businessService.getUserBusiness('user-id');
 
-      expect(result).toEqual([]);
+      expect(result).toBeNull();
     });
   });
 
@@ -237,8 +228,8 @@ describe('BusinessService', () => {
       const businessId = 'business-id';
       const userId = 'user-id';
       const settingsUpdate = {
-        delivery_enabled: true,
-        delivery_fee_flat_cents: 500,
+        delivery_type: 'flat' as const,
+        delivery_fee_cents: 500,
       };
 
       const mockBusiness = {
@@ -249,8 +240,8 @@ describe('BusinessService', () => {
       const mockSettings = {
         id: 'settings-id',
         business_id: businessId,
-        delivery_enabled: false,
-        delivery_fee_flat_cents: 0,
+        delivery_type: 'free' as const,
+        delivery_fee_cents: 0,
       };
 
       mockBusinessRepository.findOne.mockResolvedValue(mockBusiness);
@@ -266,8 +257,8 @@ describe('BusinessService', () => {
         settingsUpdate
       );
 
-      expect(result.delivery_enabled).toBe(true);
-      expect(result.delivery_fee_flat_cents).toBe(500);
+      expect(result.delivery_type).toBe('flat');
+      expect(result.delivery_fee_cents).toBe(500);
     });
   });
 });
