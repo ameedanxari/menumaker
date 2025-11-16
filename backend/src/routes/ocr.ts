@@ -223,9 +223,11 @@ export default async function ocrRoutes(fastify: FastifyInstance) {
               ? categoryMap.get(extractedDish.category)
               : undefined,
             is_available: true,
-            is_vegetarian: extractedDish.is_vegetarian ?? true,
-            is_vegan: extractedDish.is_vegan ?? false,
-            allergen_info: extractedDish.allergens?.join(', ') || '',
+            allergen_tags: extractedDish.allergens || [],
+            metadata: {
+              is_vegetarian: extractedDish.is_vegetarian ?? true,
+              is_vegan: extractedDish.is_vegan ?? false,
+            },
           });
 
           await dishRepo.save(dish);

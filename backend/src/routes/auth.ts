@@ -30,6 +30,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
     }
 
     // Don't return password hash
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash, ...userWithoutPassword } = user;
 
     reply.status(201).send({
@@ -48,6 +49,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
     const { user, tokens } = await authService.login(data.email, data.password);
 
     // Don't return password hash
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash, ...userWithoutPassword } = user;
 
     reply.send({
@@ -66,6 +68,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
     const user = await authService.getCurrentUser(request.user!.userId);
 
     // Don't return password hash
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash, ...userWithoutPassword } = user;
 
     reply.send({

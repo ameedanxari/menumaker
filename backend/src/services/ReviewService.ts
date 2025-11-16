@@ -74,9 +74,9 @@ export class ReviewService {
       throw new Error('You can only review your own orders');
     }
 
-    // Verify order is completed
-    if (order.status !== 'completed') {
-      throw new Error('Can only review completed orders');
+    // Verify order is fulfilled
+    if (order.status !== 'fulfilled') {
+      throw new Error('Can only review fulfilled orders');
     }
 
     // Check if review already exists
@@ -487,8 +487,8 @@ export class ReviewService {
       return { can_review: false, reason: 'Not your order' };
     }
 
-    if (order.status !== 'completed') {
-      return { can_review: false, reason: 'Order not completed yet' };
+    if (order.status !== 'fulfilled') {
+      return { can_review: false, reason: 'Order not fulfilled yet' };
     }
 
     // Check if already reviewed

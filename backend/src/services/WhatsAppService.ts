@@ -3,7 +3,6 @@ import { AppDataSource } from '../config/database.js';
 import { OrderNotification } from '../models/OrderNotification.js';
 import { Order } from '../models/Order.js';
 import { Business } from '../models/Business.js';
-import { BusinessSettings } from '../models/BusinessSettings.js';
 
 // Environment variables
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || '';
@@ -25,7 +24,7 @@ if (WHATSAPP_ENABLED && TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN) {
  * Message Templates
  */
 const MESSAGE_TEMPLATES = {
-  NEW_ORDER_SELLER: (order: Order, businessName: string): string => {
+  NEW_ORDER_SELLER: (order: Order, _businessName: string): string => {
     const items = order.items
       .map((item) => `${item.dish?.name || 'Item'} × ${item.quantity}`)
       .join(', ');
@@ -57,7 +56,7 @@ const MESSAGE_TEMPLATES = {
       `Track order: ${process.env.FRONTEND_URL}/orders/${order.id}`;
   },
 
-  PAYMENT_RECEIVED: (order: Order, businessName: string): string => {
+  PAYMENT_RECEIVED: (order: Order, _businessName: string): string => {
     const amount = `Rs. ${(order.total_amount_cents / 100).toFixed(2)}`;
 
     return `💰 *Payment Received*\n\n` +

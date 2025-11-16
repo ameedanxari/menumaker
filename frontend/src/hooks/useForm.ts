@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import {
   ValidationRules,
   validateForm,
+  validateField,
   hasErrors as checkHasErrors,
 } from '../utils/validation';
 
@@ -57,8 +58,7 @@ export function useForm<T extends Record<string, any>>({
       // Validate on change if enabled and field is touched
       if (validateOnChange && touched[field] && validationRules[field]) {
         const rules = validationRules[field]!;
-        const fieldValidation = require('../utils/validation').validateField;
-        const error = fieldValidation(value, rules);
+        const error = validateField(value, rules);
         setErrors((prev) => ({ ...prev, [field]: error }));
       }
     },
@@ -82,8 +82,7 @@ export function useForm<T extends Record<string, any>>({
       // Validate on blur if enabled
       if (isTouched && validateOnBlur && validationRules[field]) {
         const rules = validationRules[field]!;
-        const fieldValidation = require('../utils/validation').validateField;
-        const error = fieldValidation(values[field], rules);
+        const error = validateField(values[field], rules);
         setErrors((prev) => ({ ...prev, [field]: error }));
       }
     },

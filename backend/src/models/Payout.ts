@@ -7,6 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
   Index,
+  Relation,
 } from 'typeorm';
 import { Business } from './Business.js';
 import { PaymentProcessor } from './PaymentProcessor.js';
@@ -39,7 +40,7 @@ export class Payout {
 
   @ManyToOne(() => Business, (business) => business.payouts, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'business_id' })
-  business!: Business;
+  business!: Relation<Business>;
 
   @Column({ type: 'uuid' })
   business_id!: string;
@@ -53,7 +54,7 @@ export class Payout {
 
   @ManyToOne(() => PaymentProcessor, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'payment_processor_id' })
-  payment_processor?: PaymentProcessor;
+  payment_processor?: Relation<PaymentProcessor>;
 
   /**
    * Payout period (date range of included payments)

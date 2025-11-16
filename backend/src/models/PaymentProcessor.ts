@@ -6,6 +6,7 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Relation,
 } from 'typeorm';
 import { Business } from './Business.js';
 
@@ -35,7 +36,7 @@ export class PaymentProcessor {
 
   @ManyToOne(() => Business, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'business_id' })
-  business!: Business;
+  business!: Relation<Business>;
 
   /**
    * Processor type

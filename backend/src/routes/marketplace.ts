@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { authenticate } from '../middleware/auth.js';
 import { MarketplaceService, MarketplaceSearchFilters } from '../services/MarketplaceService.js';
+import { Business } from '../models/Business.js';
 
 /**
  * Marketplace Routes
@@ -41,30 +42,26 @@ export async function marketplaceRoutes(fastify: FastifyInstance): Promise<void>
       offset?: number;
     };
   }>('/search', async (request, reply) => {
-    try {
-      const filters: MarketplaceSearchFilters = {
-        cuisine_types: request.query.cuisine_types
-          ? request.query.cuisine_types.split(',')
-          : undefined,
-        min_rating: request.query.min_rating,
-        city: request.query.city,
-        state: request.query.state,
-        search_query: request.query.search_query,
-        is_featured: request.query.is_featured,
-        sort_by: request.query.sort_by,
-        limit: request.query.limit,
-        offset: request.query.offset,
-      };
+    const filters: MarketplaceSearchFilters = {
+      cuisine_types: request.query.cuisine_types
+        ? request.query.cuisine_types.split(',')
+        : undefined,
+      min_rating: request.query.min_rating,
+      city: request.query.city,
+      state: request.query.state,
+      search_query: request.query.search_query,
+      is_featured: request.query.is_featured,
+      sort_by: request.query.sort_by,
+      limit: request.query.limit,
+      offset: request.query.offset,
+    };
 
-      const result = await marketplaceService.searchSellers(filters);
+    const result = await marketplaceService.searchSellers(filters);
 
-      reply.send({
-        success: true,
-        data: result,
-      });
-    } catch (error) {
-      throw error;
-    }
+    reply.send({
+      success: true,
+      data: result,
+    });
   });
 
   /**
@@ -74,17 +71,13 @@ export async function marketplaceRoutes(fastify: FastifyInstance): Promise<void>
   fastify.get<{
     Querystring: { limit?: number };
   }>('/featured', async (request, reply) => {
-    try {
-      const limit = request.query.limit || 10;
-      const sellers = await marketplaceService.getFeaturedSellers(limit);
+    const limit = request.query.limit || 10;
+    const sellers = await marketplaceService.getFeaturedSellers(limit);
 
-      reply.send({
-        success: true,
-        data: { sellers },
-      });
-    } catch (error) {
-      throw error;
-    }
+    reply.send({
+      success: true,
+      data: { sellers },
+    });
   });
 
   /**
@@ -92,16 +85,12 @@ export async function marketplaceRoutes(fastify: FastifyInstance): Promise<void>
    * Get available cuisine types
    */
   fastify.get('/cuisines', async (request, reply) => {
-    try {
-      const cuisines = await marketplaceService.getAvailableCuisines();
+    const cuisines = await marketplaceService.getAvailableCuisines();
 
-      reply.send({
-        success: true,
-        data: { cuisines },
-      });
-    } catch (error) {
-      throw error;
-    }
+    reply.send({
+      success: true,
+      data: { cuisines },
+    });
   });
 
   /**
@@ -109,16 +98,12 @@ export async function marketplaceRoutes(fastify: FastifyInstance): Promise<void>
    * Get available locations (cities)
    */
   fastify.get('/locations', async (request, reply) => {
-    try {
-      const locations = await marketplaceService.getAvailableLocations();
+    const locations = await marketplaceService.getAvailableLocations();
 
-      reply.send({
-        success: true,
-        data: locations,
-      });
-    } catch (error) {
-      throw error;
-    }
+    reply.send({
+      success: true,
+      data: locations,
+    });
   });
 
   /**
@@ -128,42 +113,38 @@ export async function marketplaceRoutes(fastify: FastifyInstance): Promise<void>
   fastify.get<{
     Params: { businessId: string };
   }>('/seller/:businessId', async (request, reply) => {
-    try {
-      const { businessId } = request.params;
+    const { businessId } = request.params;
 
-      const profile = await marketplaceService.getSellerProfile(businessId);
+    const profile = await marketplaceService.getSellerProfile(businessId);
 
-      if (!profile) {
-        return reply.status(404).send({
-          success: false,
-          error: {
-            code: 'SELLER_NOT_FOUND',
-            message: 'Seller not found in marketplace',
-          },
-        });
-      }
-
-      // Check if seller is discoverable
-      if (!profile.settings.is_discoverable) {
-        return reply.status(403).send({
-          success: false,
-          error: {
-            code: 'SELLER_NOT_DISCOVERABLE',
-            message: 'This seller has opted out of marketplace discovery',
-          },
-        });
-      }
-
-      // Track impression
-      await marketplaceService.trackImpression(businessId);
-
-      reply.send({
-        success: true,
-        data: profile,
+    if (!profile) {
+      return reply.status(404).send({
+        success: false,
+        error: {
+          code: 'SELLER_NOT_FOUND',
+          message: 'Seller not found in marketplace',
+        },
       });
-    } catch (error) {
-      throw error;
     }
+
+    // Check if seller is discoverable
+    if (!profile.settings.is_discoverable) {
+      return reply.status(403).send({
+        success: false,
+        error: {
+          code: 'SELLER_NOT_DISCOVERABLE',
+          message: 'This seller has opted out of marketplace discovery',
+        },
+      });
+    }
+
+    // Track impression
+    await marketplaceService.trackImpression(businessId);
+
+    reply.send({
+      success: true,
+      data: profile,
+    });
   });
 
   /**
@@ -178,33 +159,30 @@ export async function marketplaceRoutes(fastify: FastifyInstance): Promise<void>
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const { businessId } = request.params;
+      const { businessId } = request.params;
 
-        // Verify business ownership
-        const business = await fastify.orm.manager.findOne('Business', {
-          where: { id: businessId },
+      // Verify business ownership
+      const business = await fastify.orm.manager.findOne(Business, {
+        where: { id: businessId },
+        select: ['id', 'owner_id'],
+      });
+
+      if (!business || business.owner_id !== request.user!.userId) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to view these settings',
+          },
         });
-
-        if (!business || business.owner_id !== request.user!.userId) {
-          return reply.status(403).send({
-            success: false,
-            error: {
-              code: 'FORBIDDEN',
-              message: 'You do not have permission to view these settings',
-            },
-          });
-        }
-
-        const settings = await marketplaceService.getSettings(businessId);
-
-        reply.send({
-          success: true,
-          data: { settings },
-        });
-      } catch (error) {
-        throw error;
       }
+
+      const settings = await marketplaceService.getSettings(businessId);
+
+      reply.send({
+        success: true,
+        data: { settings },
+      });
     }
   );
 
@@ -234,35 +212,32 @@ export async function marketplaceRoutes(fastify: FastifyInstance): Promise<void>
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const { businessId } = request.params;
-        const updates = request.body;
+      const { businessId } = request.params;
+      const updates = request.body;
 
-        // Verify business ownership
-        const business = await fastify.orm.manager.findOne('Business', {
-          where: { id: businessId },
+      // Verify business ownership
+      const business = await fastify.orm.manager.findOne(Business, {
+        where: { id: businessId },
+        select: ['id', 'owner_id'],
+      });
+
+      if (!business || business.owner_id !== request.user!.userId) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to update these settings',
+          },
         });
-
-        if (!business || business.owner_id !== request.user!.userId) {
-          return reply.status(403).send({
-            success: false,
-            error: {
-              code: 'FORBIDDEN',
-              message: 'You do not have permission to update these settings',
-            },
-          });
-        }
-
-        const settings = await marketplaceService.updateSettings(businessId, updates);
-
-        reply.send({
-          success: true,
-          data: { settings },
-          message: 'Marketplace settings updated successfully',
-        });
-      } catch (error) {
-        throw error;
       }
+
+      const settings = await marketplaceService.updateSettings(businessId, updates);
+
+      reply.send({
+        success: true,
+        data: { settings },
+        message: 'Marketplace settings updated successfully',
+      });
     }
   );
 
@@ -282,48 +257,45 @@ export async function marketplaceRoutes(fastify: FastifyInstance): Promise<void>
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const { businessId } = request.params;
-        const { startDate, endDate } = request.query;
+      const { businessId } = request.params;
+      const { startDate, endDate } = request.query;
 
-        if (!startDate || !endDate) {
-          return reply.status(400).send({
-            success: false,
-            error: {
-              code: 'MISSING_PARAMETERS',
-              message: 'Start date and end date are required',
-            },
-          });
-        }
-
-        // Verify business ownership
-        const business = await fastify.orm.manager.findOne('Business', {
-          where: { id: businessId },
+      if (!startDate || !endDate) {
+        return reply.status(400).send({
+          success: false,
+          error: {
+            code: 'MISSING_PARAMETERS',
+            message: 'Start date and end date are required',
+          },
         });
-
-        if (!business || business.owner_id !== request.user!.userId) {
-          return reply.status(403).send({
-            success: false,
-            error: {
-              code: 'FORBIDDEN',
-              message: 'You do not have permission to view these analytics',
-            },
-          });
-        }
-
-        const analytics = await marketplaceService.getAnalytics(
-          businessId,
-          new Date(startDate),
-          new Date(endDate)
-        );
-
-        reply.send({
-          success: true,
-          data: { analytics },
-        });
-      } catch (error) {
-        throw error;
       }
+
+      // Verify business ownership
+      const business = await fastify.orm.manager.findOne(Business, {
+        where: { id: businessId },
+        select: ['id', 'owner_id'],
+      });
+
+      if (!business || business.owner_id !== request.user!.userId) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to view these analytics',
+          },
+        });
+      }
+
+      const analytics = await marketplaceService.getAnalytics(
+        businessId,
+        new Date(startDate),
+        new Date(endDate)
+      );
+
+      reply.send({
+        success: true,
+        data: { analytics },
+        });
     }
   );
 
@@ -340,10 +312,10 @@ export async function marketplaceRoutes(fastify: FastifyInstance): Promise<void>
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const { businessId } = request.params;
-        const { notes } = request.body;
+      const { businessId } = request.params;
+      const { notes } = request.body;
 
+      try {
         const favorite = await marketplaceService.addToFavorites(
           request.user!.userId,
           businessId,
@@ -382,18 +354,14 @@ export async function marketplaceRoutes(fastify: FastifyInstance): Promise<void>
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const { businessId } = request.params;
+      const { businessId } = request.params;
 
-        await marketplaceService.removeFromFavorites(request.user!.userId, businessId);
+      await marketplaceService.removeFromFavorites(request.user!.userId, businessId);
 
-        reply.send({
-          success: true,
-          message: 'Business removed from favorites',
-        });
-      } catch (error) {
-        throw error;
-      }
+      reply.send({
+        success: true,
+        message: 'Business removed from favorites',
+      });
     }
   );
 
@@ -407,16 +375,12 @@ export async function marketplaceRoutes(fastify: FastifyInstance): Promise<void>
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const favorites = await marketplaceService.getFavorites(request.user!.userId);
+      const favorites = await marketplaceService.getFavorites(request.user!.userId);
 
-        reply.send({
-          success: true,
-          data: { favorites },
-        });
-      } catch (error) {
-        throw error;
-      }
+      reply.send({
+        success: true,
+        data: { favorites },
+      });
     }
   );
 
@@ -427,18 +391,14 @@ export async function marketplaceRoutes(fastify: FastifyInstance): Promise<void>
   fastify.post<{
     Params: { businessId: string };
   }>('/track/impression/:businessId', async (request, reply) => {
-    try {
-      const { businessId } = request.params;
+    const { businessId } = request.params;
 
-      await marketplaceService.trackImpression(businessId);
+    await marketplaceService.trackImpression(businessId);
 
-      reply.send({
-        success: true,
-        message: 'Impression tracked',
-      });
-    } catch (error) {
-      throw error;
-    }
+    reply.send({
+      success: true,
+      message: 'Impression tracked',
+    });
   });
 
   /**
@@ -448,17 +408,13 @@ export async function marketplaceRoutes(fastify: FastifyInstance): Promise<void>
   fastify.post<{
     Params: { businessId: string };
   }>('/track/click/:businessId', async (request, reply) => {
-    try {
-      const { businessId } = request.params;
+    const { businessId } = request.params;
 
-      await marketplaceService.trackMenuClick(businessId);
+    await marketplaceService.trackMenuClick(businessId);
 
-      reply.send({
-        success: true,
-        message: 'Click tracked',
-      });
-    } catch (error) {
-      throw error;
-    }
+    reply.send({
+      success: true,
+      message: 'Click tracked',
+    });
   });
 }

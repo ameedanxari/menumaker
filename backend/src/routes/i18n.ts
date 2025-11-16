@@ -7,6 +7,9 @@ import {
   isSupportedLocale,
   getLocaleFromHeader,
 } from '../config/i18n.js';
+import { Dish } from '../models/Dish.js';
+import { DishCategory } from '../models/DishCategory.js';
+import { Business } from '../models/Business.js';
 
 /**
  * i18n Routes
@@ -52,33 +55,30 @@ export async function i18nRoutes(fastify: FastifyInstance): Promise<void> {
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const { businessId } = request.params;
+      const { businessId } = request.params;
 
-        // Verify business ownership
-        const business = await fastify.orm.manager.findOne('Business', {
-          where: { id: businessId },
+      // Verify business ownership
+      const business = await fastify.orm.manager.findOne(Business, {
+        where: { id: businessId },
+        select: ['id', 'owner_id'],
+      });
+
+      if (!business || business.owner_id !== request.user!.userId) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to view these settings',
+          },
         });
-
-        if (!business || business.owner_id !== request.user!.userId) {
-          return reply.status(403).send({
-            success: false,
-            error: {
-              code: 'FORBIDDEN',
-              message: 'You do not have permission to view these settings',
-            },
-          });
-        }
-
-        const settings = await translationService.getBusinessLocaleSettings(businessId);
-
-        reply.send({
-          success: true,
-          data: { settings },
-        });
-      } catch (error) {
-        throw error;
       }
+
+      const settings = await translationService.getBusinessLocaleSettings(businessId);
+
+      reply.send({
+        success: true,
+        data: { settings },
+      });
     }
   );
 
@@ -107,8 +107,9 @@ export async function i18nRoutes(fastify: FastifyInstance): Promise<void> {
         const settings = request.body;
 
         // Verify business ownership
-        const business = await fastify.orm.manager.findOne('Business', {
+        const business = await fastify.orm.manager.findOne(Business, {
           where: { id: businessId },
+          select: ['id', 'owner_id'],
         });
 
         if (!business || business.owner_id !== request.user!.userId) {
@@ -168,7 +169,7 @@ export async function i18nRoutes(fastify: FastifyInstance): Promise<void> {
         const translations = request.body;
 
         // Verify dish ownership
-        const dish = await fastify.orm.manager.findOne('Dish', {
+        const dish = await fastify.orm.manager.findOne(Dish, {
           where: { id: dishId },
           relations: ['business'],
         });
@@ -239,7 +240,7 @@ export async function i18nRoutes(fastify: FastifyInstance): Promise<void> {
         const translations = request.body;
 
         // Verify category ownership
-        const category = await fastify.orm.manager.findOne('DishCategory', {
+        const category = await fastify.orm.manager.findOne(DishCategory, {
           where: { id: categoryId },
           relations: ['business'],
         });
@@ -301,54 +302,50 @@ export async function i18nRoutes(fastify: FastifyInstance): Promise<void> {
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const { dishId, locale } = request.params;
+      const { dishId, locale } = request.params;
 
-        if (!isSupportedLocale(locale)) {
-          return reply.status(400).send({
-            success: false,
-            error: {
-              code: 'INVALID_LOCALE',
-              message: `Unsupported locale: ${locale}`,
-            },
-          });
-        }
-
-        // Verify dish ownership
-        const dish = await fastify.orm.manager.findOne('Dish', {
-          where: { id: dishId },
-          relations: ['business'],
+      if (!isSupportedLocale(locale)) {
+        return reply.status(400).send({
+          success: false,
+          error: {
+            code: 'INVALID_LOCALE',
+            message: `Unsupported locale: ${locale}`,
+          },
         });
-
-        if (!dish) {
-          return reply.status(404).send({
-            success: false,
-            error: {
-              code: 'DISH_NOT_FOUND',
-              message: 'Dish not found',
-            },
-          });
-        }
-
-        if (dish.business.owner_id !== request.user!.userId) {
-          return reply.status(403).send({
-            success: false,
-            error: {
-              code: 'FORBIDDEN',
-              message: 'You do not have permission to update this dish',
-            },
-          });
-        }
-
-        await translationService.deleteDishTranslation(dishId, locale as SupportedLocale);
-
-        reply.send({
-          success: true,
-          message: 'Dish translation deleted successfully',
-        });
-      } catch (error) {
-        throw error;
       }
+
+      // Verify dish ownership
+      const dish = await fastify.orm.manager.findOne(Dish, {
+        where: { id: dishId },
+        relations: ['business'],
+      });
+
+      if (!dish) {
+        return reply.status(404).send({
+          success: false,
+          error: {
+            code: 'DISH_NOT_FOUND',
+            message: 'Dish not found',
+          },
+        });
+      }
+
+      if (dish.business.owner_id !== request.user!.userId) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to update this dish',
+          },
+        });
+      }
+
+      await translationService.deleteDishTranslation(dishId, locale as SupportedLocale);
+
+      reply.send({
+        success: true,
+        message: 'Dish translation deleted successfully',
+      });
     }
   );
 
@@ -364,57 +361,53 @@ export async function i18nRoutes(fastify: FastifyInstance): Promise<void> {
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const { categoryId, locale } = request.params;
+      const { categoryId, locale } = request.params;
 
-        if (!isSupportedLocale(locale)) {
-          return reply.status(400).send({
-            success: false,
-            error: {
-              code: 'INVALID_LOCALE',
-              message: `Unsupported locale: ${locale}`,
-            },
-          });
-        }
-
-        // Verify category ownership
-        const category = await fastify.orm.manager.findOne('DishCategory', {
-          where: { id: categoryId },
-          relations: ['business'],
+      if (!isSupportedLocale(locale)) {
+        return reply.status(400).send({
+          success: false,
+          error: {
+            code: 'INVALID_LOCALE',
+            message: `Unsupported locale: ${locale}`,
+          },
         });
-
-        if (!category) {
-          return reply.status(404).send({
-            success: false,
-            error: {
-              code: 'CATEGORY_NOT_FOUND',
-              message: 'Category not found',
-            },
-          });
-        }
-
-        if (category.business.owner_id !== request.user!.userId) {
-          return reply.status(403).send({
-            success: false,
-            error: {
-              code: 'FORBIDDEN',
-              message: 'You do not have permission to update this category',
-            },
-          });
-        }
-
-        await translationService.deleteCategoryTranslation(
-          categoryId,
-          locale as SupportedLocale
-        );
-
-        reply.send({
-          success: true,
-          message: 'Category translation deleted successfully',
-        });
-      } catch (error) {
-        throw error;
       }
+
+      // Verify category ownership
+      const category = await fastify.orm.manager.findOne(DishCategory, {
+        where: { id: categoryId },
+        relations: ['business'],
+      });
+
+      if (!category) {
+        return reply.status(404).send({
+          success: false,
+          error: {
+            code: 'CATEGORY_NOT_FOUND',
+            message: 'Category not found',
+          },
+        });
+      }
+
+      if (category.business.owner_id !== request.user!.userId) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to update this category',
+          },
+        });
+      }
+
+      await translationService.deleteCategoryTranslation(
+        categoryId,
+        locale as SupportedLocale
+      );
+
+      reply.send({
+        success: true,
+        message: 'Category translation deleted successfully',
+      });
     }
   );
 
@@ -460,21 +453,17 @@ export async function i18nRoutes(fastify: FastifyInstance): Promise<void> {
     Params: { businessId: string };
     Querystring: { locale?: string };
   }>('/dishes/business/:businessId', async (request, reply) => {
-    try {
-      const { businessId } = request.params;
-      const locale =
-        (request.query.locale as SupportedLocale) ||
-        getLocaleFromHeader(request.headers['accept-language']);
+    const { businessId } = request.params;
+    const locale =
+      (request.query.locale as SupportedLocale) ||
+      getLocaleFromHeader(request.headers['accept-language']);
 
-      const dishes = await translationService.getLocalizedDishes(businessId, locale);
+    const dishes = await translationService.getLocalizedDishes(businessId, locale);
 
-      reply.send({
-        success: true,
-        data: { dishes, locale },
-      });
-    } catch (error) {
-      throw error;
-    }
+    reply.send({
+      success: true,
+      data: { dishes, locale },
+    });
   });
 
   /**
@@ -485,23 +474,19 @@ export async function i18nRoutes(fastify: FastifyInstance): Promise<void> {
     Params: { businessId: string };
     Querystring: { locale?: string };
   }>('/categories/business/:businessId', async (request, reply) => {
-    try {
-      const { businessId } = request.params;
-      const locale =
-        (request.query.locale as SupportedLocale) ||
-        getLocaleFromHeader(request.headers['accept-language']);
+    const { businessId } = request.params;
+    const locale =
+      (request.query.locale as SupportedLocale) ||
+      getLocaleFromHeader(request.headers['accept-language']);
 
-      const categories = await translationService.getLocalizedCategories(
-        businessId,
-        locale
-      );
+    const categories = await translationService.getLocalizedCategories(
+      businessId,
+      locale
+    );
 
-      reply.send({
-        success: true,
-        data: { categories, locale },
-      });
-    } catch (error) {
-      throw error;
-    }
+    reply.send({
+      success: true,
+      data: { categories, locale },
+    });
   });
 }

@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import UserNotifications
 import UIKit
 
@@ -27,10 +28,10 @@ class NotificationService: NSObject, ObservableObject {
                 )
 
                 if granted {
-                    await registerForRemoteNotifications()
+                    registerForRemoteNotifications()
                 }
 
-                await checkAuthorizationStatus()
+                checkAuthorizationStatus()
             } catch {
                 print("Notification authorization error: \(error)")
             }
@@ -44,8 +45,10 @@ class NotificationService: NSObject, ObservableObject {
         }
     }
 
-    private func registerForRemoteNotifications() async {
-        await UIApplication.shared.registerForRemoteNotifications()
+    private func registerForRemoteNotifications() {
+        DispatchQueue.main.async {
+            UIApplication.shared.registerForRemoteNotifications()
+        }
     }
 
     // MARK: - Device Token
@@ -109,7 +112,7 @@ class NotificationService: NSObject, ObservableObject {
 
     func setBadgeCount(_ count: Int) {
         Task {
-            try? await UIApplication.shared.setBadgeCount(count)
+            try? await notificationCenter.setBadgeCount(count)
         }
     }
 
@@ -163,9 +166,9 @@ class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        let userInfo = response.notification.request.content.userInfo
+        let userInfo = response.notification.request.content.userInfo as [AnyHashable: Any]
 
-        Task { @MainActor in
+        Task { @MainActor [userInfo] in
             handleNotificationTap(userInfo: userInfo)
             completionHandler()
         }

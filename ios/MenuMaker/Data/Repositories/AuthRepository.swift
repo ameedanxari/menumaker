@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 /// Authentication repository
 @MainActor

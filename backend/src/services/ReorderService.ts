@@ -1,7 +1,6 @@
 import { AppDataSource } from '../config/database.js';
 import { Order } from '../models/Order.js';
 import { SavedCart } from '../models/SavedCart.js';
-import { OrderItem } from '../models/OrderItem.js';
 import { MoreThan } from 'typeorm';
 
 /**

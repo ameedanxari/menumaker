@@ -1,7 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import { authenticate } from '../middleware/auth.js';
 import { POSSyncService } from '../services/POSSyncService.js';
-import { POSProvider, SyncStatus } from '../models/POSIntegration.js';
+import { POSProvider, SyncStatus, POSIntegration } from '../models/POSIntegration.js';
+import { Business } from '../models/Business.js';
+import { Order } from '../models/Order.js';
 
 /**
  * POS Integration Routes
@@ -38,62 +40,59 @@ export async function posRoutes(fastify: FastifyInstance): Promise<void> {
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const {
-          business_id,
-          provider,
-          access_token,
+      const {
+        business_id,
+        provider,
+        access_token,
+        refresh_token,
+        token_expires_at,
+        location_id,
+        merchant_id,
+      } = request.body;
+
+      if (!business_id || !provider || !access_token) {
+        return reply.status(400).send({
+          success: false,
+          error: {
+            code: 'MISSING_PARAMETERS',
+            message: 'Business ID, provider, and access token are required',
+          },
+        });
+      }
+
+      // Verify business ownership
+      const business = await fastify.orm.manager.findOne(Business, {
+        where: { id: business_id },
+        select: ['id', 'owner_id'],
+      });
+
+      if (!business || business.owner_id !== request.user!.userId) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to manage this business',
+          },
+        });
+      }
+
+      const integration = await posSyncService.createIntegration(
+        business_id,
+        provider,
+        access_token,
+        {
           refresh_token,
-          token_expires_at,
+          token_expires_at: token_expires_at ? new Date(token_expires_at) : undefined,
           location_id,
           merchant_id,
-        } = request.body;
-
-        if (!business_id || !provider || !access_token) {
-          return reply.status(400).send({
-            success: false,
-            error: {
-              code: 'MISSING_PARAMETERS',
-              message: 'Business ID, provider, and access token are required',
-            },
-          });
         }
+      );
 
-        // Verify business ownership
-        const business = await fastify.orm.manager.findOne('Business', {
-          where: { id: business_id },
-        });
-
-        if (!business || business.owner_id !== request.user!.userId) {
-          return reply.status(403).send({
-            success: false,
-            error: {
-              code: 'FORBIDDEN',
-              message: 'You do not have permission to manage this business',
-            },
-          });
-        }
-
-        const integration = await posSyncService.createIntegration(
-          business_id,
-          provider,
-          access_token,
-          {
-            refresh_token,
-            token_expires_at: token_expires_at ? new Date(token_expires_at) : undefined,
-            location_id,
-            merchant_id,
-          }
-        );
-
-        reply.send({
-          success: true,
-          data: { integration },
-          message: `${provider} POS integration connected successfully`,
-        });
-      } catch (error) {
-        throw error;
-      }
+      reply.send({
+        success: true,
+        data: { integration },
+        message: `${provider} POS integration connected successfully`,
+      });
     }
   );
 
@@ -109,43 +108,40 @@ export async function posRoutes(fastify: FastifyInstance): Promise<void> {
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const { business_id } = request.body;
+      const { business_id } = request.body;
 
-        if (!business_id) {
-          return reply.status(400).send({
-            success: false,
-            error: {
-              code: 'MISSING_PARAMETERS',
-              message: 'Business ID is required',
-            },
-          });
-        }
-
-        // Verify business ownership
-        const business = await fastify.orm.manager.findOne('Business', {
-          where: { id: business_id },
+      if (!business_id) {
+        return reply.status(400).send({
+          success: false,
+          error: {
+            code: 'MISSING_PARAMETERS',
+            message: 'Business ID is required',
+          },
         });
-
-        if (!business || business.owner_id !== request.user!.userId) {
-          return reply.status(403).send({
-            success: false,
-            error: {
-              code: 'FORBIDDEN',
-              message: 'You do not have permission to manage this business',
-            },
-          });
-        }
-
-        await posSyncService.disconnectIntegration(business_id);
-
-        reply.send({
-          success: true,
-          message: 'POS integration disconnected successfully',
-        });
-      } catch (error) {
-        throw error;
       }
+
+      // Verify business ownership
+      const business = await fastify.orm.manager.findOne(Business, {
+        where: { id: business_id },
+        select: ['id', 'owner_id'],
+      });
+
+      if (!business || business.owner_id !== request.user!.userId) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to manage this business',
+          },
+        });
+      }
+
+      await posSyncService.disconnectIntegration(business_id);
+
+      reply.send({
+        success: true,
+        message: 'POS integration disconnected successfully',
+      });
     }
   );
 
@@ -161,58 +157,55 @@ export async function posRoutes(fastify: FastifyInstance): Promise<void> {
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const { businessId } = request.params;
+      const { businessId } = request.params;
 
-        // Verify business ownership
-        const business = await fastify.orm.manager.findOne('Business', {
-          where: { id: businessId },
+      // Verify business ownership
+      const business = await fastify.orm.manager.findOne(Business, {
+        where: { id: businessId },
+        select: ['id', 'owner_id'],
+      });
+
+      if (!business || business.owner_id !== request.user!.userId) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to view this integration',
+          },
         });
-
-        if (!business || business.owner_id !== request.user!.userId) {
-          return reply.status(403).send({
-            success: false,
-            error: {
-              code: 'FORBIDDEN',
-              message: 'You do not have permission to view this integration',
-            },
-          });
-        }
-
-        const integration = await posSyncService.getIntegration(businessId);
-
-        if (!integration) {
-          return reply.status(404).send({
-            success: false,
-            error: {
-              code: 'INTEGRATION_NOT_FOUND',
-              message: 'No active POS integration found',
-            },
-          });
-        }
-
-        // Don't return sensitive tokens
-        const safeIntegration = {
-          id: integration.id,
-          provider: integration.provider,
-          is_active: integration.is_active,
-          location_id: integration.location_id,
-          merchant_id: integration.merchant_id,
-          auto_sync_orders: integration.auto_sync_orders,
-          sync_customer_info: integration.sync_customer_info,
-          last_sync_at: integration.last_sync_at,
-          error_count: integration.error_count,
-          last_error: integration.last_error,
-          created_at: integration.created_at,
-        };
-
-        reply.send({
-          success: true,
-          data: { integration: safeIntegration },
-        });
-      } catch (error) {
-        throw error;
       }
+
+      const integration = await posSyncService.getIntegration(businessId);
+
+      if (!integration) {
+        return reply.status(404).send({
+          success: false,
+          error: {
+            code: 'INTEGRATION_NOT_FOUND',
+            message: 'No active POS integration found',
+          },
+        });
+      }
+
+      // Don't return sensitive tokens
+      const safeIntegration = {
+        id: integration.id,
+        provider: integration.provider,
+        is_active: integration.is_active,
+        location_id: integration.location_id,
+        merchant_id: integration.merchant_id,
+        auto_sync_orders: integration.auto_sync_orders,
+        sync_customer_info: integration.sync_customer_info,
+        last_sync_at: integration.last_sync_at,
+        error_count: integration.error_count,
+        last_error: integration.last_error,
+        created_at: integration.created_at,
+      };
+
+      reply.send({
+        success: true,
+        data: { integration: safeIntegration },
+      });
     }
   );
 
@@ -232,9 +225,9 @@ export async function posRoutes(fastify: FastifyInstance): Promise<void> {
         const { orderId } = request.params;
 
         // Get order to verify ownership
-        const order = await fastify.orm.manager.findOne('Order', {
+        const order = await fastify.orm.manager.findOne(Order, {
           where: { id: orderId },
-          relations: ['business'],
+          select: ['id', 'business_id'],
         });
 
         if (!order) {
@@ -248,7 +241,12 @@ export async function posRoutes(fastify: FastifyInstance): Promise<void> {
         }
 
         // Verify business ownership
-        if (order.business.owner_id !== request.user!.userId) {
+        const business = await fastify.orm.manager.findOne(Business, {
+          where: { id: order.business_id },
+          select: ['id', 'owner_id'],
+        });
+
+        if (!business || business.owner_id !== request.user!.userId) {
           return reply.status(403).send({
             success: false,
             error: {
@@ -297,43 +295,40 @@ export async function posRoutes(fastify: FastifyInstance): Promise<void> {
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const { businessId } = request.params;
-        const { limit, offset, status } = request.query;
+      const { businessId } = request.params;
+      const { limit, offset, status } = request.query;
 
-        // Verify business ownership
-        const business = await fastify.orm.manager.findOne('Business', {
-          where: { id: businessId },
-        });
+      // Verify business ownership
+      const business = await fastify.orm.manager.findOne(Business, {
+        where: { id: businessId },
+        select: ['id', 'owner_id'],
+      });
 
-        if (!business || business.owner_id !== request.user!.userId) {
-          return reply.status(403).send({
-            success: false,
-            error: {
-              code: 'FORBIDDEN',
-              message: 'You do not have permission to view this history',
-            },
-          });
-        }
-
-        const { logs, total } = await posSyncService.getSyncHistory(businessId, {
-          limit,
-          offset,
-          status,
-        });
-
-        reply.send({
-          success: true,
-          data: {
-            logs,
-            total,
-            limit: limit || 50,
-            offset: offset || 0,
+      if (!business || business.owner_id !== request.user!.userId) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to view this history',
           },
         });
-      } catch (error) {
-        throw error;
       }
+
+      const { logs, total } = await posSyncService.getSyncHistory(businessId, {
+        limit,
+        offset,
+        status,
+      });
+
+      reply.send({
+        success: true,
+        data: {
+          logs,
+          total,
+          limit: limit || 50,
+          offset: offset || 0,
+        },
+      });
     }
   );
 
@@ -349,33 +344,30 @@ export async function posRoutes(fastify: FastifyInstance): Promise<void> {
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const { businessId } = request.params;
+      const { businessId } = request.params;
 
-        // Verify business ownership
-        const business = await fastify.orm.manager.findOne('Business', {
-          where: { id: businessId },
+      // Verify business ownership
+      const business = await fastify.orm.manager.findOne(Business, {
+        where: { id: businessId },
+        select: ['id', 'owner_id'],
+      });
+
+      if (!business || business.owner_id !== request.user!.userId) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to view these statistics',
+          },
         });
-
-        if (!business || business.owner_id !== request.user!.userId) {
-          return reply.status(403).send({
-            success: false,
-            error: {
-              code: 'FORBIDDEN',
-              message: 'You do not have permission to view these statistics',
-            },
-          });
-        }
-
-        const stats = await posSyncService.getSyncStats(businessId);
-
-        reply.send({
-          success: true,
-          data: { stats },
-        });
-      } catch (error) {
-        throw error;
       }
+
+      const stats = await posSyncService.getSyncStats(businessId);
+
+      reply.send({
+        success: true,
+        data: { stats },
+      });
     }
   );
 }

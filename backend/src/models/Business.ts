@@ -8,6 +8,7 @@ import {
   OneToMany,
   OneToOne,
   JoinColumn,
+  Relation,
 } from 'typeorm';
 import { User } from './User.js';
 import { Dish } from './Dish.js';
@@ -24,7 +25,7 @@ export class Business {
 
   @ManyToOne(() => User, (user) => user.business, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'owner_id' })
-  owner!: User;
+  owner!: Relation<User>;
 
   @Column({ type: 'uuid' })
   owner_id!: string;
@@ -68,20 +69,20 @@ export class Business {
 
   // Relations
   @OneToMany(() => Dish, (dish) => dish.business, { cascade: true })
-  dishes?: Dish[];
+  dishes?: Relation<Dish[]>;
 
   @OneToMany(() => DishCategory, (category) => category.business, { cascade: true })
-  dish_categories?: DishCategory[];
+  dish_categories?: Relation<DishCategory[]>;
 
   @OneToMany(() => Menu, (menu) => menu.business, { cascade: true })
-  menus?: Menu[];
+  menus?: Relation<Menu[]>;
 
   @OneToMany(() => Order, (order) => order.business)
-  orders?: Order[];
+  orders?: Relation<Order[]>;
 
   @OneToMany(() => Payout, (payout) => payout.business)
-  payouts?: Payout[];
+  payouts?: Relation<Payout[]>;
 
   @OneToOne(() => BusinessSettings, (settings) => settings.business, { cascade: true })
-  settings?: BusinessSettings;
+  settings?: Relation<BusinessSettings>;
 }

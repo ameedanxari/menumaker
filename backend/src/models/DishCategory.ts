@@ -8,6 +8,7 @@ import {
   OneToMany,
   JoinColumn,
   Index,
+  Relation,
 } from 'typeorm';
 import { Business } from './Business.js';
 import { Dish } from './Dish.js';
@@ -43,7 +44,7 @@ export class DishCategory {
 
   @ManyToOne(() => Business, (business) => business.dish_categories, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'business_id' })
-  business!: Business;
+  business!: Relation<Business>;
 
   @Column({ type: 'uuid' })
   business_id!: string;
@@ -59,5 +60,5 @@ export class DishCategory {
 
   // Relations
   @OneToMany(() => Dish, (dish) => dish.category)
-  dishes?: Dish[];
+  dishes?: Relation<Dish[]>;
 }

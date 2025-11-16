@@ -1,7 +1,8 @@
 import { FastifyInstance } from 'fastify';
 import { authenticate } from '../middleware/auth.js';
 import { PaymentProcessorService } from '../services/PaymentProcessorService.js';
-import { ProcessorType } from '../models/PaymentProcessor.js';
+import { ProcessorType, PaymentProcessor } from '../models/PaymentProcessor.js';
+import { Business } from '../models/Business.js';
 
 /**
  * Payment Processor Routes
@@ -27,65 +28,62 @@ export async function paymentProcessorRoutes(fastify: FastifyInstance): Promise<
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const { businessId } = request.query as { businessId: string };
+      const { businessId } = request.query as { businessId: string };
 
-        if (!businessId) {
-          return reply.status(400).send({
-            success: false,
-            error: {
-              code: 'MISSING_BUSINESS_ID',
-              message: 'Business ID is required',
-            },
-          });
-        }
-
-        // Verify business ownership
-        const business = await fastify.orm.manager.findOne('Business', {
-          where: { id: businessId },
+      if (!businessId) {
+        return reply.status(400).send({
+          success: false,
+          error: {
+            code: 'MISSING_BUSINESS_ID',
+            message: 'Business ID is required',
+          },
         });
-
-        if (!business || business.owner_id !== request.user!.userId) {
-          return reply.status(403).send({
-            success: false,
-            error: {
-              code: 'FORBIDDEN',
-              message: 'You do not have permission to view these processors',
-            },
-          });
-        }
-
-        // Get all processors (active and inactive)
-        const processors = await fastify.orm.manager.find('PaymentProcessor', {
-          where: { business_id: businessId },
-          order: { priority: 'ASC' },
-        });
-
-        // Sanitize credentials (don't expose API keys)
-        const sanitizedProcessors = processors.map((p: any) => ({
-          id: p.id,
-          processor_type: p.processor_type,
-          status: p.status,
-          is_active: p.is_active,
-          priority: p.priority,
-          settlement_schedule: p.settlement_schedule,
-          min_payout_threshold_cents: p.min_payout_threshold_cents,
-          fee_percentage: p.fee_percentage,
-          fixed_fee_cents: p.fixed_fee_cents,
-          last_transaction_at: p.last_transaction_at,
-          verified_at: p.verified_at,
-          connection_error: p.connection_error,
-          metadata: p.metadata,
-          created_at: p.created_at,
-        }));
-
-        reply.send({
-          success: true,
-          data: { processors: sanitizedProcessors },
-        });
-      } catch (error) {
-        throw error;
       }
+
+      // Verify business ownership
+      const business = await fastify.orm.manager.findOne(Business, {
+        where: { id: businessId },
+        select: ['id', 'owner_id'],
+      });
+
+      if (!business || business.owner_id !== request.user!.userId) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to view these processors',
+          },
+        });
+      }
+
+      // Get all processors (active and inactive)
+      const processors = await fastify.orm.manager.find(PaymentProcessor, {
+        where: { business_id: businessId },
+        order: { priority: 'ASC' },
+      });
+
+      // Sanitize credentials (don't expose API keys)
+      const sanitizedProcessors = processors.map((p: any) => ({
+        id: p.id,
+        processor_type: p.processor_type,
+        status: p.status,
+        is_active: p.is_active,
+        priority: p.priority,
+        settlement_schedule: p.settlement_schedule,
+        min_payout_threshold_cents: p.min_payout_threshold_cents,
+        fee_percentage: p.fee_percentage,
+        fixed_fee_cents: p.fixed_fee_cents,
+        last_transaction_at: p.last_transaction_at,
+        verified_at: p.verified_at,
+        connection_error: p.connection_error,
+        metadata: p.metadata,
+        created_at: p.created_at,
+      }));
+
+      reply.send({
+        success: true,
+        data: { processors: sanitizedProcessors },
+      });
     }
   );
 
@@ -134,8 +132,9 @@ export async function paymentProcessorRoutes(fastify: FastifyInstance): Promise<
         }
 
         // Verify business ownership
-        const business = await fastify.orm.manager.findOne('Business', {
+        const business = await fastify.orm.manager.findOne(Business, {
           where: { id: businessId },
+          select: ['id', 'owner_id'],
         });
 
         if (!business || business.owner_id !== request.user!.userId) {
@@ -206,46 +205,42 @@ export async function paymentProcessorRoutes(fastify: FastifyInstance): Promise<
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const { id } = request.params;
+      const { id } = request.params;
 
-        // Get processor and verify ownership
-        const processor = await fastify.orm.manager.findOne('PaymentProcessor', {
-          where: { id },
-          relations: ['business'],
+      // Get processor and verify ownership
+      const processor = await fastify.orm.manager.findOne(PaymentProcessor, {
+        where: { id },
+        relations: ['business'],
+      });
+
+      if (!processor) {
+        return reply.status(404).send({
+          success: false,
+          error: {
+            code: 'PROCESSOR_NOT_FOUND',
+            message: 'Payment processor not found',
+          },
         });
-
-        if (!processor) {
-          return reply.status(404).send({
-            success: false,
-            error: {
-              code: 'PROCESSOR_NOT_FOUND',
-              message: 'Payment processor not found',
-            },
-          });
-        }
-
-        if (processor.business.owner_id !== request.user!.userId) {
-          return reply.status(403).send({
-            success: false,
-            error: {
-              code: 'FORBIDDEN',
-              message: 'You do not have permission to disconnect this processor',
-            },
-          });
-        }
-
-        // Disconnect
-        const updated = await processorService.disconnectProcessor(id);
-
-        reply.send({
-          success: true,
-          data: { processor: updated },
-          message: 'Processor disconnected successfully',
-        });
-      } catch (error) {
-        throw error;
       }
+
+      if (processor.business.owner_id !== request.user!.userId) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to disconnect this processor',
+          },
+        });
+      }
+
+      // Disconnect
+      const updated = await processorService.disconnectProcessor(id);
+
+      reply.send({
+        success: true,
+        data: { processor: updated },
+        message: 'Processor disconnected successfully',
+      });
     }
   );
 
@@ -261,74 +256,70 @@ export async function paymentProcessorRoutes(fastify: FastifyInstance): Promise<
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const { id } = request.params;
+      const { id } = request.params;
 
-        // Get processor and verify ownership
-        const processor = await fastify.orm.manager.findOne('PaymentProcessor', {
-          where: { id },
-          relations: ['business'],
+      // Get processor and verify ownership
+      const processor = await fastify.orm.manager.findOne(PaymentProcessor, {
+        where: { id },
+        relations: ['business'],
+      });
+
+      if (!processor) {
+        return reply.status(404).send({
+          success: false,
+          error: {
+            code: 'PROCESSOR_NOT_FOUND',
+            message: 'Payment processor not found',
+          },
         });
+      }
 
-        if (!processor) {
-          return reply.status(404).send({
-            success: false,
-            error: {
-              code: 'PROCESSOR_NOT_FOUND',
-              message: 'Payment processor not found',
-            },
-          });
-        }
+      if (processor.business.owner_id !== request.user!.userId) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to verify this processor',
+          },
+        });
+      }
 
-        if (processor.business.owner_id !== request.user!.userId) {
-          return reply.status(403).send({
-            success: false,
-            error: {
-              code: 'FORBIDDEN',
-              message: 'You do not have permission to verify this processor',
-            },
-          });
-        }
+      // Get processor service and verify credentials
+      const service = processorService['getProcessorService'](processor.processor_type);
+      const verification = await service.verifyCredentials(processor.credentials);
 
-        // Get processor service and verify credentials
-        const service = processorService['getProcessorService'](processor.processor_type);
-        const verification = await service.verifyCredentials(processor.credentials);
-
-        if (!verification.isValid) {
-          processor.status = 'failed';
-          processor.connection_error = verification.error || 'Verification failed';
-          await fastify.orm.manager.save(processor);
-
-          return reply.status(400).send({
-            success: false,
-            error: {
-              code: 'VERIFICATION_FAILED',
-              message: verification.error || 'Credential verification failed',
-            },
-          });
-        }
-
-        // Update processor
-        processor.status = 'active';
-        processor.verified_at = new Date();
-        processor.connection_error = null;
-        processor.metadata = {
-          ...processor.metadata,
-          ...verification.merchantInfo,
-        };
+      if (!verification.isValid) {
+        processor.status = 'failed';
+        processor.connection_error = verification.error || 'Verification failed';
         await fastify.orm.manager.save(processor);
 
-        reply.send({
-          success: true,
-          data: {
-            verified: true,
-            merchantInfo: verification.merchantInfo,
+        return reply.status(400).send({
+          success: false,
+          error: {
+            code: 'VERIFICATION_FAILED',
+            message: verification.error || 'Credential verification failed',
           },
-          message: 'Processor credentials verified successfully',
         });
-      } catch (error) {
-        throw error;
       }
+
+      // Update processor
+      processor.status = 'active';
+      processor.verified_at = new Date();
+      processor.connection_error = null;
+      processor.metadata = {
+        ...processor.metadata,
+        ...verification.merchantInfo,
+      };
+      await fastify.orm.manager.save(processor);
+
+      reply.send({
+        success: true,
+        data: {
+          verified: true,
+          merchantInfo: verification.merchantInfo,
+        },
+        message: 'Processor credentials verified successfully',
+      });
     }
   );
 
@@ -349,59 +340,56 @@ export async function paymentProcessorRoutes(fastify: FastifyInstance): Promise<
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const { businessId, startDate, endDate, format = 'json' } = request.query;
+      const { businessId, startDate, endDate, format = 'json' } = request.query;
 
-        if (!businessId || !startDate || !endDate) {
-          return reply.status(400).send({
-            success: false,
-            error: {
-              code: 'MISSING_PARAMETERS',
-              message: 'businessId, startDate, and endDate are required',
-            },
-          });
-        }
-
-        // Verify business ownership
-        const business = await fastify.orm.manager.findOne('Business', {
-          where: { id: businessId },
+      if (!businessId || !startDate || !endDate) {
+        return reply.status(400).send({
+          success: false,
+          error: {
+            code: 'MISSING_PARAMETERS',
+            message: 'businessId, startDate, and endDate are required',
+          },
         });
-
-        if (!business || business.owner_id !== request.user!.userId) {
-          return reply.status(403).send({
-            success: false,
-            error: {
-              code: 'FORBIDDEN',
-              message: 'You do not have permission to view reports for this business',
-            },
-          });
-        }
-
-        // Generate report
-        const report = await processorService.generateSettlementReport(
-          businessId,
-          new Date(startDate),
-          new Date(endDate)
-        );
-
-        if (format === 'csv') {
-          // Convert to CSV
-          const csv = this.convertReportToCSV(report);
-          reply.header('Content-Type', 'text/csv');
-          reply.header(
-            'Content-Disposition',
-            `attachment; filename="settlement-report-${startDate}-${endDate}.csv"`
-          );
-          return reply.send(csv);
-        }
-
-        reply.send({
-          success: true,
-          data: { report },
-        });
-      } catch (error) {
-        throw error;
       }
+
+      // Verify business ownership
+      const business = await fastify.orm.manager.findOne(Business, {
+        where: { id: businessId },
+        select: ['id', 'owner_id'],
+      });
+
+      if (!business || business.owner_id !== request.user!.userId) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to view reports for this business',
+          },
+        });
+      }
+
+      // Generate report
+      const report = await processorService.generateSettlementReport(
+        businessId,
+        new Date(startDate),
+        new Date(endDate)
+      );
+
+      if (format === 'csv') {
+        // Convert to CSV
+        const csv = convertReportToCSV(report);
+        reply.header('Content-Type', 'text/csv');
+        reply.header(
+          'Content-Disposition',
+          `attachment; filename="settlement-report-${startDate}-${endDate}.csv"`
+        );
+        return reply.send(csv);
+      }
+
+      reply.send({
+        success: true,
+        data: { report },
+      });
     }
   );
 

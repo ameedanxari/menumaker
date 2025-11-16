@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { ReorderService, SaveCartParams } from '../services/ReorderService.js';
+import { ReorderService} from '../services/ReorderService.js';
 
 /**
  * Re-order Routes (Phase 2.7)

@@ -1,4 +1,6 @@
 import Foundation
+import Combine
+import CoreLocation
 
 /// Marketplace repository
 @MainActor

@@ -1,7 +1,6 @@
 import { Client as MinioClient } from 'minio';
 import crypto from 'crypto';
 import path from 'path';
-
 export class MediaService {
   private minioClient: MinioClient;
   private bucketName: string;
@@ -117,7 +116,7 @@ export class MediaService {
     return `${protocol}://${endpoint}/${this.bucketName}/${fileName}`;
   }
 
-  async deleteFile(fileUrl: string, userId: string): Promise<void> {
+  async deleteFile(fileUrl: string, _userId: string): Promise<void> {
     try {
       // Security: Validate that the URL belongs to this bucket and is properly formatted
       const expectedPrefix = this.getPublicUrl('');

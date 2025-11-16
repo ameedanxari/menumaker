@@ -194,16 +194,12 @@ export const useMenuStore = create<MenuState>((set, _get) => ({
   },
 
   createCategory: async (businessId: string, name: string) => {
-    try {
-      const response = await api.createDishCategory(businessId, name);
+    const response = await api.createDishCategory(businessId, name);
 
-      if (response.success) {
-        set((state) => ({
-          categories: [...state.categories, response.data.category],
-        }));
-      }
-    } catch (error: any) {
-      throw error;
+    if (response.success) {
+      set((state) => ({
+        categories: [...state.categories, response.data.category],
+      }));
     }
   },
 
@@ -261,34 +257,13 @@ export const useMenuStore = create<MenuState>((set, _get) => ({
   },
 
   addDishToMenu: async (menuId: string, dishId: string, priceOverride?: number) => {
-    try {
-      const response = await api.addDishToMenu(
-        menuId,
-        dishId,
-        priceOverride ? Math.round(priceOverride * 100) : undefined
-      );
+    const response = await api.addDishToMenu(
+      menuId,
+      dishId,
+      priceOverride ? Math.round(priceOverride * 100) : undefined
+    );
 
-      if (response.success) {
-        // Refresh current menu
-        const menuResponse = await api.getMenuById(menuId);
-        if (menuResponse.success) {
-          set((state) => ({
-            currentMenu: menuResponse.data.menu,
-            menus: state.menus.map((m) =>
-              m.id === menuId ? menuResponse.data.menu : m
-            ),
-          }));
-        }
-      }
-    } catch (error: any) {
-      throw error;
-    }
-  },
-
-  removeDishFromMenu: async (menuId: string, dishId: string) => {
-    try {
-      await api.removeDishFromMenu(menuId, dishId);
-
+    if (response.success) {
       // Refresh current menu
       const menuResponse = await api.getMenuById(menuId);
       if (menuResponse.success) {
@@ -299,8 +274,21 @@ export const useMenuStore = create<MenuState>((set, _get) => ({
           ),
         }));
       }
-    } catch (error: any) {
-      throw error;
+    }
+  },
+
+  removeDishFromMenu: async (menuId: string, dishId: string) => {
+    await api.removeDishFromMenu(menuId, dishId);
+
+    // Refresh current menu
+    const menuResponse = await api.getMenuById(menuId);
+    if (menuResponse.success) {
+      set((state) => ({
+        currentMenu: menuResponse.data.menu,
+        menus: state.menus.map((m) =>
+          m.id === menuId ? menuResponse.data.menu : m
+        ),
+      }));
     }
   },
 

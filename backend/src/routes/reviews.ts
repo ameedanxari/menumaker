@@ -1,7 +1,8 @@
 import { FastifyInstance } from 'fastify';
 import { authenticate } from '../middleware/auth.js';
 import { ReviewService } from '../services/ReviewService.js';
-import { ReviewStatus } from '../models/Review.js';
+import { ReviewStatus, Review } from '../models/Review.js';
+import { Business } from '../models/Business.js';
 
 /**
  * Review Routes
@@ -86,39 +87,35 @@ export async function reviewRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get<{
     Params: { id: string };
   }>('/:id', async (request, reply) => {
-    try {
-      const { id } = request.params;
+    const { id } = request.params;
 
-      const review = await reviewService.getReview(id);
+    const review = await reviewService.getReview(id);
 
-      if (!review) {
-        return reply.status(404).send({
-          success: false,
-          error: {
-            code: 'REVIEW_NOT_FOUND',
-            message: 'Review not found',
-          },
-        });
-      }
-
-      // Only show public reviews to non-owners
-      if (!review.is_public && (!request.user || request.user.userId !== review.customer_id)) {
-        return reply.status(403).send({
-          success: false,
-          error: {
-            code: 'FORBIDDEN',
-            message: 'Review is not public',
-          },
-        });
-      }
-
-      reply.send({
-        success: true,
-        data: { review },
+    if (!review) {
+      return reply.status(404).send({
+        success: false,
+        error: {
+          code: 'REVIEW_NOT_FOUND',
+          message: 'Review not found',
+        },
       });
-    } catch (error) {
-      throw error;
     }
+
+    // Only show public reviews to non-owners
+    if (!review.is_public && (!request.user || request.user.userId !== review.customer_id)) {
+      return reply.status(403).send({
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Review is not public',
+        },
+      });
+    }
+
+    reply.send({
+      success: true,
+      data: { review },
+    });
   });
 
   /**
@@ -134,56 +131,53 @@ export async function reviewRoutes(fastify: FastifyInstance): Promise<void> {
       offset?: number;
     };
   }>('/business/:businessId', async (request, reply) => {
-    try {
-      const { businessId } = request.params;
-      const { status, includePrivate, limit, offset } = request.query;
+    const { businessId } = request.params;
+    const { status, includePrivate, limit, offset } = request.query;
 
-      // Verify business ownership for private reviews
-      if (includePrivate) {
-        if (!request.user) {
-          return reply.status(401).send({
-            success: false,
-            error: {
-              code: 'UNAUTHORIZED',
-              message: 'Authentication required',
-            },
-          });
-        }
-
-        const business = await fastify.orm.manager.findOne('Business', {
-          where: { id: businessId },
+    // Verify business ownership for private reviews
+    if (includePrivate) {
+      if (!request.user) {
+        return reply.status(401).send({
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Authentication required',
+          },
         });
-
-        if (!business || business.owner_id !== request.user.userId) {
-          return reply.status(403).send({
-            success: false,
-            error: {
-              code: 'FORBIDDEN',
-              message: 'You do not have permission to view private reviews',
-            },
-          });
-        }
       }
 
-      const { reviews, total } = await reviewService.getBusinessReviews(businessId, {
-        status,
-        includePrivate: includePrivate === true,
-        limit,
-        offset,
+      const business = await fastify.orm.manager.findOne(Business, {
+        where: { id: businessId },
+        select: ['id', 'owner_id'],
       });
 
-      reply.send({
-        success: true,
-        data: {
-          reviews,
-          total,
-          limit: limit || 50,
-          offset: offset || 0,
-        },
-      });
-    } catch (error) {
-      throw error;
+      if (!business || business.owner_id !== request.user.userId) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to view private reviews',
+          },
+        });
+      }
     }
+
+    const { reviews, total } = await reviewService.getBusinessReviews(businessId, {
+      status,
+      includePrivate: includePrivate === true,
+      limit,
+      offset,
+    });
+
+    reply.send({
+      success: true,
+      data: {
+        reviews,
+        total,
+        limit: limit || 50,
+        offset: offset || 0,
+      },
+    });
   });
 
   /**
@@ -198,33 +192,30 @@ export async function reviewRoutes(fastify: FastifyInstance): Promise<void> {
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const { businessId } = request.params;
+      const { businessId } = request.params;
 
-        // Verify business ownership
-        const business = await fastify.orm.manager.findOne('Business', {
-          where: { id: businessId },
+      // Verify business ownership
+      const business = await fastify.orm.manager.findOne(Business, {
+        where: { id: businessId },
+        select: ['id', 'owner_id'],
+      });
+
+      if (!business || business.owner_id !== request.user!.userId) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to view pending reviews',
+          },
         });
-
-        if (!business || business.owner_id !== request.user!.userId) {
-          return reply.status(403).send({
-            success: false,
-            error: {
-              code: 'FORBIDDEN',
-              message: 'You do not have permission to view pending reviews',
-            },
-          });
-        }
-
-        const reviews = await reviewService.getPendingReviews(businessId);
-
-        reply.send({
-          success: true,
-          data: { reviews },
-        });
-      } catch (error) {
-        throw error;
       }
+
+      const reviews = await reviewService.getPendingReviews(businessId);
+
+      reply.send({
+        success: true,
+        data: { reviews },
+      });
     }
   );
 
@@ -272,8 +263,9 @@ export async function reviewRoutes(fastify: FastifyInstance): Promise<void> {
         }
 
         // Verify business ownership
-        const business = await fastify.orm.manager.findOne('Business', {
+        const business = await fastify.orm.manager.findOne(Business, {
           where: { id: review.business_id },
+          select: ['id', 'owner_id'],
         });
 
         if (!business || business.owner_id !== request.user!.userId) {
@@ -357,8 +349,9 @@ export async function reviewRoutes(fastify: FastifyInstance): Promise<void> {
         }
 
         // Verify business ownership
-        const business = await fastify.orm.manager.findOne('Business', {
+        const business = await fastify.orm.manager.findOne(Business, {
           where: { id: review.business_id },
+          select: ['id', 'owner_id'],
         });
 
         if (!business || business.owner_id !== request.user!.userId) {
@@ -441,8 +434,9 @@ export async function reviewRoutes(fastify: FastifyInstance): Promise<void> {
         }
 
         // Verify business ownership
-        const business = await fastify.orm.manager.findOne('Business', {
+        const business = await fastify.orm.manager.findOne(Business, {
           where: { id: review.business_id },
+          select: ['id', 'owner_id'],
         });
 
         if (!business || business.owner_id !== request.user!.userId) {
@@ -488,18 +482,14 @@ export async function reviewRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get<{
     Params: { businessId: string };
   }>('/metrics/business/:businessId', async (request, reply) => {
-    try {
-      const { businessId } = request.params;
+    const { businessId } = request.params;
 
-      const metrics = await reviewService.getBusinessMetrics(businessId);
+    const metrics = await reviewService.getBusinessMetrics(businessId);
 
-      reply.send({
-        success: true,
-        data: { metrics },
-      });
-    } catch (error) {
-      throw error;
-    }
+    reply.send({
+      success: true,
+      data: { metrics },
+    });
   });
 
   /**
@@ -513,33 +503,29 @@ export async function reviewRoutes(fastify: FastifyInstance): Promise<void> {
       endDate: string;
     };
   }>('/trends/business/:businessId', async (request, reply) => {
-    try {
-      const { businessId } = request.params;
-      const { startDate, endDate } = request.query;
+    const { businessId } = request.params;
+    const { startDate, endDate } = request.query;
 
-      if (!startDate || !endDate) {
-        return reply.status(400).send({
-          success: false,
-          error: {
-            code: 'MISSING_PARAMETERS',
-            message: 'Start date and end date are required',
-          },
-        });
-      }
-
-      const trends = await reviewService.getReviewTrends(
-        businessId,
-        new Date(startDate),
-        new Date(endDate)
-      );
-
-      reply.send({
-        success: true,
-        data: { trends },
+    if (!startDate || !endDate) {
+      return reply.status(400).send({
+        success: false,
+        error: {
+          code: 'MISSING_PARAMETERS',
+          message: 'Start date and end date are required',
+        },
       });
-    } catch (error) {
-      throw error;
     }
+
+    const trends = await reviewService.getReviewTrends(
+      businessId,
+      new Date(startDate),
+      new Date(endDate)
+    );
+
+    reply.send({
+      success: true,
+      data: { trends },
+    });
   });
 
   /**
@@ -554,31 +540,27 @@ export async function reviewRoutes(fastify: FastifyInstance): Promise<void> {
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const { orderId } = request.params;
+      const { orderId } = request.params;
 
-        const review = await reviewService.getCustomerReviewForOrder(
-          orderId,
-          request.user!.userId
-        );
+      const review = await reviewService.getCustomerReviewForOrder(
+        orderId,
+        request.user!.userId
+      );
 
-        if (!review) {
-          return reply.status(404).send({
-            success: false,
-            error: {
-              code: 'REVIEW_NOT_FOUND',
-              message: 'No review found for this order',
-            },
-          });
-        }
-
-        reply.send({
-          success: true,
-          data: { review },
+      if (!review) {
+        return reply.status(404).send({
+          success: false,
+          error: {
+            code: 'REVIEW_NOT_FOUND',
+            message: 'No review found for this order',
+          },
         });
-      } catch (error) {
-        throw error;
       }
+
+      reply.send({
+        success: true,
+        data: { review },
+      });
     }
   );
 
@@ -594,18 +576,14 @@ export async function reviewRoutes(fastify: FastifyInstance): Promise<void> {
       preHandler: authenticate,
     },
     async (request, reply) => {
-      try {
-        const { orderId } = request.params;
+      const { orderId } = request.params;
 
-        const result = await reviewService.canCustomerReview(orderId, request.user!.userId);
+      const result = await reviewService.canCustomerReview(orderId, request.user!.userId);
 
-        reply.send({
-          success: true,
-          data: result,
-        });
-      } catch (error) {
-        throw error;
-      }
+      reply.send({
+        success: true,
+        data: result,
+      });
     }
   );
 }

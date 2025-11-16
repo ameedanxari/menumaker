@@ -6,6 +6,7 @@ import {
   ManyToOne,
   JoinColumn,
   Index,
+  Relation,
 } from 'typeorm';
 import { Menu } from './Menu.js';
 import { Dish } from './Dish.js';
@@ -18,14 +19,14 @@ export class MenuItem {
 
   @ManyToOne(() => Menu, (menu) => menu.menu_items, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'menu_id' })
-  menu!: Menu;
+  menu!: Relation<Menu>;
 
   @Column({ type: 'uuid' })
   menu_id!: string;
 
   @ManyToOne(() => Dish, (dish) => dish.menu_items)
   @JoinColumn({ name: 'dish_id' })
-  dish!: Dish;
+  dish!: Relation<Dish>;
 
   @Column({ type: 'uuid' })
   dish_id!: string;

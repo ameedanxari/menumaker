@@ -49,8 +49,8 @@ export class MenuService {
     const menu = this.menuRepository.create({
       business_id: businessId,
       title: data.title,
-      start_date: data.start_date,
-      end_date: data.end_date,
+      start_date: typeof data.start_date === 'string' ? new Date(data.start_date) : data.start_date,
+      end_date: typeof data.end_date === 'string' ? new Date(data.end_date) : data.end_date,
       status: 'draft',
       version: 0,
     });
@@ -121,7 +121,13 @@ export class MenuService {
     }
 
     // Update menu
-    Object.assign(menu, data);
+    if (data.title !== undefined) menu.title = data.title;
+    if (data.start_date !== undefined) {
+      menu.start_date = typeof data.start_date === 'string' ? new Date(data.start_date) : data.start_date;
+    }
+    if (data.end_date !== undefined) {
+      menu.end_date = typeof data.end_date === 'string' ? new Date(data.end_date) : data.end_date;
+    }
     menu.version += 1;
 
     await this.menuRepository.save(menu);
@@ -129,7 +135,7 @@ export class MenuService {
     return menu;
   }
 
-  async publishMenu(menuId: string, userId: string, data: MenuPublishInput): Promise<Menu> {
+  async publishMenu(menuId: string, userId: string, data: Omit<MenuPublishInput, 'items'> & { items: Array<{ dish_id: string; is_available?: boolean; position?: number; price_override_cents?: number }> }): Promise<Menu> {
     const menu = await this.getMenuById(menuId, false);
 
     // Verify business ownership

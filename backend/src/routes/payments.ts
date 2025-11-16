@@ -1,10 +1,11 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import { FastifyInstance} from 'fastify';
 import { StripeService } from '../services/StripeService.js';
 import { OrderService } from '../services/OrderService.js';
 import { PaymentProcessorService } from '../services/PaymentProcessorService.js';
 import { ProcessorType } from '../models/PaymentProcessor.js';
 import { authenticate } from '../middleware/auth.js';
 import { logSecurityEvent } from '../utils/logger.js';
+import { Business } from '../models/Business.js';
 
 export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
   const stripeService = new StripeService();
@@ -108,11 +109,7 @@ export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
       processor?: ProcessorType;
       processorId?: string;
     };
-  }>('/webhook-multi', {
-    config: {
-      rawBody: true,
-    },
-  }, async (request, reply) => {
+  }>('/webhook-multi', async (request, reply) => {
     const { processor, processorId } = request.query;
 
     if (!processor) {
@@ -294,49 +291,45 @@ export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
       return;
     }
 
-    try {
-      // Get order details
-      const order = await orderService.getOrderById(orderId);
+    // Get order details
+    const order = await orderService.getOrderById(orderId);
 
-      // Check if order already has a successful payment
-      const existingPayment = await stripeService.getPaymentByOrderId(orderId);
-      if (existingPayment && existingPayment.status === 'succeeded') {
-        reply.status(400).send({
-          success: false,
-          error: {
-            code: 'ORDER_ALREADY_PAID',
-            message: 'This order has already been paid',
-          },
-        });
-        return;
-      }
-
-      // Create payment intent
-      const { clientSecret, paymentIntentId, payment } = await stripeService.createPaymentIntent(order, {
-        description: `Order from ${order.business.name}`,
-        statementDescriptor: order.business.name.slice(0, 22),
-        metadata: {
-          customer_name: order.customer_name,
-          customer_phone: order.customer_phone,
+    // Check if order already has a successful payment
+    const existingPayment = await stripeService.getPaymentByOrderId(orderId);
+    if (existingPayment && existingPayment.status === 'succeeded') {
+      reply.status(400).send({
+        success: false,
+        error: {
+          code: 'ORDER_ALREADY_PAID',
+          message: 'This order has already been paid',
         },
       });
-
-      reply.send({
-        success: true,
-        data: {
-          clientSecret,
-          paymentIntentId,
-          payment: {
-            id: payment.id,
-            amount: payment.amount_cents,
-            currency: payment.currency,
-            status: payment.status,
-          },
-        },
-      });
-    } catch (error) {
-      throw error;
+      return;
     }
+
+    // Create payment intent
+    const { clientSecret, paymentIntentId, payment } = await stripeService.createPaymentIntent(order, {
+      description: `Order from ${order.business.name}`,
+      statementDescriptor: order.business.name.slice(0, 22),
+      metadata: {
+        customer_name: order.customer_name,
+        customer_phone: order.customer_phone,
+      },
+    });
+
+    reply.send({
+      success: true,
+      data: {
+        clientSecret,
+        paymentIntentId,
+        payment: {
+          id: payment.id,
+          amount: payment.amount_cents,
+          currency: payment.currency,
+          status: payment.status,
+        },
+      },
+    });
   });
 
   /**
@@ -363,32 +356,28 @@ export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
       return;
     }
 
-    try {
-      // Get raw body for signature verification
-      const rawBody = (request as any).rawBody || request.body;
+    // Get raw body for signature verification
+    const rawBody = (request as any).rawBody || request.body;
 
-      // Process webhook
-      const { processed, event } = await stripeService.handleWebhook(rawBody, signature);
+    // Process webhook
+    const { processed, event } = await stripeService.handleWebhook(rawBody, signature);
 
-      // Log webhook processing
-      logSecurityEvent(request.log, `Stripe webhook processed: ${event.type}`, {
-        requestId: request.id,
-        method: request.method,
-        path: request.url,
-        severity: 'low',
-      });
+    // Log webhook processing
+    logSecurityEvent(request.log, `Stripe webhook processed: ${event.type}`, {
+      requestId: request.id,
+      method: request.method,
+      path: request.url,
+      severity: 'low',
+    });
 
-      reply.send({
-        success: true,
-        data: {
-          processed,
-          eventType: event.type,
-          eventId: event.id,
-        },
-      });
-    } catch (error) {
-      throw error;
-    }
+    reply.send({
+      success: true,
+      data: {
+        processed,
+        eventType: event.type,
+        eventId: event.id,
+      },
+    });
   });
 
   /**
@@ -401,42 +390,38 @@ export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
 
-    try {
-      const payment = await stripeService['paymentRepository'].findOne({
-        where: { id },
-        relations: ['order', 'business'],
+    const payment = await stripeService['paymentRepository'].findOne({
+      where: { id },
+      relations: ['order', 'business'],
+    });
+
+    if (!payment) {
+      reply.status(404).send({
+        success: false,
+        error: {
+          code: 'PAYMENT_NOT_FOUND',
+          message: 'Payment not found',
+        },
       });
-
-      if (!payment) {
-        reply.status(404).send({
-          success: false,
-          error: {
-            code: 'PAYMENT_NOT_FOUND',
-            message: 'Payment not found',
-          },
-        });
-        return;
-      }
-
-      // Check authorization (user must own the business)
-      if (payment.business.owner_id !== request.user!.userId) {
-        reply.status(403).send({
-          success: false,
-          error: {
-            code: 'FORBIDDEN',
-            message: 'You do not have permission to view this payment',
-          },
-        });
-        return;
-      }
-
-      reply.send({
-        success: true,
-        data: { payment },
-      });
-    } catch (error) {
-      throw error;
+      return;
     }
+
+    // Check authorization (user must own the business)
+    if (payment.business.owner_id !== request.user!.userId) {
+      reply.status(403).send({
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to view this payment',
+        },
+      });
+      return;
+    }
+
+    reply.send({
+      success: true,
+      data: { payment },
+    });
   });
 
   /**
@@ -453,57 +438,53 @@ export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
       reason?: 'duplicate' | 'fraudulent' | 'requested_by_customer';
     };
 
-    try {
-      // Get payment to check authorization
-      const payment = await stripeService['paymentRepository'].findOne({
-        where: { id },
-        relations: ['business'],
-      });
+    // Get payment to check authorization
+    const payment = await stripeService['paymentRepository'].findOne({
+      where: { id },
+      relations: ['business'],
+    });
 
-      if (!payment) {
-        reply.status(404).send({
-          success: false,
-          error: {
-            code: 'PAYMENT_NOT_FOUND',
-            message: 'Payment not found',
-          },
-        });
-        return;
-      }
-
-      // Check authorization (user must own the business)
-      if (payment.business.owner_id !== request.user!.userId) {
-        reply.status(403).send({
-          success: false,
-          error: {
-            code: 'FORBIDDEN',
-            message: 'You do not have permission to refund this payment',
-          },
-        });
-        return;
-      }
-
-      // Create refund
-      const { refund, payment: updatedPayment } = await stripeService.createRefund(id, {
-        amount,
-        reason,
-      });
-
-      reply.send({
-        success: true,
-        data: {
-          refund: {
-            id: refund.id,
-            amount: refund.amount,
-            status: refund.status,
-            reason: refund.reason,
-          },
-          payment: updatedPayment,
+    if (!payment) {
+      reply.status(404).send({
+        success: false,
+        error: {
+          code: 'PAYMENT_NOT_FOUND',
+          message: 'Payment not found',
         },
       });
-    } catch (error) {
-      throw error;
+      return;
     }
+
+    // Check authorization (user must own the business)
+    if (payment.business.owner_id !== request.user!.userId) {
+      reply.status(403).send({
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to refund this payment',
+        },
+      });
+      return;
+    }
+
+    // Create refund
+    const { refund, payment: updatedPayment } = await stripeService.createRefund(id, {
+      amount,
+      reason,
+    });
+
+    reply.send({
+      success: true,
+      data: {
+        refund: {
+          id: refund.id,
+          amount: refund.amount,
+          status: refund.status,
+          reason: refund.reason,
+        },
+        payment: updatedPayment,
+      },
+    });
   });
 
   /**
@@ -520,36 +501,33 @@ export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
       endDate?: string;
     };
 
-    try {
-      // Verify business ownership
-      const business = await fastify.orm.manager.findOne('Business', {
-        where: { id: businessId },
+    // Verify business ownership
+    const business = await fastify.orm.manager.findOne(Business, {
+      where: { id: businessId },
+      select: ['id', 'owner_id'],
+    });
+
+    if (!business || business.owner_id !== request.user!.userId) {
+      reply.status(403).send({
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to view these stats',
+        },
       });
-
-      if (!business || business.owner_id !== request.user!.userId) {
-        reply.status(403).send({
-          success: false,
-          error: {
-            code: 'FORBIDDEN',
-            message: 'You do not have permission to view these stats',
-          },
-        });
-        return;
-      }
-
-      // Get payment stats
-      const stats = await stripeService.getBusinessPaymentStats(
-        businessId,
-        startDate ? new Date(startDate) : undefined,
-        endDate ? new Date(endDate) : undefined
-      );
-
-      reply.send({
-        success: true,
-        data: { stats },
-      });
-    } catch (error) {
-      throw error;
+      return;
     }
+
+    // Get payment stats
+    const stats = await stripeService.getBusinessPaymentStats(
+      businessId,
+      startDate ? new Date(startDate) : undefined,
+      endDate ? new Date(endDate) : undefined
+    );
+
+    reply.send({
+      success: true,
+      data: { stats },
+    });
   });
 }

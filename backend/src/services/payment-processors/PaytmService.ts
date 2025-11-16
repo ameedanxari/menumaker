@@ -171,7 +171,7 @@ export class PaytmService implements IPaymentProcessorService {
         throw new Error('Invalid Paytm checksum');
       }
 
-      const { ORDERID, TXNID, STATUS, RESPCODE, RESPMSG, TXNAMOUNT } = callbackParams;
+      const { ORDERID, TXNID, STATUS, RESPCODE, RESPMSG } = callbackParams;
 
       // Find payment
       const payment = await this.paymentRepository.findOne({

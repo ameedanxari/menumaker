@@ -4,7 +4,7 @@ import { Subscription, SubscriptionTier, SUBSCRIPTION_TIERS } from '../models/Su
 import { Business } from '../models/Business.js';
 import { Order } from '../models/Order.js';
 import { AppDataSource } from '../config/database.js';
-import { logMetric, logSecurityEvent } from '../utils/logger.js';
+import { logMetric } from '../utils/logger.js';
 
 /**
  * Subscription service for managing Stripe Billing and subscription tiers
@@ -162,7 +162,7 @@ export class SubscriptionService {
 
       // Get client secret for payment confirmation
       const latestInvoice = stripeSubscription.latest_invoice as Stripe.Invoice;
-      const paymentIntent = latestInvoice?.payment_intent as Stripe.PaymentIntent;
+      const paymentIntent = (latestInvoice as any)?.payment_intent as Stripe.PaymentIntent;
       const clientSecret = paymentIntent?.client_secret;
 
       // Log metric

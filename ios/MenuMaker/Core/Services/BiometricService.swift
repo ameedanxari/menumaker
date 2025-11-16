@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import LocalAuthentication
 
 /// Biometric authentication errors
@@ -81,6 +82,8 @@ class BiometricService: ObservableObject {
                 biometricType = .faceID
             case .touchID:
                 biometricType = .touchID
+            case .opticID:
+                biometricType = .faceID  // Treat opticID similar to faceID
             case .none:
                 biometricType = .none
             @unknown default:
