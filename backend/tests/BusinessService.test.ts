@@ -18,7 +18,8 @@ describe('BusinessService', () => {
 
     mockBusinessRepository = {
       findOne: jest.fn(),
-      find: jest.fn(),
+      // @ts-ignore
+      find: jest.fn().mockResolvedValue([]), // Return empty array for slug generation
       create: jest.fn(),
       save: jest.fn(),
     };
@@ -73,6 +74,11 @@ describe('BusinessService', () => {
         timezone: 'America/New_York',
       };
 
+      // First findOne call checks if business exists (should return null)
+      // Second findOne call reloads business with settings (should return business)
+      mockBusinessRepository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ ...mockBusiness, settings: mockSettings });
       mockBusinessRepository.create.mockReturnValue(mockBusiness);
       mockBusinessRepository.save.mockResolvedValue(mockBusiness);
       mockSettingsRepository.create.mockReturnValue(mockSettings);
@@ -201,6 +207,7 @@ describe('BusinessService', () => {
 
       expect(mockBusinessRepository.findOne).toHaveBeenCalledWith({
         where: { id: businessId },
+        relations: ['settings', 'owner'],
       });
       expect(mockBusinessRepository.save).toHaveBeenCalledWith(
         expect.objectContaining(updateData)
@@ -218,7 +225,7 @@ describe('BusinessService', () => {
 
       await expect(
         businessService.updateBusiness('business-id', 'user-id', { name: 'New Name' })
-      ).rejects.toThrow('Unauthorized');
+      ).rejects.toThrow('You do not have permission to update this business');
     });
   });
 
