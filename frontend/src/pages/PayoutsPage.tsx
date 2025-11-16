@@ -58,7 +58,7 @@ export default function PayoutsPage() {
         });
       }
     } catch (_error) {
-      console.error('Failed to load payouts:', error);
+      console.error('Failed to load payouts:', _error);
     } finally {
       setLoading(false);
     }
@@ -73,7 +73,7 @@ export default function PayoutsPage() {
       loadData();
       alert('Payout schedule updated successfully');
     } catch (_error) {
-      console.error('Failed to update schedule:', error);
+      console.error('Failed to update schedule:', _error);
       alert('Failed to update payout schedule');
     }
   };

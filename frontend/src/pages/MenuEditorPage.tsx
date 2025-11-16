@@ -91,7 +91,7 @@ export default function MenuEditorPage() {
       setNewCategoryName('');
       setShowNewCategoryInput(false);
     } catch (_error) {
-      console.error('Failed to create category:', error);
+      console.error('Failed to create category:', _error);
     }
   };
 
@@ -103,7 +103,7 @@ export default function MenuEditorPage() {
       setNewMenuDescription('');
       setShowNewMenuModal(false);
     } catch (_error) {
-      console.error('Failed to create menu:', error);
+      console.error('Failed to create menu:', _error);
     }
   };
 
@@ -115,7 +115,7 @@ export default function MenuEditorPage() {
     try {
       await addDishToMenu(currentMenu.id, dishId);
     } catch (_error) {
-      console.error('Failed to add dish to menu:', error);
+      console.error('Failed to add dish to menu:', _error);
     }
   };
 
@@ -124,7 +124,7 @@ export default function MenuEditorPage() {
     try {
       await removeDishFromMenu(currentMenu.id, dishId);
     } catch (_error) {
-      console.error('Failed to remove dish from menu:', error);
+      console.error('Failed to remove dish from menu:', _error);
     }
   };
 
@@ -134,7 +134,7 @@ export default function MenuEditorPage() {
       try {
         await publishMenu(currentMenu.id);
       } catch (_error) {
-        console.error('Failed to publish menu:', error);
+        console.error('Failed to publish menu:', _error);
       }
     }
   };
@@ -145,7 +145,7 @@ export default function MenuEditorPage() {
       try {
         await archiveMenu(currentMenu.id);
       } catch (_error) {
-        console.error('Failed to archive menu:', error);
+        console.error('Failed to archive menu:', _error);
       }
     }
   };

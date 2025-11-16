@@ -54,7 +54,7 @@ export function SubscriptionStatusWidget() {
         // No usage data
       }
     } catch (_err) {
-      console.error('Failed to fetch subscription data:', err);
+      console.error('Failed to fetch subscription data:', _err);
     } finally {
       setIsLoading(false);
     }

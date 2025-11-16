@@ -46,7 +46,7 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch (_error) {
           set({ isLoading: false });
-          throw error;
+          throw _error;
         }
       },
 
@@ -67,7 +67,7 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch (_error) {
           set({ isLoading: false });
-          throw error;
+          throw _error;
         }
       },
 
