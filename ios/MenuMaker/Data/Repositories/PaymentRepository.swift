@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 /// Payment repository
 @MainActor
@@ -72,11 +73,17 @@ class PaymentRepository: ObservableObject {
         minimumThresholdCents: Int,
         autoPayoutEnabled: Bool
     ) async throws -> PayoutSchedule {
-        let request: [String: Any] = [
-            "frequency": frequency.rawValue,
-            "minimum_threshold_cents": minimumThresholdCents,
-            "auto_payout_enabled": autoPayoutEnabled
-        ]
+        struct PayoutScheduleRequest: Encodable {
+            let frequency: String
+            let minimum_threshold_cents: Int
+            let auto_payout_enabled: Bool
+        }
+
+        let request = PayoutScheduleRequest(
+            frequency: frequency.rawValue,
+            minimum_threshold_cents: minimumThresholdCents,
+            auto_payout_enabled: autoPayoutEnabled
+        )
 
         let response: PayoutListResponse = try await apiClient.request(
             endpoint: AppConstants.API.Endpoints.payments + "/payouts/schedule",
