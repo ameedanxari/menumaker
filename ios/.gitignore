@@ -1,0 +1,26 @@
+# Xcode
+*.xcworkspace
+xcuserdata/
+*.xcuserstate
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# CocoaPods
+Pods/
+*.xcworkspace
+
+# Build
+DerivedData/
+build/
+
+# Swift
+*.swiftmodule
+*.swiftdoc
+
+# Misc
+.DS_Store
