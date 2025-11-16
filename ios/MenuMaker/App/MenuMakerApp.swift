@@ -17,7 +17,9 @@ struct MenuMakerApp: App {
                 .environmentObject(appCoordinator)
                 .environmentObject(authViewModel)
                 .onAppear {
-                    authViewModel.checkAuthentication()
+                    Task {
+                        await authViewModel.checkAuthentication()
+                    }
                 }
                 .onChange(of: scenePhase) { oldPhase, newPhase in
                     handleScenePhaseChange(from: oldPhase, to: newPhase)

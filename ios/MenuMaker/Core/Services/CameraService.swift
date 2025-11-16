@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import AVFoundation
 import UIKit
 
@@ -99,15 +100,26 @@ class CameraService: NSObject, ObservableObject {
         return try await withCheckedThrowingContinuation { continuation in
             let settings = AVCapturePhotoSettings()
 
-            if photoOutput.availablePhotoCodecTypes.contains(.hevc) {
-                settings.photoCodecType = .hevc
-            }
+            // Use HEVC if available for better compression
+            if let hevcCodec = photoOutput.availablePhotoCodecTypes.first(where: { $0 == .hevc }) {
+                let formatSettings: [String: Any] = [
+                    AVVideoCodecKey: hevcCodec
+                ]
+                let photoSettings = AVCapturePhotoSettings(format: formatSettings)
 
-            let delegate = PhotoCaptureDelegate { result in
-                continuation.resume(with: result)
-            }
+                let delegate = PhotoCaptureDelegate { result in
+                    continuation.resume(with: result)
+                }
 
-            photoOutput.capturePhoto(with: settings, delegate: delegate)
+                photoOutput.capturePhoto(with: photoSettings, delegate: delegate)
+            } else {
+                // Use default settings
+                let delegate = PhotoCaptureDelegate { result in
+                    continuation.resume(with: result)
+                }
+
+                photoOutput.capturePhoto(with: settings, delegate: delegate)
+            }
         }
     }
 
