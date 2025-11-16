@@ -25,7 +25,7 @@ export default function PaymentProcessorsPage() {
       setLoading(true);
       const response = await api.get('/payment-processors');
       setProcessors(response.data.data.processors || []);
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to load payment processors:', error);
     } finally {
       setLoading(false);
@@ -45,7 +45,7 @@ export default function PaymentProcessorsPage() {
         // Manual setup (show API key form)
         alert('Please enter your API keys in the configuration');
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to connect processor:', error);
       alert('Failed to connect payment processor');
     }
@@ -57,7 +57,7 @@ export default function PaymentProcessorsPage() {
         is_active: !isActive,
       });
       loadProcessors();
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to toggle processor:', error);
       alert('Failed to update processor status');
     }
@@ -71,7 +71,7 @@ export default function PaymentProcessorsPage() {
     try {
       await api.delete(`/payment-processors/${processorId}`);
       loadProcessors();
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to disconnect processor:', error);
       alert('Failed to disconnect processor');
     }

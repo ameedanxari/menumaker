@@ -41,7 +41,7 @@ export default function CouponsPage() {
       setLoading(true);
       const response = await api.get('/coupons');
       setCoupons(response.data.data.coupons || []);
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to load coupons:', error);
     } finally {
       setLoading(false);
@@ -75,7 +75,7 @@ export default function CouponsPage() {
       });
       loadCoupons();
       alert('Coupon created successfully!');
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to create coupon:', error);
       alert('Failed to create coupon');
     }
@@ -87,7 +87,7 @@ export default function CouponsPage() {
         is_active: !isActive,
       });
       loadCoupons();
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to toggle coupon:', error);
       alert('Failed to update coupon');
     }
@@ -99,7 +99,7 @@ export default function CouponsPage() {
     try {
       await api.delete(`/coupons/${id}`);
       loadCoupons();
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to delete coupon:', error);
       alert('Failed to delete coupon');
     }

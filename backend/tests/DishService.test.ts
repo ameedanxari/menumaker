@@ -1,14 +1,12 @@
+import { jest, describe, beforeEach, it, expect } from '@jest/globals';
+import type { Mock } from 'jest-mock';
 import { DishService } from '../src/services/DishService';
 import { AppDataSource } from '../src/config/database';
 import { Dish } from '../src/models/Dish';
 import { DishCategory } from '../src/models/DishCategory';
 import { Business } from '../src/models/Business';
 
-jest.mock('../src/config/database', () => ({
-  AppDataSource: {
-    getRepository: jest.fn(),
-  },
-}));
+jest.mock('../src/config/database');
 
 describe('DishService', () => {
   let dishService: DishService;
@@ -38,12 +36,13 @@ describe('DishService', () => {
       findOne: jest.fn(),
     };
 
-    (AppDataSource.getRepository as jest.Mock).mockImplementation((entity) => {
+    // Set up the mock implementation
+    AppDataSource.getRepository = jest.fn().mockImplementation((entity) => {
       if (entity === Dish) return mockDishRepository;
       if (entity === DishCategory) return mockCategoryRepository;
       if (entity === Business) return mockBusinessRepository;
       return {};
-    });
+    }) as any;
 
     dishService = new DishService();
   });

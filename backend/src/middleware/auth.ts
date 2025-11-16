@@ -28,7 +28,7 @@ export async function authenticate(
     const payload = verifyToken(token);
 
     request.user = payload;
-  } catch (error) {
+  } catch (_error) {
     return reply.status(401).send({
       success: false,
       error: {

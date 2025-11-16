@@ -90,7 +90,7 @@ export default function MenuEditorPage() {
       await createCategory(currentBusiness.id, newCategoryName);
       setNewCategoryName('');
       setShowNewCategoryInput(false);
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to create category:', error);
     }
   };
@@ -102,7 +102,7 @@ export default function MenuEditorPage() {
       setNewMenuName('');
       setNewMenuDescription('');
       setShowNewMenuModal(false);
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to create menu:', error);
     }
   };
@@ -114,7 +114,7 @@ export default function MenuEditorPage() {
     }
     try {
       await addDishToMenu(currentMenu.id, dishId);
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to add dish to menu:', error);
     }
   };
@@ -123,7 +123,7 @@ export default function MenuEditorPage() {
     if (!currentMenu) return;
     try {
       await removeDishFromMenu(currentMenu.id, dishId);
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to remove dish from menu:', error);
     }
   };
@@ -133,7 +133,7 @@ export default function MenuEditorPage() {
     if (confirm('Are you sure you want to publish this menu? This will replace your current active menu.')) {
       try {
         await publishMenu(currentMenu.id);
-      } catch (error) {
+      } catch (_error) {
         console.error('Failed to publish menu:', error);
       }
     }
@@ -144,7 +144,7 @@ export default function MenuEditorPage() {
     if (confirm('Are you sure you want to archive this menu?')) {
       try {
         await archiveMenu(currentMenu.id);
-      } catch (error) {
+      } catch (_error) {
         console.error('Failed to archive menu:', error);
       }
     }

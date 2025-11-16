@@ -44,7 +44,7 @@ export const useAuthStore = create<AuthState>()(
               isLoading: false,
             });
           }
-        } catch (error) {
+        } catch (_error) {
           set({ isLoading: false });
           throw error;
         }
@@ -65,7 +65,7 @@ export const useAuthStore = create<AuthState>()(
               isLoading: false,
             });
           }
-        } catch (error) {
+        } catch (_error) {
           set({ isLoading: false });
           throw error;
         }
@@ -94,7 +94,7 @@ export const useAuthStore = create<AuthState>()(
                 isAuthenticated: true,
               });
             }
-          } catch (error) {
+          } catch (_error) {
             // Token is invalid, clear auth state
             get().logout();
           }

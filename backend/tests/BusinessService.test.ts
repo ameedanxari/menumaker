@@ -1,14 +1,12 @@
+import { jest, describe, beforeEach, it, expect } from '@jest/globals';
+import type { Mock } from 'jest-mock';
 import { BusinessService } from '../src/services/BusinessService';
 import { AppDataSource } from '../src/config/database';
 import { Business } from '../src/models/Business';
 import { BusinessSettings } from '../src/models/BusinessSettings';
 
 // Mock dependencies
-jest.mock('../src/config/database', () => ({
-  AppDataSource: {
-    getRepository: jest.fn(),
-  },
-}));
+jest.mock('../src/config/database');
 
 describe('BusinessService', () => {
   let businessService: BusinessService;
@@ -31,11 +29,12 @@ describe('BusinessService', () => {
       findOne: jest.fn(),
     };
 
-    (AppDataSource.getRepository as jest.Mock).mockImplementation((entity) => {
+    // Set up the mock implementation
+    AppDataSource.getRepository = jest.fn().mockImplementation((entity) => {
       if (entity === Business) return mockBusinessRepository;
       if (entity === BusinessSettings) return mockSettingsRepository;
       return {};
-    });
+    }) as any;
 
     businessService = new BusinessService();
   });

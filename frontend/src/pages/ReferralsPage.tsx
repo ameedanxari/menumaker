@@ -41,7 +41,7 @@ export default function ReferralsPage() {
 
       setStats(statsRes.data.data.stats || null);
       setLeaderboard(leaderboardRes.data.data.leaderboard || []);
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to load referral data:', error);
     } finally {
       setLoading(false);
@@ -55,7 +55,7 @@ export default function ReferralsPage() {
       });
       loadData();
       alert('Referral code created successfully!');
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to create referral code:', error);
       alert('Failed to create referral code');
     }

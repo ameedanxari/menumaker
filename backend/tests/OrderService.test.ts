@@ -1,3 +1,5 @@
+import { jest, describe, beforeEach, it, expect } from '@jest/globals';
+import type { Mock } from 'jest-mock';
 import { OrderService } from '../src/services/OrderService';
 import { AppDataSource } from '../src/config/database';
 import { Order } from '../src/models/Order';
@@ -7,12 +9,7 @@ import { BusinessSettings } from '../src/models/BusinessSettings';
 import { Dish } from '../src/models/Dish';
 
 // Mock dependencies
-jest.mock('../src/config/database', () => ({
-  AppDataSource: {
-    getRepository: jest.fn(),
-    transaction: jest.fn(),
-  },
-}));
+jest.mock('../src/config/database');
 
 describe('OrderService', () => {
   let orderService: OrderService;
@@ -49,17 +46,18 @@ describe('OrderService', () => {
       findOne: jest.fn(),
     };
 
-    (AppDataSource.getRepository as jest.Mock).mockImplementation((entity) => {
+    // Set up the mock implementation
+    AppDataSource.getRepository = jest.fn().mockImplementation((entity) => {
       if (entity === Order) return mockOrderRepository;
       if (entity === OrderItem) return mockOrderItemRepository;
       if (entity === Business) return mockBusinessRepository;
       if (entity === BusinessSettings) return mockSettingsRepository;
       if (entity === Dish) return mockDishRepository;
       return {};
-    });
+    }) as any;
 
     // Mock transaction
-    (AppDataSource.transaction as jest.Mock).mockImplementation(async (callback) => {
+    AppDataSource.transaction = jest.fn().mockImplementation(async (callback) => {
       const mockManager = {
         getRepository: (entity: any) => {
           if (entity === Order) return mockOrderRepository;
@@ -68,7 +66,7 @@ describe('OrderService', () => {
         },
       };
       return callback(mockManager);
-    });
+    }) as any;
 
     orderService = new OrderService();
   });

@@ -229,7 +229,7 @@ export const useMenuStore = create<MenuState>((set, _get) => ({
       if (response.success) {
         set({ activeMenu: response.data.menu });
       }
-    } catch (error: any) {
+    } catch (_error: any) {
       // No active menu is not an error
       set({ activeMenu: null });
     }

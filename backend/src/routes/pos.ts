@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { authenticate } from '../middleware/auth.js';
 import { POSSyncService } from '../services/POSSyncService.js';
-import { POSProvider, SyncStatus, POSIntegration } from '../models/POSIntegration.js';
+import { POSProvider, SyncStatus } from '../models/POSIntegration.js';
 import { Business } from '../models/Business.js';
 import { Order } from '../models/Order.js';
 
