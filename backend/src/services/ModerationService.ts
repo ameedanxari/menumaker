@@ -1,3 +1,4 @@
+import { In } from 'typeorm';
 import { AppDataSource } from '../config/database.js';
 import { ContentFlag } from '../models/ContentFlag.js';
 import { AuditLog } from '../models/AuditLog.js';
