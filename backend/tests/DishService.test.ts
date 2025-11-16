@@ -238,7 +238,7 @@ describe('DishService', () => {
 
       expect(mockCategoryRepository.find).toHaveBeenCalledWith({
         where: { business_id: businessId },
-        order: { display_order: 'ASC' },
+        order: { sort_order: 'ASC' },
       });
       expect(result).toHaveLength(3);
     });
