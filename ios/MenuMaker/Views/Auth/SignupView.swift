@@ -31,34 +31,40 @@ struct SignupView: View {
                             placeholder: "Full Name",
                             text: $name
                         )
+                        .accessibilityIdentifier("name-field")
 
                         CustomTextField(
                             placeholder: "Email",
                             text: $email,
                             keyboardType: .emailAddress
                         )
+                        .accessibilityIdentifier("email-field")
 
                         CustomTextField(
                             placeholder: "Phone (Optional)",
                             text: $phone,
                             keyboardType: .phonePad
                         )
+                        .accessibilityIdentifier("phone-field")
 
                         CustomSecureField(
                             placeholder: "Password",
                             text: $password
                         )
+                        .accessibilityIdentifier("password-field")
 
                         CustomSecureField(
                             placeholder: "Confirm Password",
                             text: $confirmPassword
                         )
+                        .accessibilityIdentifier("confirm-password-field")
 
                         if let errorMessage = authViewModel.errorMessage {
                             Text(errorMessage)
                                 .font(.caption)
                                 .foregroundColor(.theme.error)
                                 .padding(.horizontal)
+                                .accessibilityIdentifier("error-message")
                         }
 
                         Button(action: signup) {
@@ -72,17 +78,20 @@ struct SignupView: View {
                         }
                         .buttonStyle(PrimaryButtonStyle())
                         .disabled(authViewModel.isLoading || !isFormValid)
+                        .accessibilityIdentifier("signup-button")
                     }
                     .padding(.horizontal, 24)
                 }
             }
             .background(Color.theme.background)
             .navigationBarTitleDisplayMode(.inline)
+            .accessibilityIdentifier("signup-screen")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .accessibilityIdentifier("cancel-button")
                 }
             }
         }

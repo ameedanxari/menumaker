@@ -38,11 +38,14 @@ struct MenuEditorView: View {
         }
         .background(Color.theme.background)
         .navigationTitle("Menu")
+        .accessibilityIdentifier("menu-editor-screen")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: { showAddDish = true }) {
                     Image(systemName: "plus.circle.fill")
                 }
+                .accessibilityLabel("Add Item")
+                .accessibilityIdentifier("add-item-button")
             }
         }
         .sheet(isPresented: $showAddDish) {

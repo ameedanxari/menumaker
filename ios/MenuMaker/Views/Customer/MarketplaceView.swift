@@ -10,42 +10,46 @@ struct MarketplaceView: View {
             // Search Bar
             SearchBar(text: $viewModel.searchQuery)
                 .padding()
+                .accessibilityIdentifier("marketplace-search-bar")
 
             // Cuisine Filter
             CuisineFilter(
                 cuisines: viewModel.getCuisineTypes(),
                 selectedCuisine: $selectedCuisine
             )
+            .accessibilityIdentifier("cuisine-filter")
 
             // Sellers Grid
-            if viewModel.isLoading {
-                ProgressView()
-                    .padding()
-            } else if viewModel.filteredSellers.isEmpty {
+            if viewModel.filteredSellers.isEmpty && !viewModel.isLoading {
                 EmptyState(
                     icon: "storefront",
                     title: "No Sellers",
                     message: "No sellers found matching your criteria"
                 )
+                .accessibilityIdentifier("empty-marketplace-state")
             } else {
                 ScrollView {
                     LazyVStack(spacing: 16) {
                         ForEach(viewModel.filteredSellers) { seller in
                             SellerCard(seller: seller)
+                                .accessibilityIdentifier("seller-card-\(seller.id)")
                         }
                     }
                     .padding()
                 }
+                .accessibilityIdentifier("sellers-list")
             }
         }
         .background(Color.theme.background)
         .navigationTitle("Marketplace")
         .navigationBarTitleDisplayMode(.large)
+        .accessibilityIdentifier("marketplace-screen")
         .navigationBarItems(trailing: Button(action: {
             showSortOptions = true
         }) {
             Image(systemName: "arrow.up.arrow.down")
-        })
+        }
+        .accessibilityIdentifier("sort-button"))
         .actionSheet(isPresented: $showSortOptions) {
             ActionSheet(
                 title: Text("Sort By"),
@@ -69,6 +73,16 @@ struct MarketplaceView: View {
         .onChange(of: selectedCuisine) { newValue in
             viewModel.filterByCuisine(newValue)
         }
+        .overlay(
+            Group {
+                if viewModel.isLoading {
+                    ProgressView()
+                        .padding()
+                        .background(Color.theme.background.opacity(0.8))
+                        .accessibilityIdentifier("loading-indicator")
+                }
+            }
+        )
     }
 }
 
@@ -82,11 +96,13 @@ struct CuisineFilter: View {
                 FilterChip(title: "All", isSelected: selectedCuisine == nil) {
                     selectedCuisine = nil
                 }
+                .accessibilityIdentifier("filter-all")
 
                 ForEach(cuisines, id: \.self) { cuisine in
                     FilterChip(title: cuisine, isSelected: selectedCuisine == cuisine) {
                         selectedCuisine = cuisine
                     }
+                    .accessibilityIdentifier("filter-\(cuisine.lowercased().replacingOccurrences(of: " ", with: "-"))")
                 }
             }
             .padding(.horizontal)
