@@ -41,8 +41,8 @@ struct MarketplaceView: View {
         .navigationTitle("Marketplace")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Menu(content: {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                Menu {
                     Button("Sort by Distance") {
                         viewModel.sortByDistance()
                     }
@@ -52,9 +52,9 @@ struct MarketplaceView: View {
                     Button("Sort by Reviews") {
                         viewModel.sortByReviews()
                     }
-                }, label: {
+                } label: {
                     Image(systemName: "arrow.up.arrow.down")
-                })
+                }
             }
         }
         .refreshable {
