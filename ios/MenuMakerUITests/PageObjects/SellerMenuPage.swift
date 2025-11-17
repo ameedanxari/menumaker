@@ -95,7 +95,8 @@ struct SellerMenuPage {
     func assertCartBadgeCount(_ expectedCount: Int) -> SellerMenuPage {
         if expectedCount > 0 {
             XCTAssertTrue(cartBadge.waitForExistence(timeout: 2), "Cart badge should be visible")
-            if let badgeText = cartBadge.label, let count = Int(badgeText) {
+            let badgeText = cartBadge.label
+            if let count = Int(badgeText) {
                 XCTAssertEqual(count, expectedCount, "Cart badge should show \(expectedCount) items")
             }
         }

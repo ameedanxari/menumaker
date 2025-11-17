@@ -118,10 +118,10 @@ struct SignupPage {
 
     @discardableResult
     func assertAllElementsVisible() -> SignupPage {
-        XCTAssertTrue(nameField.exists, "Name field should be visible")
-        XCTAssertTrue(emailField.exists, "Email field should be visible")
-        XCTAssertTrue(passwordField.exists, "Password field should be visible")
-        XCTAssertTrue(signupButton.exists, "Signup button should be visible")
+        XCTAssertTrue(nameField.waitForExistence(timeout: 2), "Name field should be visible")
+        XCTAssertTrue(emailField.waitForExistence(timeout: 2), "Email field should be visible")
+        XCTAssertTrue(passwordField.waitForExistence(timeout: 2), "Password field should be visible")
+        XCTAssertTrue(signupButton.waitForExistence(timeout: 2), "Signup button should be visible")
         return self
     }
 
