@@ -5,6 +5,7 @@
 //  Unit tests for authentication models
 //
 
+import Foundation
 import Testing
 @testable import MenuMaker
 
