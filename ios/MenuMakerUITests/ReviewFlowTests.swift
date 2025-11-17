@@ -484,7 +484,7 @@ final class ReviewFlowTests: XCTestCase {
             throw XCTSkip("Average rating not displayed")
         }
 
-        let initialRating = reviewPage.averageRatingLabel.label
+        let _ = reviewPage.averageRatingLabel.label
 
         // Submit a new review
         navigateToReviewScreen()

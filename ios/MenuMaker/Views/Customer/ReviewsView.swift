@@ -100,7 +100,7 @@ struct ReviewsView: View {
                 TextEditor(text: $comment)
                     .frame(minHeight: 120)
                     .padding(4)
-                    .background(Color.theme.secondaryBackground)
+                    .background(Color.theme.surface)
                     .cornerRadius(8)
                     .accessibilityIdentifier("review-comment-field")
             }
@@ -138,7 +138,7 @@ struct ReviewsView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.theme.secondaryBackground)
+                    .background(Color.theme.surface)
                     .foregroundColor(.theme.primary)
                     .cornerRadius(12)
                 }
@@ -175,7 +175,7 @@ struct ReviewsView: View {
                                         .font(.caption)
                                 }
                                 .frame(width: 100, height: 100)
-                                .background(Color.theme.secondaryBackground)
+                                .background(Color.theme.surface)
                                 .foregroundColor(.theme.primary)
                                 .cornerRadius(12)
                             }

@@ -318,7 +318,7 @@ final class ReferralFlowTests: XCTestCase {
         }
 
         // Get available credits amount
-        let creditsText = referralPage.availableCreditsLabel.label
+        let _ = referralPage.availableCreditsLabel.label
 
         // Navigate to marketplace and make a purchase
         app.tabBars.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'marketplace' OR label CONTAINS[c] 'home'")).firstMatch.tap()
@@ -338,7 +338,7 @@ final class ReferralFlowTests: XCTestCase {
         let cartPage = menuPage.navigateToCart()
 
         // At checkout, credits should be available
-        let checkoutPage = cartPage.proceedToCheckout()
+        let _ = cartPage.proceedToCheckout()
         sleep(1)
 
         // Look for credits option in checkout

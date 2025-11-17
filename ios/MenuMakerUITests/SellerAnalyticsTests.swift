@@ -289,7 +289,7 @@ final class SellerAnalyticsTests: XCTestCase {
         analyticsPage.switchToTodayView()
 
         // Get current sales count
-        let initialSales = analyticsPage.totalOrdersLabel.label
+        let _ = analyticsPage.totalOrdersLabel.label
 
         // Simulate receiving a new order (in real scenario, would come from customer app)
         // For test purposes, we'll just refresh

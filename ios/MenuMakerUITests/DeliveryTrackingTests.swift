@@ -233,7 +233,7 @@ final class DeliveryTrackingTests: XCTestCase {
             throw XCTSkip("Order tracking not implemented yet")
         }
 
-        let initialStatus = trackingPage.orderStatusLabel.label
+        let _ = trackingPage.orderStatusLabel.label
 
         trackingPage.tapRefresh()
 

@@ -12,13 +12,21 @@ struct LoginView: View {
             VStack(spacing: 24) {
                 // Logo and Title
                 VStack(spacing: 12) {
-                    Image(systemName: "fork.knife.circle.fill")
-                        .font(.system(size: 80))
-                        .foregroundColor(.theme.primary)
+                    // MenuMaker Logo
+                    ZStack {
+                        Circle()
+                            .fill(Color.theme.primary)
+                            .frame(width: 80, height: 80)
+
+                        Image(systemName: "fork.knife")
+                            .font(.system(size: 36))
+                            .foregroundColor(.white)
+                    }
 
                     Text("MenuMaker")
                         .font(.largeTitle)
                         .fontWeight(.bold)
+                        .foregroundColor(.theme.text)
 
                     Text("Manage your restaurant business")
                         .font(.subheadline)
@@ -54,13 +62,21 @@ struct LoginView: View {
                             ProgressView()
                                 .tint(.white)
                         } else {
-                            Text("Log In")
+                            Text("Sign In")
                                 .fontWeight(.semibold)
                         }
                     }
                     .buttonStyle(PrimaryButtonStyle())
                     .disabled(authViewModel.isLoading || email.isEmpty || password.isEmpty)
                     .accessibilityIdentifier("login-button")
+
+                    // Forgot Password Link
+                    Button("Forgot Password?") {
+                        // TODO: Navigate to forgot password screen
+                    }
+                    .foregroundColor(.theme.textSecondary)
+                    .font(.body)
+                    .accessibilityIdentifier("forgot-password-link")
 
                     // Biometric Login
                     if BiometricService.shared.isAvailable {
