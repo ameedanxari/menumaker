@@ -111,8 +111,15 @@ class NotificationService: NSObject, ObservableObject {
     // MARK: - Badge Management
 
     func setBadgeCount(_ count: Int) {
-        Task {
-            try? await notificationCenter.setBadgeCount(count)
+        if #available(iOS 16.0, *) {
+            Task {
+                try? await notificationCenter.setBadgeCount(count)
+            }
+        } else {
+            // Fallback for iOS 15
+            DispatchQueue.main.async {
+                UIApplication.shared.applicationIconBadgeNumber = count
+            }
         }
     }
 
@@ -166,9 +173,9 @@ class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        let userInfo = response.notification.request.content.userInfo as [AnyHashable: Any]
+        let userInfo = response.notification.request.content.userInfo
 
-        Task { @MainActor [userInfo] in
+        Task { @MainActor in
             handleNotificationTap(userInfo: userInfo)
             completionHandler()
         }
