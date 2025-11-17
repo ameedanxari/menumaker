@@ -196,9 +196,9 @@ struct DeliveryTrackingPage {
         if mapView.waitForExistence(timeout: 2) {
             // Pinch to zoom in
             let start1 = mapView.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.5))
-            let start2 = mapView.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5))
+            let _ = mapView.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5))
             let end1 = mapView.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5))
-            let end2 = mapView.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5))
+            let _ = mapView.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5))
 
             start1.press(forDuration: 0.1, thenDragTo: end1)
         }
