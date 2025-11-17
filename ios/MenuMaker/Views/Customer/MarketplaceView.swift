@@ -40,7 +40,7 @@ struct MarketplaceView: View {
         .background(Color.theme.background)
         .navigationTitle("Marketplace")
         .navigationBarTitleDisplayMode(.large)
-        .toolbar {
+        .toolbar(content: {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button("Sort by Distance") {
@@ -56,7 +56,7 @@ struct MarketplaceView: View {
                     Image(systemName: "arrow.up.arrow.down")
                 }
             }
-        }
+        })
         .refreshable {
             await viewModel.refreshSellers()
         }
