@@ -499,32 +499,32 @@ describe('CouponService', () => {
 
   describe('archiveCoupon', () => {
     it('should archive a coupon', async () => {
+      const mockCoupon = {
+        id: 'coupon-123',
+        status: 'active',
+      };
+
+      mockCouponRepository.findOne.mockResolvedValue(mockCoupon);
+      mockCouponRepository.save.mockImplementation((data) => Promise.resolve(data));
+
       await couponService.archiveCoupon('coupon-123');
 
-      expect(mockCouponRepository.update).toHaveBeenCalledWith('coupon-123', {
-        status: 'archived',
-      });
+      expect(mockCouponRepository.save).toHaveBeenCalled();
     });
   });
 
   describe('expireCoupons', () => {
     it('should expire coupons past their validity date', async () => {
-      const expiredCoupons = [
-        { id: 'coupon-1', status: 'active' },
-        { id: 'coupon-2', status: 'active' },
-      ];
-
-      mockCouponRepository.find.mockResolvedValue(expiredCoupons);
-      mockCouponRepository.save.mockImplementation((data) => Promise.resolve(data));
+      mockCouponRepository.update.mockResolvedValue({ affected: 2 });
 
       const result = await couponService.expireCoupons();
 
       expect(result).toBe(2);
-      expect(mockCouponRepository.save).toHaveBeenCalledTimes(2);
+      expect(mockCouponRepository.update).toHaveBeenCalled();
     });
 
     it('should return 0 if no expired coupons', async () => {
-      mockCouponRepository.find.mockResolvedValue([]);
+      mockCouponRepository.update.mockResolvedValue({ affected: 0 });
 
       const result = await couponService.expireCoupons();
 

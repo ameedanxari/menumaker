@@ -373,93 +373,46 @@ describe('OrderService', () => {
   });
 
   describe('getOrderSummary', () => {
-    it('should calculate order summary correctly', async () => {
-      const mockDish1 = {
-        id: 'dish-1',
-        name: 'Pizza',
-        price_cents: 2000,
-      };
-
-      const mockDish2 = {
-        id: 'dish-2',
-        name: 'Burger',
-        price_cents: 1500,
-      };
-
-      const items = [
-        { dish_id: 'dish-1', quantity: 2 },
-        { dish_id: 'dish-2', quantity: 1 },
+    it('should return business order statistics', async () => {
+      const mockOrders = [
+        { id: 'order-1', total_cents: 5000, order_status: 'completed' },
+        { id: 'order-2', total_cents: 3000, order_status: 'completed' },
+        { id: 'order-3', total_cents: 4000, order_status: 'pending' },
       ];
 
-      mockDishRepository.findOne
-        .mockResolvedValueOnce(mockDish1)
-        .mockResolvedValueOnce(mockDish2);
+      mockOrderRepository.find.mockResolvedValue(mockOrders);
 
       const result = await orderService.getOrderSummary(
         'business-123',
-        items,
-        'delivery',
-        undefined
+        'user-123'
       );
 
-      expect(result.subtotal_cents).toBe(5500); // 2*2000 + 1*1500
-      expect(result.delivery_fee_cents).toBeGreaterThan(0);
-      expect(result.total_cents).toBeGreaterThan(5500);
-      expect(result.items).toHaveLength(2);
+      expect(result.totalOrders).toBe(3);
+      expect(result.totalSales).toBe(12000);
+      expect(result.averageOrderValue).toBe(4000);
+      expect(result.ordersByStatus.completed).toBe(2);
+      expect(result.ordersByStatus.pending).toBe(1);
     });
 
-    it('should apply coupon discount to total', async () => {
-      const mockDish = {
-        id: 'dish-1',
-        name: 'Pizza',
-        price_cents: 2000,
-      };
+    it('should filter by date range', async () => {
+      const mockOrders = [
+        { id: 'order-1', total_cents: 5000, order_status: 'completed' },
+      ];
 
-      const items = [{ dish_id: 'dish-1', quantity: 2 }];
+      mockOrderRepository.find.mockResolvedValue(mockOrders);
 
-      mockDishRepository.findOne.mockResolvedValue(mockDish);
+      const startDate = new Date('2025-01-01');
+      const endDate = new Date('2025-01-31');
 
       const result = await orderService.getOrderSummary(
         'business-123',
-        items,
-        'delivery',
-        1000 // 1000 cents discount
+        'user-123',
+        startDate,
+        endDate
       );
 
-      expect(result.discount_cents).toBe(1000);
-      expect(result.total_cents).toBeLessThan(result.subtotal_cents);
-    });
-
-    it('should throw error if dish not found', async () => {
-      const items = [{ dish_id: 'nonexistent', quantity: 1 }];
-
-      mockDishRepository.findOne.mockResolvedValue(null);
-
-      await expect(
-        orderService.getOrderSummary('business-123', items, 'delivery', undefined)
-      ).rejects.toThrow('Dish not found');
-    });
-
-    it('should calculate pickup order without delivery fee', async () => {
-      const mockDish = {
-        id: 'dish-1',
-        name: 'Pizza',
-        price_cents: 2000,
-      };
-
-      const items = [{ dish_id: 'dish-1', quantity: 1 }];
-
-      mockDishRepository.findOne.mockResolvedValue(mockDish);
-
-      const result = await orderService.getOrderSummary(
-        'business-123',
-        items,
-        'pickup',
-        undefined
-      );
-
-      expect(result.delivery_fee_cents).toBe(0);
-      expect(result.total_cents).toBe(result.subtotal_cents);
+      expect(result.totalOrders).toBe(1);
+      expect(result.totalSales).toBe(5000);
     });
   });
 
