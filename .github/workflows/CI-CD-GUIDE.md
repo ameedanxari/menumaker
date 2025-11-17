@@ -264,7 +264,7 @@ If the pipeline shows "No changes detected":
 To manually run a workflow (e.g., for testing):
 
 1. Go to Actions tab
-2. Select workflow (e.g., "Android CI (Legacy)")
+2. Select workflow (e.g., "Smart CI/CD Pipeline")
 3. Click "Run workflow"
 4. Select branch
 5. Click "Run workflow" button
@@ -280,7 +280,6 @@ To manually run a workflow (e.g., for testing):
 | `nightly-e2e.yml` | End-to-end tests | Nightly schedule |
 | `deploy.yml` | Production deployment | Manual/tags |
 | `ci.yml` (legacy) | Old CI pipeline | Manual only |
-| `android-ci.yml` (legacy) | Old Android CI | Manual only |
 
 ---
 
