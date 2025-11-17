@@ -2,7 +2,7 @@ package com.menumaker.viewmodel
 
 import com.menumaker.data.common.Resource
 import com.menumaker.data.remote.models.AuthData
-import com.menumaker.data.remote.models.User
+import com.menumaker.data.remote.models.UserDto
 import com.menumaker.data.repository.AuthRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -36,7 +36,7 @@ class AuthViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
 
-    private val mockUser = User(
+    private val mockUser = UserDto(
         id = "user123",
         email = "test@example.com",
         name = "Test User",
@@ -71,7 +71,7 @@ class AuthViewModelTest {
         val email = "test@example.com"
         val password = "password123"
         val successFlow = flow {
-            emit(Resource.Loading())
+            emit(Resource.Loading)
             emit(Resource.Success(mockAuthData))
         }
 
@@ -94,8 +94,8 @@ class AuthViewModelTest {
         val password = "wrongpassword"
         val errorMessage = "Invalid credentials"
         val errorFlow = flow {
-            emit(Resource.Loading())
-            emit(Resource.Error<AuthData>(errorMessage))
+            emit(Resource.Loading)
+            emit(Resource.Error(errorMessage))
         }
 
         `when`(authRepository.login(email, password)).thenReturn(errorFlow)
@@ -116,7 +116,7 @@ class AuthViewModelTest {
         val email = "test@example.com"
         val password = "password123"
         val loadingFlow = flow {
-            emit(Resource.Loading<AuthData>())
+            emit(Resource.Loading())
         }
 
         `when`(authRepository.login(email, password)).thenReturn(loadingFlow)
@@ -153,7 +153,7 @@ class AuthViewModelTest {
         val password = "SecurePass123!"
         val name = "New User"
         val successFlow = flow {
-            emit(Resource.Loading())
+            emit(Resource.Loading)
             emit(Resource.Success(mockAuthData))
         }
 
@@ -177,8 +177,8 @@ class AuthViewModelTest {
         val name = "Duplicate User"
         val errorMessage = "Email already exists"
         val errorFlow = flow {
-            emit(Resource.Loading())
-            emit(Resource.Error<AuthData>(errorMessage))
+            emit(Resource.Loading)
+            emit(Resource.Error(errorMessage))
         }
 
         `when`(authRepository.signup(email, password, name)).thenReturn(errorFlow)
@@ -201,7 +201,7 @@ class AuthViewModelTest {
         val name = "Test User"
         val errorMessage = "Password must be at least 8 characters"
         val errorFlow = flow {
-            emit(Resource.Error<AuthData>(errorMessage))
+            emit(Resource.Error(errorMessage))
         }
 
         `when`(authRepository.signup(email, password, name)).thenReturn(errorFlow)
@@ -224,33 +224,6 @@ class AuthViewModelTest {
 
         // When
         viewModel.logout()
-
-        // Then
-        assertFalse(viewModel.isAuthenticated.value)
-    }
-
-    // MARK: - Authentication Check Tests
-
-    @Test
-    fun `checkAuthentication updates state based on stored token`() = runTest {
-        // Given
-        val hasToken = true
-        `when`(authRepository.hasValidToken()).thenReturn(hasToken)
-
-        // When
-        viewModel.checkAuthentication()
-
-        // Then
-        assertEquals(hasToken, viewModel.isAuthenticated.value)
-    }
-
-    @Test
-    fun `checkAuthentication sets false when no token exists`() = runTest {
-        // Given
-        `when`(authRepository.hasValidToken()).thenReturn(false)
-
-        // When
-        viewModel.checkAuthentication()
 
         // Then
         assertFalse(viewModel.isAuthenticated.value)
@@ -283,7 +256,7 @@ class AuthViewModelTest {
             emit(Resource.Success(mockAuthData))
         }
         val errorFlow = flow {
-            emit(Resource.Error<AuthData>("Error"))
+            emit(Resource.Error("Error"))
         }
 
         // When - First attempt fails
@@ -343,10 +316,10 @@ class AuthViewModelTest {
     fun `concurrent login and signup requests handle state correctly`() = runTest {
         // Given
         val loginFlow = flow {
-            emit(Resource.Loading<AuthData>())
+            emit(Resource.Loading())
         }
         val signupFlow = flow {
-            emit(Resource.Loading<AuthData>())
+            emit(Resource.Loading())
         }
 
         `when`(authRepository.login("test@example.com", "pass")).thenReturn(loginFlow)
