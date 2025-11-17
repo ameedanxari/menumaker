@@ -168,7 +168,7 @@ struct ConnectProcessorView: View {
     @State private var accountId = ""
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 Section("Select Provider") {
                     Picker("Provider", selection: $selectedProvider) {
@@ -210,7 +210,7 @@ struct ConnectProcessorView: View {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         PaymentProcessorsView()
     }
 }

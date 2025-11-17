@@ -87,7 +87,7 @@ struct Integration: Codable, Identifiable {
     }
 
     var providerType: IntegrationProvider {
-        IntegrationProvider(rawValue: provider) ?? .other(provider)
+        IntegrationProvider(rawValue: provider)
     }
 
     var displayName: String {

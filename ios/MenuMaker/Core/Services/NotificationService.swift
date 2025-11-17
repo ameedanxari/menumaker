@@ -111,8 +111,15 @@ class NotificationService: NSObject, ObservableObject {
     // MARK: - Badge Management
 
     func setBadgeCount(_ count: Int) {
-        Task {
-            try? await notificationCenter.setBadgeCount(count)
+        if #available(iOS 16.0, *) {
+            Task {
+                try? await notificationCenter.setBadgeCount(count)
+            }
+        } else {
+            // Fallback for iOS 15
+            DispatchQueue.main.async {
+                UIApplication.shared.applicationIconBadgeNumber = count
+            }
         }
     }
 
@@ -166,26 +173,30 @@ class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        let userInfo = response.notification.request.content.userInfo as [AnyHashable: Any]
+        let userInfo = response.notification.request.content.userInfo
 
-        Task { @MainActor [userInfo] in
-            handleNotificationTap(userInfo: userInfo)
+        // Extract values before entering Task to avoid Sendable issues
+        let type = userInfo["type"] as? String
+        let orderId = userInfo["orderId"] as? String
+
+        Task { @MainActor in
+            handleNotificationTap(type: type, orderId: orderId)
             completionHandler()
         }
     }
 
-    private func handleNotificationTap(userInfo: [AnyHashable: Any]) {
+    private func handleNotificationTap(type: String?, orderId: String?) {
         // Handle different notification types
-        if let type = userInfo["type"] as? String {
-            switch type {
-            case "new_order", "order_status":
-                if let orderId = userInfo["orderId"] as? String {
-                    // Navigate to order details
-                    print("Navigate to order: \(orderId)")
-                }
-            default:
-                break
+        guard let type = type else { return }
+
+        switch type {
+        case "new_order", "order_status":
+            if let orderId = orderId {
+                // Navigate to order details
+                print("Navigate to order: \(orderId)")
             }
+        default:
+            break
         }
     }
 }

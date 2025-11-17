@@ -5,6 +5,7 @@
 //  Unit tests for authentication models
 //
 
+import Foundation
 import Testing
 @testable import MenuMaker
 
@@ -13,6 +14,7 @@ struct AuthModelsTests {
     // MARK: - User Model Tests
 
     @Test("User model decodes correctly from JSON")
+    @MainActor
     func testUserDecoding() throws {
         let json = """
         {
@@ -88,6 +90,7 @@ struct AuthModelsTests {
     // MARK: - Request Model Tests
 
     @Test("LoginRequest encodes correctly")
+    @MainActor
     func testLoginRequestEncoding() throws {
         let request = LoginRequest(email: "test@example.com", password: "password123")
         let encoder = JSONEncoder()
@@ -99,6 +102,7 @@ struct AuthModelsTests {
     }
 
     @Test("SignupRequest encodes with all fields")
+    @MainActor
     func testSignupRequestEncoding() throws {
         let request = SignupRequest(
             email: "new@example.com",
@@ -118,6 +122,7 @@ struct AuthModelsTests {
     }
 
     @Test("SignupRequest encodes without optional phone")
+    @MainActor
     func testSignupRequestWithoutPhone() throws {
         let request = SignupRequest(
             email: "new@example.com",
@@ -137,6 +142,7 @@ struct AuthModelsTests {
     // MARK: - AuthResponse Tests
 
     @Test("AuthResponse decodes successfully")
+    @MainActor
     func testAuthResponseDecoding() throws {
         let json = """
         {
@@ -167,6 +173,7 @@ struct AuthModelsTests {
     }
 
     @Test("AuthData contains valid tokens and user")
+    @MainActor
     func testAuthDataStructure() throws {
         let json = """
         {

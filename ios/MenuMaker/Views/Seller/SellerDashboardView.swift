@@ -27,11 +27,13 @@ struct SellerDashboardView: View {
         }
         .background(Color.theme.background)
         .navigationTitle("Dashboard")
+        .accessibilityIdentifier("seller-dashboard-screen")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: { Task { await sellerViewModel.refreshData() } }) {
                     Image(systemName: "arrow.clockwise")
                 }
+                .accessibilityIdentifier("refresh-dashboard-button")
             }
         }
         .refreshable {
@@ -70,6 +72,7 @@ struct BusinessHeaderCard: View {
                     .font(.caption)
             }
             .buttonStyle(.bordered)
+            .accessibilityIdentifier("edit-business-button")
         }
         .frame(maxWidth: .infinity)
         .padding()
@@ -224,7 +227,7 @@ struct ReviewRowView: View {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         SellerDashboardView()
             .environmentObject(SellerViewModel())
     }

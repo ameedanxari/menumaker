@@ -33,17 +33,20 @@ struct LoginView: View {
                         text: $email,
                         keyboardType: .emailAddress
                     )
+                    .accessibilityIdentifier("email-field")
 
                     CustomSecureField(
                         placeholder: "Password",
                         text: $password
                     )
+                    .accessibilityIdentifier("password-field")
 
                     if let errorMessage = authViewModel.errorMessage {
                         Text(errorMessage)
                             .font(.caption)
                             .foregroundColor(.theme.error)
                             .padding(.horizontal)
+                            .accessibilityIdentifier("error-message")
                     }
 
                     Button(action: login) {
@@ -57,6 +60,7 @@ struct LoginView: View {
                     }
                     .buttonStyle(PrimaryButtonStyle())
                     .disabled(authViewModel.isLoading || email.isEmpty || password.isEmpty)
+                    .accessibilityIdentifier("login-button")
 
                     // Biometric Login
                     if BiometricService.shared.isAvailable {
@@ -67,6 +71,7 @@ struct LoginView: View {
                             }
                         }
                         .buttonStyle(SecondaryButtonStyle())
+                        .accessibilityIdentifier("biometric-login-button")
                     }
 
                     // Sign Up Link
@@ -78,7 +83,8 @@ struct LoginView: View {
                             showSignup = true
                         }
                         .foregroundColor(.theme.primary)
-                        .fontWeight(.semibold)
+                        .font(.body.weight(.semibold))
+                        .accessibilityIdentifier("signup-link-button")
                     }
                     .padding(.top, 8)
                 }
@@ -88,6 +94,7 @@ struct LoginView: View {
             }
         }
         .background(Color.theme.background)
+        .accessibilityIdentifier("login-screen")
         .sheet(isPresented: $showSignup) {
             SignupView()
         }

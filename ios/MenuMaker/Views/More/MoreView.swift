@@ -55,15 +55,18 @@ struct MoreView: View {
                     Label("Logout", systemImage: "arrow.right.square")
                         .foregroundColor(.theme.error)
                 }
+                .accessibilityIdentifier("logout-button")
             }
         }
         .navigationTitle("More")
+        .accessibilityIdentifier("more-screen")
         .confirmationDialog("Logout", isPresented: $showLogoutConfirmation) {
             Button("Logout", role: .destructive) {
                 Task {
                     await authViewModel.logout()
                 }
             }
+            .accessibilityIdentifier("confirm-logout-button")
         } message: {
             Text("Are you sure you want to logout?")
         }
@@ -79,16 +82,19 @@ struct SettingsView: View {
         Form {
             Section("Notifications") {
                 Toggle("Push Notifications", isOn: $notificationsEnabled)
+                    .accessibilityIdentifier("push-notifications-toggle")
             }
 
             Section("Security") {
                 if BiometricService.shared.isAvailable {
                     Toggle(BiometricService.shared.biometricType.displayName, isOn: $biometricAuthEnabled)
+                        .accessibilityIdentifier("biometric-auth-toggle")
                 }
 
                 NavigationLink("Change Password") {
                     Text("Change Password")
                 }
+                .accessibilityIdentifier("change-password-link")
             }
 
             Section("Appearance") {
@@ -97,24 +103,28 @@ struct SettingsView: View {
                     Text("Light").tag(ColorScheme.light as ColorScheme?)
                     Text("Dark").tag(ColorScheme.dark as ColorScheme?)
                 }
+                .accessibilityIdentifier("theme-picker")
             }
 
             Section("Data") {
                 Button("Clear Cache") {
                     ImageService.shared.clearCache()
                 }
+                .accessibilityIdentifier("clear-cache-button")
 
                 Button("Clear Cart") {
                     CartRepository.shared.clearCart()
                 }
+                .accessibilityIdentifier("clear-cart-button")
             }
         }
         .navigationTitle("Settings")
+        .accessibilityIdentifier("settings-screen")
     }
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         MoreView()
             .environmentObject(AuthViewModel())
     }

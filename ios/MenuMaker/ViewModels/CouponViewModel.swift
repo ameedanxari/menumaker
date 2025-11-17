@@ -49,16 +49,18 @@ class CouponViewModel: ObservableObject {
 
     // MARK: - Coupon Management
 
-    func createCoupon(
-        code: String,
-        discountType: DiscountType,
-        discountValue: Int,
-        maxDiscount: Double?,
-        minOrderValue: Double,
-        validUntil: Date?,
-        usageLimitType: UsageLimitType,
-        totalUsageLimit: Int?
-    ) async {
+    struct CreateCouponParams {
+        let code: String
+        let discountType: DiscountType
+        let discountValue: Int
+        let maxDiscount: Double?
+        let minOrderValue: Double
+        let validUntil: Date?
+        let usageLimitType: UsageLimitType
+        let totalUsageLimit: Int?
+    }
+
+    func createCoupon(_ params: CreateCouponParams) async {
         guard let businessId = try? await KeychainManager.shared.getBusinessId() else {
             return
         }
@@ -67,29 +69,29 @@ class CouponViewModel: ObservableObject {
         errorMessage = nil
 
         do {
-            let maxDiscountCents = maxDiscount.map { Int($0 * 100) }
-            let minOrderValueCents = Int(minOrderValue * 100)
-            let validUntilString = validUntil.map { ISO8601DateFormatter().string(from: $0) }
+            let maxDiscountCents = params.maxDiscount.map { Int($0 * 100) }
+            let minOrderValueCents = Int(params.minOrderValue * 100)
+            let validUntilString = params.validUntil.map { ISO8601DateFormatter().string(from: $0) }
 
             let coupon = try await repository.createCoupon(
                 businessId: businessId,
-                code: code.uppercased(),
-                discountType: discountType,
-                discountValue: discountValue,
+                code: params.code.uppercased(),
+                discountType: params.discountType,
+                discountValue: params.discountValue,
                 maxDiscountCents: maxDiscountCents,
                 minOrderValueCents: minOrderValueCents,
                 validUntil: validUntilString,
-                usageLimitType: usageLimitType,
-                totalUsageLimit: totalUsageLimit
+                usageLimitType: params.usageLimitType,
+                totalUsageLimit: params.totalUsageLimit
             )
 
             coupons.append(coupon)
             activeCoupons = repository.getActiveCoupons()
 
             analyticsService.track(.couponCreated, parameters: [
-                "code": code,
-                "discount_type": discountType.rawValue,
-                "discount_value": discountValue
+                "code": params.code,
+                "discount_type": params.discountType.rawValue,
+                "discount_value": params.discountValue
             ])
 
         } catch {
@@ -99,32 +101,50 @@ class CouponViewModel: ObservableObject {
         isLoading = false
     }
 
-    func updateCoupon(
-        _ couponId: String,
-        discountValue: Int?,
-        maxDiscount: Double?,
-        minOrderValue: Double?,
-        validUntil: Date?,
-        isActive: Bool?
-    ) async {
+    struct UpdateCouponParams {
+        let couponId: String
+        let discountValue: Int?
+        let maxDiscount: Double?
+        let minOrderValue: Double?
+        let validUntil: Date?
+        let isActive: Bool?
+
+        init(
+            couponId: String,
+            discountValue: Int? = nil,
+            maxDiscount: Double? = nil,
+            minOrderValue: Double? = nil,
+            validUntil: Date? = nil,
+            isActive: Bool? = nil
+        ) {
+            self.couponId = couponId
+            self.discountValue = discountValue
+            self.maxDiscount = maxDiscount
+            self.minOrderValue = minOrderValue
+            self.validUntil = validUntil
+            self.isActive = isActive
+        }
+    }
+
+    func updateCoupon(_ params: UpdateCouponParams) async {
         isLoading = true
         errorMessage = nil
 
         do {
-            let maxDiscountCents = maxDiscount.map { Int($0 * 100) }
-            let minOrderValueCents = minOrderValue.map { Int($0 * 100) }
-            let validUntilString = validUntil.map { ISO8601DateFormatter().string(from: $0) }
+            let maxDiscountCents = params.maxDiscount.map { Int($0 * 100) }
+            let minOrderValueCents = params.minOrderValue.map { Int($0 * 100) }
+            let validUntilString = params.validUntil.map { ISO8601DateFormatter().string(from: $0) }
 
             let coupon = try await repository.updateCoupon(
-                couponId,
-                discountValue: discountValue,
+                params.couponId,
+                discountValue: params.discountValue,
                 maxDiscountCents: maxDiscountCents,
                 minOrderValueCents: minOrderValueCents,
                 validUntil: validUntilString,
-                isActive: isActive
+                isActive: params.isActive
             )
 
-            if let index = coupons.firstIndex(where: { $0.id == couponId }) {
+            if let index = coupons.firstIndex(where: { $0.id == params.couponId }) {
                 coupons[index] = coupon
             }
 
@@ -160,8 +180,10 @@ class CouponViewModel: ObservableObject {
             return
         }
 
-        await updateCoupon(couponId, discountValue: nil, maxDiscount: nil,
-                          minOrderValue: nil, validUntil: nil, isActive: !coupon.isActive)
+        await updateCoupon(UpdateCouponParams(
+            couponId: couponId,
+            isActive: !coupon.isActive
+        ))
     }
 
     // MARK: - Validation

@@ -14,40 +14,53 @@ struct CouponsView: View {
             }
             .pickerStyle(.segmented)
             .padding()
+            .accessibilityIdentifier("coupon-filter")
 
             // Coupons List
-            if viewModel.isLoading {
-                ProgressView()
-                    .padding()
-            } else if displayedCoupons.isEmpty {
+            if displayedCoupons.isEmpty && !viewModel.isLoading {
                 EmptyState(
                     icon: "ticket",
                     title: "No Coupons",
                     message: showActive ? "Create your first coupon" : "No expired coupons"
                 )
+                .accessibilityIdentifier("empty-coupons-state")
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         ForEach(displayedCoupons) { coupon in
                             CouponCard(coupon: coupon, viewModel: viewModel)
+                                .accessibilityIdentifier("coupon-card-\(coupon.id)")
                         }
                     }
                     .padding()
                 }
+                .accessibilityIdentifier("coupons-list")
             }
         }
         .background(Color.theme.background)
         .navigationTitle("Coupons")
+        .accessibilityIdentifier("coupons-screen")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: { showAddCoupon = true }) {
                     Image(systemName: "plus.circle.fill")
                 }
+                .accessibilityIdentifier("add-coupon-button")
             }
         }
         .sheet(isPresented: $showAddCoupon) {
             AddCouponView(viewModel: viewModel)
         }
+        .overlay(
+            Group {
+                if viewModel.isLoading {
+                    ProgressView()
+                        .padding()
+                        .background(Color.theme.background.opacity(0.8))
+                        .accessibilityIdentifier("loading-indicator")
+                }
+            }
+        )
         .refreshable {
             await viewModel.refreshCoupons()
         }
@@ -133,7 +146,7 @@ struct AddCouponView: View {
     @State private var validUntil: Date? = nil
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 Section("Coupon Details") {
                     TextField("Code (e.g., SAVE20)", text: $code)
@@ -186,7 +199,7 @@ struct AddCouponView: View {
         guard let discount = Int(discountValue),
               let minOrder = Double(minOrderValue) else { return }
 
-        await viewModel.createCoupon(
+        await viewModel.createCoupon(CouponViewModel.CreateCouponParams(
             code: code,
             discountType: discountType,
             discountValue: discount,
@@ -195,14 +208,14 @@ struct AddCouponView: View {
             validUntil: validUntil,
             usageLimitType: .unlimited,
             totalUsageLimit: nil
-        )
+        ))
 
         dismiss()
     }
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         CouponsView()
     }
 }

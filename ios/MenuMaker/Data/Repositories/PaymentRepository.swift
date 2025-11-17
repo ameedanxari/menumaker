@@ -75,14 +75,20 @@ class PaymentRepository: ObservableObject {
     ) async throws -> PayoutSchedule {
         struct PayoutScheduleRequest: Encodable {
             let frequency: String
-            let minimum_threshold_cents: Int
-            let auto_payout_enabled: Bool
+            let minimumThresholdCents: Int
+            let autoPayoutEnabled: Bool
+
+            enum CodingKeys: String, CodingKey {
+                case frequency
+                case minimumThresholdCents = "minimum_threshold_cents"
+                case autoPayoutEnabled = "auto_payout_enabled"
+            }
         }
 
         let request = PayoutScheduleRequest(
             frequency: frequency.rawValue,
-            minimum_threshold_cents: minimumThresholdCents,
-            auto_payout_enabled: autoPayoutEnabled
+            minimumThresholdCents: minimumThresholdCents,
+            autoPayoutEnabled: autoPayoutEnabled
         )
 
         let response: PayoutListResponse = try await apiClient.request(

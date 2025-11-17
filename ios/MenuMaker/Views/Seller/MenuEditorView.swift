@@ -38,11 +38,14 @@ struct MenuEditorView: View {
         }
         .background(Color.theme.background)
         .navigationTitle("Menu")
+        .accessibilityIdentifier("menu-editor-screen")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: { showAddDish = true }) {
                     Image(systemName: "plus.circle.fill")
                 }
+                .accessibilityLabel("Add Item")
+                .accessibilityIdentifier("add-item-button")
             }
         }
         .sheet(isPresented: $showAddDish) {
@@ -170,11 +173,18 @@ struct AddDishView: View {
     @State private var isAvailable = true
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 Section("Basic Information") {
                     TextField("Name", text: $name)
-                    TextField("Description", text: $description, axis: .vertical)
+                    // Multi-line text field for description (iOS 15 compatible)
+                    VStack(alignment: .leading) {
+                        Text("Description")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        TextEditor(text: $description)
+                            .frame(minHeight: 80)
+                    }
                     TextField("Price", text: $price)
                         .keyboardType(.decimalPad)
                     TextField("Category", text: $category)
@@ -207,7 +217,7 @@ struct AddDishView: View {
     private func saveDish() async {
         guard let priceValue = Double(price) else { return }
 
-        await viewModel.createDish(
+        await viewModel.createDish(DishViewModel.CreateDishParams(
             name: name,
             description: description.isEmpty ? nil : description,
             price: priceValue,
@@ -215,14 +225,14 @@ struct AddDishView: View {
             isVegetarian: isVegetarian,
             isAvailable: isAvailable,
             image: nil
-        )
+        ))
 
         dismiss()
     }
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         MenuEditorView()
     }
 }

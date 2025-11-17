@@ -13,6 +13,7 @@ struct CartView: View {
                     title: "Empty Cart",
                     message: "Add items to your cart to get started"
                 )
+                .accessibilityIdentifier("empty-cart-state")
             } else {
                 // Cart Items
                 ScrollView {
@@ -20,6 +21,7 @@ struct CartView: View {
                         // Items List
                         ForEach(viewModel.cart?.items ?? []) { item in
                             CartItemRow(item: item, viewModel: viewModel)
+                                .accessibilityIdentifier("cart-item-\(item.dishId)")
                         }
 
                         // Coupon Section
@@ -29,12 +31,15 @@ struct CartView: View {
                             onApply: { await viewModel.applyCoupon(couponCode) },
                             onRemove: { viewModel.removeCoupon() }
                         )
+                        .accessibilityIdentifier("coupon-section")
 
                         // Summary
                         CartSummary(viewModel: viewModel)
+                            .accessibilityIdentifier("cart-summary")
                     }
                     .padding()
                 }
+                .accessibilityIdentifier("cart-items-list")
 
                 // Checkout Button
                 Button(action: { showCheckout = true }) {
@@ -43,10 +48,12 @@ struct CartView: View {
                 }
                 .buttonStyle(PrimaryButtonStyle())
                 .padding()
+                .accessibilityIdentifier("checkout-button")
             }
         }
         .background(Color.theme.background)
         .navigationTitle("Cart (\(viewModel.getItemCount()))")
+        .accessibilityIdentifier("cart-screen")
         .sheet(isPresented: $showCheckout) {
             CheckoutView(viewModel: viewModel)
         }
@@ -78,16 +85,19 @@ struct CartItemRow: View {
                         .font(.title3)
                         .foregroundColor(.theme.primary)
                 }
+                .accessibilityIdentifier("decrease-quantity-\(item.dishId)")
 
                 Text("\(item.quantity)")
                     .font(.headline)
                     .frame(minWidth: 30)
+                    .accessibilityIdentifier("quantity-\(item.dishId)")
 
                 Button(action: { viewModel.incrementQuantity(item.dishId) }) {
                     Image(systemName: "plus.circle.fill")
                         .font(.title3)
                         .foregroundColor(.theme.primary)
                 }
+                .accessibilityIdentifier("increase-quantity-\(item.dishId)")
             }
 
             // Total
@@ -116,6 +126,7 @@ struct CouponSection: View {
                         Text("Coupon Applied: \(coupon.code)")
                             .font(.subheadline)
                             .fontWeight(.semibold)
+                            .accessibilityIdentifier("applied-coupon-code")
 
                         Text(coupon.formattedDiscount)
                             .font(.caption)
@@ -129,11 +140,13 @@ struct CouponSection: View {
                     }
                     .font(.caption)
                     .foregroundColor(.theme.error)
+                    .accessibilityIdentifier("remove-coupon-button")
                 }
             } else {
                 HStack {
                     TextField("Enter Coupon Code", text: $couponCode)
                         .textCase(.uppercase)
+                        .accessibilityIdentifier("coupon-code-field")
 
                     Button("Apply") {
                         Task {
@@ -142,6 +155,7 @@ struct CouponSection: View {
                     }
                     .buttonStyle(.bordered)
                     .disabled(couponCode.isEmpty)
+                    .accessibilityIdentifier("apply-coupon-button")
                 }
             }
         }
@@ -191,25 +205,31 @@ struct CheckoutView: View {
     @State private var customerEmail = ""
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 Section("Customer Information") {
                     TextField("Name", text: $customerName)
+                        .accessibilityIdentifier("customer-name-field")
                     TextField("Phone", text: $customerPhone)
                         .keyboardType(.phonePad)
+                        .accessibilityIdentifier("customer-phone-field")
                     TextField("Email", text: $customerEmail)
                         .keyboardType(.emailAddress)
+                        .accessibilityIdentifier("customer-email-field")
                 }
 
                 Section("Order Summary") {
                     DetailRow(label: "Total", value: viewModel.getFormattedTotal())
+                        .accessibilityIdentifier("checkout-total")
                 }
             }
             .navigationTitle("Checkout")
             .navigationBarTitleDisplayMode(.inline)
+            .accessibilityIdentifier("checkout-screen")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { dismiss() }
+                        .accessibilityIdentifier("cancel-checkout-button")
                 }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -219,6 +239,7 @@ struct CheckoutView: View {
                         }
                     }
                     .disabled(!isFormValid)
+                    .accessibilityIdentifier("place-order-button")
                 }
             }
         }
@@ -242,7 +263,7 @@ struct CheckoutView: View {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         CartView()
     }
 }

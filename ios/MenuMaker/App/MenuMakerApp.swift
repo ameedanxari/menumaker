@@ -21,8 +21,8 @@ struct MenuMakerApp: App {
                         await authViewModel.checkAuthentication()
                     }
                 }
-                .onChange(of: scenePhase) { oldPhase, newPhase in
-                    handleScenePhaseChange(from: oldPhase, to: newPhase)
+                .onChange(of: scenePhase) { newPhase in
+                    handleScenePhaseChange(to: newPhase)
                 }
         }
     }
@@ -51,7 +51,7 @@ struct MenuMakerApp: App {
         NotificationService.shared.requestAuthorization()
     }
 
-    private func handleScenePhaseChange(from oldPhase: ScenePhase, to newPhase: ScenePhase) {
+    private func handleScenePhaseChange(to newPhase: ScenePhase) {
         switch newPhase {
         case .active:
             // App became active
@@ -84,7 +84,7 @@ struct ContentView: View {
             if authViewModel.isAuthenticated {
                 MainTabView()
             } else {
-                NavigationStack {
+                NavigationView {
                     LoginView()
                 }
             }
@@ -102,7 +102,7 @@ struct MainTabView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             // Seller Dashboard
-            NavigationStack {
+            NavigationView {
                 SellerDashboardView()
             }
             .tabItem {
@@ -111,7 +111,7 @@ struct MainTabView: View {
             .tag(0)
 
             // Orders
-            NavigationStack {
+            NavigationView {
                 OrdersListView()
             }
             .tabItem {
@@ -120,7 +120,7 @@ struct MainTabView: View {
             .tag(1)
 
             // Menu
-            NavigationStack {
+            NavigationView {
                 MenuEditorView()
             }
             .tabItem {
@@ -129,7 +129,7 @@ struct MainTabView: View {
             .tag(2)
 
             // More
-            NavigationStack {
+            NavigationView {
                 MoreView()
             }
             .tabItem {

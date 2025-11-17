@@ -44,25 +44,27 @@ class DishRepository: ObservableObject {
 
     // MARK: - Create Operations
 
-    func createDish(
-        businessId: String,
-        name: String,
-        description: String?,
-        priceCents: Int,
-        imageUrl: String?,
-        category: String?,
-        isVegetarian: Bool,
-        isAvailable: Bool
-    ) async throws -> Dish {
+    struct CreateDishParams {
+        let businessId: String
+        let name: String
+        let description: String?
+        let priceCents: Int
+        let imageUrl: String?
+        let category: String?
+        let isVegetarian: Bool
+        let isAvailable: Bool
+    }
+
+    func createDish(_ params: CreateDishParams) async throws -> Dish {
         let request = CreateDishRequest(
-            businessId: businessId,
-            name: name,
-            description: description,
-            priceCents: priceCents,
-            imageUrl: imageUrl,
-            category: category,
-            isVegetarian: isVegetarian,
-            isAvailable: isAvailable
+            businessId: params.businessId,
+            name: params.name,
+            description: params.description,
+            priceCents: params.priceCents,
+            imageUrl: params.imageUrl,
+            category: params.category,
+            isVegetarian: params.isVegetarian,
+            isAvailable: params.isAvailable
         )
 
         let response: DishResponse = try await apiClient.request(
@@ -79,34 +81,56 @@ class DishRepository: ObservableObject {
 
     // MARK: - Update Operations
 
-    func updateDish(
-        _ dishId: String,
-        name: String? = nil,
-        description: String? = nil,
-        priceCents: Int? = nil,
-        imageUrl: String? = nil,
-        category: String? = nil,
-        isVegetarian: Bool? = nil,
-        isAvailable: Bool? = nil
-    ) async throws -> Dish {
+    struct UpdateDishParams {
+        let dishId: String
+        let name: String?
+        let description: String?
+        let priceCents: Int?
+        let imageUrl: String?
+        let category: String?
+        let isVegetarian: Bool?
+        let isAvailable: Bool?
+
+        init(
+            dishId: String,
+            name: String? = nil,
+            description: String? = nil,
+            priceCents: Int? = nil,
+            imageUrl: String? = nil,
+            category: String? = nil,
+            isVegetarian: Bool? = nil,
+            isAvailable: Bool? = nil
+        ) {
+            self.dishId = dishId
+            self.name = name
+            self.description = description
+            self.priceCents = priceCents
+            self.imageUrl = imageUrl
+            self.category = category
+            self.isVegetarian = isVegetarian
+            self.isAvailable = isAvailable
+        }
+    }
+
+    func updateDish(_ params: UpdateDishParams) async throws -> Dish {
         let request = UpdateDishRequest(
-            name: name,
-            description: description,
-            priceCents: priceCents,
-            imageUrl: imageUrl,
-            category: category,
-            isVegetarian: isVegetarian,
-            isAvailable: isAvailable
+            name: params.name,
+            description: params.description,
+            priceCents: params.priceCents,
+            imageUrl: params.imageUrl,
+            category: params.category,
+            isVegetarian: params.isVegetarian,
+            isAvailable: params.isAvailable
         )
 
         let response: DishResponse = try await apiClient.request(
-            endpoint: AppConstants.API.Endpoints.dish(dishId),
+            endpoint: AppConstants.API.Endpoints.dish(params.dishId),
             method: .patch,
             body: request
         )
 
         // Update local cache
-        if let index = dishes.firstIndex(where: { $0.id == dishId }) {
+        if let index = dishes.firstIndex(where: { $0.id == params.dishId }) {
             dishes[index] = response.data.dish
         }
 

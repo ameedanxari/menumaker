@@ -163,7 +163,7 @@ struct FormattersTests {
 
     @Test("ISO8601 formatter creates valid string")
     func testISO8601Formatter() {
-        let date = Date(timeIntervalSince1970: 1705317000) // 2025-01-15 10:30:00 UTC
+        let date = Date(timeIntervalSince1970: 1736937000) // 2025-01-15 10:30:00 UTC
         let iso8601String = Formatters.formatISO8601(date)
         #expect(iso8601String.contains("2025"))
         #expect(iso8601String.contains("T"))
@@ -172,7 +172,7 @@ struct FormattersTests {
 
     @Test("Date extension provides ISO8601 string")
     func testDateISO8601Extension() {
-        let date = Date(timeIntervalSince1970: 1705317000)
+        let date = Date(timeIntervalSince1970: 1736937000)
         let iso8601 = date.iso8601String
         #expect(iso8601.contains("T"))
         #expect(iso8601.contains("Z"))

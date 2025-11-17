@@ -344,4 +344,124 @@ describe('OrderService', () => {
       expect(result.fulfilled_at).toBeDefined();
     });
   });
+
+  describe('getOrderById', () => {
+    it('should get order by ID', async () => {
+      const mockOrder = {
+        id: 'order-123',
+        business_id: 'business-123',
+        customer_id: 'customer-123',
+        order_status: 'pending',
+      };
+
+      mockOrderRepository.findOne.mockResolvedValue(mockOrder);
+
+      const result = await orderService.getOrderById('order-123');
+
+      expect(result).toEqual(mockOrder);
+      expect(mockOrderRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'order-123' },
+        relations: expect.arrayContaining(['business', 'items']),
+      });
+    });
+
+    it('should throw error if order not found', async () => {
+      mockOrderRepository.findOne.mockResolvedValue(null);
+
+      await expect(orderService.getOrderById('nonexistent')).rejects.toThrow('Order not found');
+    });
+  });
+
+  describe('getOrderSummary', () => {
+    it('should return business order statistics', async () => {
+      const mockOrders = [
+        { id: 'order-1', total_cents: 5000, order_status: 'completed' },
+        { id: 'order-2', total_cents: 3000, order_status: 'completed' },
+        { id: 'order-3', total_cents: 4000, order_status: 'pending' },
+      ];
+
+      mockOrderRepository.find.mockResolvedValue(mockOrders);
+
+      const result = await orderService.getOrderSummary(
+        'business-123',
+        'user-123'
+      );
+
+      expect(result.totalOrders).toBe(3);
+      expect(result.totalSales).toBe(12000);
+      expect(result.averageOrderValue).toBe(4000);
+      expect(result.ordersByStatus.completed).toBe(2);
+      expect(result.ordersByStatus.pending).toBe(1);
+    });
+
+    it('should filter by date range', async () => {
+      const mockOrders = [
+        { id: 'order-1', total_cents: 5000, order_status: 'completed' },
+      ];
+
+      mockOrderRepository.find.mockResolvedValue(mockOrders);
+
+      const startDate = new Date('2025-01-01');
+      const endDate = new Date('2025-01-31');
+
+      const result = await orderService.getOrderSummary(
+        'business-123',
+        'user-123',
+        startDate,
+        endDate
+      );
+
+      expect(result.totalOrders).toBe(1);
+      expect(result.totalSales).toBe(5000);
+    });
+  });
+
+  describe('order validation', () => {
+    it('should validate minimum order value', async () => {
+      const mockBusiness = {
+        id: 'business-123',
+        settings: {
+          min_order_value_cents: 5000, // Rs. 50 minimum
+        },
+      };
+
+      mockBusinessRepository.findOne.mockResolvedValue(mockBusiness);
+
+      const mockDish = {
+        id: 'dish-1',
+        price_cents: 1000,
+      };
+
+      mockDishRepository.findOne.mockResolvedValue(mockDish);
+
+      const orderData = {
+        business_id: 'business-123',
+        customer_id: 'customer-123',
+        items: [{ dish_id: 'dish-1', quantity: 1 }], // Only 10 Rs
+        order_type: 'delivery' as const,
+      };
+
+      await expect(orderService.createOrder(orderData)).rejects.toThrow(
+        'Minimum order value not met'
+      );
+    });
+  });
+
+  describe('error handling', () => {
+    it('should handle database errors gracefully', async () => {
+      mockOrderRepository.findOne.mockRejectedValue(new Error('Database connection failed'));
+
+      await expect(orderService.getOrderById('order-123')).rejects.toThrow(
+        'Database connection failed'
+      );
+    });
+
+    it('should handle update errors when order not found', async () => {
+      mockOrderRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        orderService.updateOrder('nonexistent', 'user-123', { order_status: 'confirmed' })
+      ).rejects.toThrow('Order not found');
+    });
+  });
 });

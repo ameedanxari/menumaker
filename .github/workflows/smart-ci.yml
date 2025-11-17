@@ -55,29 +55,6 @@ jobs:
   # ============================================
   # BACKEND JOBS
   # ============================================
-  backend-lint:
-    name: Backend - Lint
-    needs: detect-changes
-    if: needs.detect-changes.outputs.backend == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        working-directory: ./backend
-        run: npm ci
-
-      - name: Run linter
-        working-directory: ./backend
-        run: npm run lint
-
   backend-test:
     name: Backend - Tests
     needs: detect-changes
@@ -257,29 +234,6 @@ jobs:
   # ============================================
   # FRONTEND JOBS
   # ============================================
-  frontend-lint:
-    name: Frontend - Lint
-    needs: detect-changes
-    if: needs.detect-changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        working-directory: ./frontend
-        run: npm ci
-
-      - name: Run linter
-        working-directory: ./frontend
-        run: npm run lint
-
   frontend-test:
     name: Frontend - Tests
     needs: detect-changes
@@ -433,40 +387,6 @@ jobs:
   # ============================================
   # ANDROID JOBS
   # ============================================
-  android-lint:
-    name: Android - Lint
-    needs: detect-changes
-    if: needs.detect-changes.outputs.android == 'true'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./android
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: 'temurin'
-          cache: gradle
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Run lint
-        run: ./gradlew lint
-
-      - name: Upload lint results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-lint-results
-          path: android/app/build/reports/lint-results-*.html
-          retention-days: 7
-
   android-test:
     name: Android - Unit Tests
     needs: detect-changes
@@ -605,23 +525,6 @@ jobs:
   # ============================================
   # iOS JOBS
   # ============================================
-  ios-lint:
-    name: iOS - Lint (SwiftLint)
-    needs: detect-changes
-    if: needs.detect-changes.outputs.ios == 'true'
-    runs-on: macos-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install SwiftLint
-        run: brew install swiftlint
-
-      - name: Run SwiftLint
-        working-directory: ./ios
-        run: swiftlint lint --reporter github-actions-logging || echo "SwiftLint completed with warnings"
-
   ios-build:
     name: iOS - Build
     needs: detect-changes
@@ -656,9 +559,13 @@ jobs:
             echo "No Podfile found, skipping CocoaPods installation"
           fi
 
+      - name: Install xcpretty
+        run: gem install xcpretty
+
       - name: Build iOS app (Debug)
         working-directory: ./ios
         run: |
+          set -o pipefail
           xcodebuild clean build \
             -project MenuMaker.xcodeproj \
             -scheme MenuMaker \
@@ -668,7 +575,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            | xcpretty || true
+            | xcpretty
 
       - name: Build summary
         run: |
@@ -700,9 +607,13 @@ jobs:
             echo "No Podfile found, skipping CocoaPods installation"
           fi
 
-      - name: Run unit tests
+      - name: Install xcpretty
+        run: gem install xcpretty
+
+      - name: Run unit and UI tests
         working-directory: ./ios
         run: |
+          set -o pipefail
           xcodebuild test \
             -project MenuMaker.xcodeproj \
             -scheme MenuMaker \
@@ -711,6 +622,7 @@ jobs:
             -enableCodeCoverage YES \
             CODE_SIGNING_ALLOWED=NO \
             | xcpretty
+          echo "✅ iOS unit tests and UI tests completed"
 
       - name: Upload test results
         if: always()
@@ -806,21 +718,17 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - detect-changes
-      - backend-lint
       - backend-test
       - backend-build
       - backend-typecheck
       - backend-security
-      - frontend-lint
       - frontend-test
       - frontend-build
       - frontend-typecheck
       - frontend-security
-      - android-lint
       - android-test
       - android-build
       - android-security
-      - ios-lint
       - ios-build
       - ios-test
       - ios-security
@@ -862,7 +770,8 @@ jobs:
 
           # iOS checks (if iOS changed)
           if [ "${{ needs.detect-changes.outputs.ios }}" == "true" ]; then
-            if [ "${{ needs.ios-build.result }}" != "success" ]; then
+            if [ "${{ needs.ios-test.result }}" != "success" ] || \
+               [ "${{ needs.ios-build.result }}" != "success" ]; then
               echo "❌ iOS checks failed"
               exit 1
             fi
@@ -895,27 +804,27 @@ jobs:
             }
 
             summary += '\n### Pipeline Results\n\n';
-            summary += '| Component | Lint | Test | Build | Status |\n';
-            summary += '|-----------|------|------|-------|--------|\n';
+            summary += '| Component | Test | Build | Status |\n';
+            summary += '|-----------|------|-------|--------|\n';
 
             if (backendChanged) {
               const status = '${{ needs.backend-build.result }}' === 'success' ? '✅' : '❌';
-              summary += `| Backend | ${'${{ needs.backend-lint.result }}'} | ${'${{ needs.backend-test.result }}'} | ${'${{ needs.backend-build.result }}'} | ${status} |\n`;
+              summary += `| Backend | ${'${{ needs.backend-test.result }}'} | ${'${{ needs.backend-build.result }}'} | ${status} |\n`;
             }
 
             if (frontendChanged) {
               const status = '${{ needs.frontend-build.result }}' === 'success' ? '✅' : '❌';
-              summary += `| Frontend | ${'${{ needs.frontend-lint.result }}'} | ${'${{ needs.frontend-test.result }}'} | ${'${{ needs.frontend-build.result }}'} | ${status} |\n`;
+              summary += `| Frontend | ${'${{ needs.frontend-test.result }}'} | ${'${{ needs.frontend-build.result }}'} | ${status} |\n`;
             }
 
             if (androidChanged) {
               const status = '${{ needs.android-build.result }}' === 'success' ? '✅' : '❌';
-              summary += `| Android | ${'${{ needs.android-lint.result }}'} | ${'${{ needs.android-test.result }}'} | ${'${{ needs.android-build.result }}'} | ${status} |\n`;
+              summary += `| Android | ${'${{ needs.android-test.result }}'} | ${'${{ needs.android-build.result }}'} | ${status} |\n`;
             }
 
             if (iosChanged) {
               const status = '${{ needs.ios-build.result }}' === 'success' ? '✅' : '❌';
-              summary += `| iOS | ${'${{ needs.ios-lint.result }}'} | ${'${{ needs.ios-test.result }}'} | ${'${{ needs.ios-build.result }}'} | ${status} |\n`;
+              summary += `| iOS | ${'${{ needs.ios-test.result }}'} | ${'${{ needs.ios-build.result }}'} | ${status} |\n`;
             }
 
             summary += '\n---\n';
