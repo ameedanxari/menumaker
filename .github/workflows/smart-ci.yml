@@ -656,9 +656,13 @@ jobs:
             echo "No Podfile found, skipping CocoaPods installation"
           fi
 
+      - name: Install xcpretty
+        run: gem install xcpretty
+
       - name: Build iOS app (Debug)
         working-directory: ./ios
         run: |
+          set -o pipefail
           xcodebuild clean build \
             -project MenuMaker.xcodeproj \
             -scheme MenuMaker \
@@ -668,7 +672,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            | xcpretty || true
+            | xcpretty
 
       - name: Build summary
         run: |
@@ -700,9 +704,13 @@ jobs:
             echo "No Podfile found, skipping CocoaPods installation"
           fi
 
+      - name: Install xcpretty
+        run: gem install xcpretty
+
       - name: Run unit tests
         working-directory: ./ios
         run: |
+          set -o pipefail
           xcodebuild test \
             -project MenuMaker.xcodeproj \
             -scheme MenuMaker \
@@ -862,7 +870,8 @@ jobs:
 
           # iOS checks (if iOS changed)
           if [ "${{ needs.detect-changes.outputs.ios }}" == "true" ]; then
-            if [ "${{ needs.ios-build.result }}" != "success" ]; then
+            if [ "${{ needs.ios-test.result }}" != "success" ] || \
+               [ "${{ needs.ios-build.result }}" != "success" ]; then
               echo "❌ iOS checks failed"
               exit 1
             fi
