@@ -13,11 +13,12 @@ struct ForgotPasswordPage {
     // MARK: - Elements
 
     var emailField: XCUIElement {
-        app.textFields["Email"]
+        app.textFields["email-field"]
     }
 
     var submitButton: XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'submit' OR label CONTAINS[c] 'send' OR label CONTAINS[c] 'reset'")).firstMatch
+        // Since ForgotPasswordView doesn't exist yet, look for any button that might be a submit button
+        app.buttons["submit-button"]
     }
 
     var backButton: XCUIElement {

@@ -12,29 +12,33 @@ struct LoginPage {
 
     // MARK: - Elements
 
+    private var loginScreen: XCUIElement {
+        app.scrollViews["login-screen"]
+    }
+
     var welcomeText: XCUIElement {
         app.staticTexts["Welcome Back"]
     }
 
     var emailField: XCUIElement {
-        app.textFields["Email"]
+        loginScreen.textFields["email-field"]
     }
 
     var passwordField: XCUIElement {
-        app.secureTextFields["Password"]
+        loginScreen.secureTextFields["password-field"]
     }
 
     var loginButton: XCUIElement {
-        // Updated to match actual button label
-        app.buttons["Log In"]
+        // Use accessibility identifier instead of label
+        app.buttons["login-button"]
     }
 
     var signUpButton: XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'sign up'")).firstMatch
+        app.buttons["signup-link-button"]
     }
 
     var forgotPasswordButton: XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'forgot password'")).firstMatch
+        app.buttons["forgot-password-link"]
     }
 
     var errorMessage: XCUIElement {
@@ -90,7 +94,7 @@ struct LoginPage {
 
     @discardableResult
     func assertScreenDisplayed(timeout: TimeInterval = 2) -> LoginPage {
-        XCTAssertTrue(emailField.waitForExistence(timeout: timeout), "Login screen should be displayed")
+        XCTAssertTrue(loginScreen.waitForExistence(timeout: timeout), "Login screen should be displayed")
         return self
     }
 
