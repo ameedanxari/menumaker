@@ -71,7 +71,7 @@ struct ReferralView: View {
                         .accessibilityIdentifier("copy-code-button")
                     }
                     .padding()
-                    .background(Color.theme.secondaryBackground)
+                    .background(Color.theme.surface)
                     .cornerRadius(12)
 
                     // Share Button
@@ -104,7 +104,7 @@ struct ReferralView: View {
 
             if let stats = viewModel.stats {
                 HStack(spacing: 12) {
-                    StatCard(
+                    ReferralStatCard(
                         title: "Total Referrals",
                         value: "\(stats.totalReferrals)",
                         icon: "person.2.fill",
@@ -112,9 +112,9 @@ struct ReferralView: View {
                     )
                     .accessibilityIdentifier("total-referrals-stat")
 
-                    StatCard(
+                    ReferralStatCard(
                         title: "Rewards Earned",
-                        value: formatCurrency(stats.totalRewardsCents),
+                        value: formatCurrency(stats.totalEarningsCents),
                         icon: "indianrupeesign.circle.fill",
                         color: .green
                     )
@@ -122,7 +122,7 @@ struct ReferralView: View {
                 }
 
                 HStack(spacing: 12) {
-                    StatCard(
+                    ReferralStatCard(
                         title: "Pending",
                         value: "\(stats.pendingReferrals)",
                         icon: "clock.fill",
@@ -130,7 +130,7 @@ struct ReferralView: View {
                     )
                     .accessibilityIdentifier("pending-referrals-stat")
 
-                    StatCard(
+                    ReferralStatCard(
                         title: "This Month",
                         value: "\(stats.monthlyReferrals)",
                         icon: "calendar",
@@ -196,7 +196,7 @@ struct ReferralView: View {
     }
 }
 
-struct StatCard: View {
+private struct ReferralStatCard: View {
     let title: String
     let value: String
     let icon: String

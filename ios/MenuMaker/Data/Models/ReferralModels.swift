@@ -6,6 +6,7 @@ struct ReferralStats: Codable {
     let totalReferrals: Int
     let successfulReferrals: Int
     let pendingReferrals: Int
+    let monthlyReferrals: Int
     let totalEarningsCents: Int
     let referralCode: String
     let leaderboardPosition: Int?
