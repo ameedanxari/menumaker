@@ -214,7 +214,7 @@ struct AddDishView: View {
     private func saveDish() async {
         guard let priceValue = Double(price) else { return }
 
-        await viewModel.createDish(
+        await viewModel.createDish(DishViewModel.CreateDishParams(
             name: name,
             description: description.isEmpty ? nil : description,
             price: priceValue,
@@ -222,7 +222,7 @@ struct AddDishView: View {
             isVegetarian: isVegetarian,
             isAvailable: isAvailable,
             image: nil
-        )
+        ))
 
         dismiss()
     }

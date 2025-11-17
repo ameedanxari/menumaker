@@ -180,8 +180,10 @@ class CouponViewModel: ObservableObject {
             return
         }
 
-        await updateCoupon(couponId, discountValue: nil, maxDiscount: nil,
-                          minOrderValue: nil, validUntil: nil, isActive: !coupon.isActive)
+        await updateCoupon(UpdateCouponParams(
+            couponId: couponId,
+            isActive: !coupon.isActive
+        ))
     }
 
     // MARK: - Validation

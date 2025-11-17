@@ -239,9 +239,10 @@ class DishViewModel: ObservableObject {
             return
         }
 
-        await updateDish(dishId, name: nil, description: nil, price: nil,
-                        category: nil, isVegetarian: nil, isAvailable: !dish.isAvailable,
-                        image: nil)
+        await updateDish(UpdateDishParams(
+            dishId: dishId,
+            isAvailable: !dish.isAvailable
+        ))
     }
 
     // MARK: - Statistics

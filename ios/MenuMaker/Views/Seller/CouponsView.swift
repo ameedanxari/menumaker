@@ -186,7 +186,7 @@ struct AddCouponView: View {
         guard let discount = Int(discountValue),
               let minOrder = Double(minOrderValue) else { return }
 
-        await viewModel.createCoupon(
+        await viewModel.createCoupon(CouponViewModel.CreateCouponParams(
             code: code,
             discountType: discountType,
             discountValue: discount,
@@ -195,7 +195,7 @@ struct AddCouponView: View {
             validUntil: validUntil,
             usageLimitType: .unlimited,
             totalUsageLimit: nil
-        )
+        ))
 
         dismiss()
     }
