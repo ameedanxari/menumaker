@@ -57,8 +57,8 @@ final class AuthenticationUITests: XCTestCase {
         loginButton.tap()
 
         // Verify navigation to home screen or loading indicator
-        let homeIndicator = app.staticTexts["Home"] || app.navigationBars["MenuMaker"]
-        XCTAssertTrue(homeIndicator.waitForExistence(timeout: 5))
+        let homeIndicator = app.staticTexts["Home"].exists || app.navigationBars["MenuMaker"].exists
+        XCTAssertTrue(homeIndicator || app.staticTexts["Home"].waitForExistence(timeout: 5) || app.navigationBars["MenuMaker"].waitForExistence(timeout: 5))
     }
 
     @MainActor
