@@ -61,7 +61,11 @@ struct OrderHistoryPage {
     }
 
     var orderDateLabels: XCUIElementQuery {
-        app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'jan' OR label CONTAINS[c] 'feb' OR label CONTAINS[c] 'mar' OR label CONTAINS[c] 'apr' OR label CONTAINS[c] 'may' OR label CONTAINS[c] 'jun' OR label CONTAINS[c] 'today' OR label CONTAINS[c] 'yesterday'"))
+        let months = "label CONTAINS[c] 'jan' OR label CONTAINS[c] 'feb' OR label CONTAINS[c] 'mar'"
+        let moreMonths = "label CONTAINS[c] 'apr' OR label CONTAINS[c] 'may' OR label CONTAINS[c] 'jun'"
+        let relative = "label CONTAINS[c] 'today' OR label CONTAINS[c] 'yesterday'"
+        let format = "\(months) OR \(moreMonths) OR \(relative)"
+        return app.staticTexts.matching(NSPredicate(format: format))
     }
 
     var orderTotalLabels: XCUIElementQuery {

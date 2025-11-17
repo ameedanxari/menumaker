@@ -85,15 +85,17 @@ class DishViewModel: ObservableObject {
 
     // MARK: - Dish Management
 
-    func createDish(
-        name: String,
-        description: String?,
-        price: Double,
-        category: String?,
-        isVegetarian: Bool,
-        isAvailable: Bool,
-        image: UIImage?
-    ) async {
+    struct CreateDishParams {
+        let name: String
+        let description: String?
+        let price: Double
+        let category: String?
+        let isVegetarian: Bool
+        let isAvailable: Bool
+        let image: UIImage?
+    }
+
+    func createDish(_ params: CreateDishParams) async {
         guard let businessId = try? await KeychainManager.shared.getBusinessId() else {
             return
         }
@@ -104,21 +106,23 @@ class DishViewModel: ObservableObject {
         do {
             // Upload image if provided
             var imageUrl: String?
-            if let image = image {
+            if let image = params.image {
                 imageUrl = try await repository.uploadDishImage(image)
             }
 
-            let priceCents = Int(price * 100)
+            let priceCents = Int(params.price * 100)
 
             let dish = try await repository.createDish(
-                businessId: businessId,
-                name: name,
-                description: description,
-                priceCents: priceCents,
-                imageUrl: imageUrl,
-                category: category,
-                isVegetarian: isVegetarian,
-                isAvailable: isAvailable
+                DishRepository.CreateDishParams(
+                    businessId: businessId,
+                    name: params.name,
+                    description: params.description,
+                    priceCents: priceCents,
+                    imageUrl: imageUrl,
+                    category: params.category,
+                    isVegetarian: params.isVegetarian,
+                    isAvailable: params.isAvailable
+                )
             )
 
             dishes.append(dish)
@@ -127,8 +131,8 @@ class DishViewModel: ObservableObject {
 
             analyticsService.track(.dishCreated, parameters: [
                 "dish_id": dish.id,
-                "name": name,
-                "price": price
+                "name": params.name,
+                "price": params.price
             ])
 
         } catch {
@@ -138,47 +142,71 @@ class DishViewModel: ObservableObject {
         isLoading = false
     }
 
-    func updateDish(
-        _ dishId: String,
-        name: String?,
-        description: String?,
-        price: Double?,
-        category: String?,
-        isVegetarian: Bool?,
-        isAvailable: Bool?,
-        image: UIImage?
-    ) async {
+    struct UpdateDishParams {
+        let dishId: String
+        let name: String?
+        let description: String?
+        let price: Double?
+        let category: String?
+        let isVegetarian: Bool?
+        let isAvailable: Bool?
+        let image: UIImage?
+
+        init(
+            dishId: String,
+            name: String? = nil,
+            description: String? = nil,
+            price: Double? = nil,
+            category: String? = nil,
+            isVegetarian: Bool? = nil,
+            isAvailable: Bool? = nil,
+            image: UIImage? = nil
+        ) {
+            self.dishId = dishId
+            self.name = name
+            self.description = description
+            self.price = price
+            self.category = category
+            self.isVegetarian = isVegetarian
+            self.isAvailable = isAvailable
+            self.image = image
+        }
+    }
+
+    func updateDish(_ params: UpdateDishParams) async {
         isLoading = true
         errorMessage = nil
 
         do {
             // Upload new image if provided
             var imageUrl: String?
-            if let image = image {
+            if let image = params.image {
                 imageUrl = try await repository.uploadDishImage(image)
             }
 
-            let priceCents = price.map { Int($0 * 100) }
+            let priceCents = params.price.map { Int($0 * 100) }
 
             let dish = try await repository.updateDish(
-                dishId,
-                name: name,
-                description: description,
-                priceCents: priceCents,
-                imageUrl: imageUrl,
-                category: category,
-                isVegetarian: isVegetarian,
-                isAvailable: isAvailable
+                DishRepository.UpdateDishParams(
+                    dishId: params.dishId,
+                    name: params.name,
+                    description: params.description,
+                    priceCents: priceCents,
+                    imageUrl: imageUrl,
+                    category: params.category,
+                    isVegetarian: params.isVegetarian,
+                    isAvailable: params.isAvailable
+                )
             )
 
-            if let index = dishes.firstIndex(where: { $0.id == dishId }) {
+            if let index = dishes.firstIndex(where: { $0.id == params.dishId }) {
                 dishes[index] = dish
             }
 
             categories = repository.getCategories()
             filterDishes()
 
-            analyticsService.track(.dishUpdated, parameters: ["dish_id": dishId])
+            analyticsService.track(.dishUpdated, parameters: ["dish_id": params.dishId])
 
         } catch {
             errorMessage = error.localizedDescription
