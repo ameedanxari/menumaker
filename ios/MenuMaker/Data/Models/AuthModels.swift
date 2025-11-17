@@ -18,6 +18,10 @@ struct RefreshTokenRequest: Encodable {
     let refreshToken: String
 }
 
+struct ForgotPasswordRequest: Encodable {
+    let email: String
+}
+
 // MARK: - Response Models
 
 struct AuthResponse: Decodable {

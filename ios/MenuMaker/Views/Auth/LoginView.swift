@@ -6,6 +6,7 @@ struct LoginView: View {
     @State private var password = ""
     @State private var showSignup = false
     @State private var showBiometric = false
+    @State private var showForgotPassword = false
 
     var body: some View {
         ScrollView {
@@ -72,7 +73,7 @@ struct LoginView: View {
 
                     // Forgot Password Link
                     Button("Forgot Password?") {
-                        // TODO: Navigate to forgot password screen
+                        showForgotPassword = true
                     }
                     .foregroundColor(.theme.textSecondary)
                     .font(.body)
@@ -113,6 +114,9 @@ struct LoginView: View {
         .accessibilityIdentifier("login-screen")
         .sheet(isPresented: $showSignup) {
             SignupView()
+        }
+        .sheet(isPresented: $showForgotPassword) {
+            ForgotPasswordView()
         }
         .task {
             if showBiometric {

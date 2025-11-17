@@ -12,12 +12,15 @@ struct ForgotPasswordPage {
 
     // MARK: - Elements
 
+    private var forgotPasswordScreen: XCUIElement {
+        app.scrollViews["forgot-password-screen"]
+    }
+
     var emailField: XCUIElement {
-        app.textFields["email-field"]
+        forgotPasswordScreen.textFields["email-field"]
     }
 
     var submitButton: XCUIElement {
-        // Since ForgotPasswordView doesn't exist yet, look for any button that might be a submit button
         app.buttons["submit-button"]
     }
 
@@ -26,11 +29,11 @@ struct ForgotPasswordPage {
     }
 
     var successMessage: XCUIElement {
-        app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'sent' OR label CONTAINS[c] 'check email'")).firstMatch
+        app.staticTexts["success-message"]
     }
 
     var errorMessage: XCUIElement {
-        app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'error' OR label CONTAINS[c] 'invalid'")).firstMatch
+        app.staticTexts["error-message"]
     }
 
     // MARK: - Actions
@@ -59,11 +62,7 @@ struct ForgotPasswordPage {
 
     @discardableResult
     func assertScreenDisplayed(timeout: TimeInterval = 2) -> ForgotPasswordPage {
-        // Check if we actually navigated to a forgot password screen
-        // For now, check if the email field exists and login button doesn't exist
-        let onForgotPasswordScreen = emailField.waitForExistence(timeout: timeout) &&
-                                     !app.buttons["login-button"].exists
-        XCTAssertTrue(onForgotPasswordScreen, "Forgot password screen should be displayed")
+        XCTAssertTrue(forgotPasswordScreen.waitForExistence(timeout: timeout), "Forgot password screen should be displayed")
         return self
     }
 

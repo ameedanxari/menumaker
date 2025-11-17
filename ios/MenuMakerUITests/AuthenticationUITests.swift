@@ -148,20 +148,10 @@ final class AuthenticationUITests: XCTestCase {
     @MainActor
     func testForgotPasswordFlow() throws {
         let loginPage = LoginPage(app: app)
-
-        // Check if forgot password button exists
-        guard loginPage.forgotPasswordButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Forgot password feature not yet implemented")
-        }
-
         let forgotPasswordPage = loginPage.tapForgotPassword()
 
-        // Check if we actually navigated to forgot password screen
-        guard !app.buttons["login-button"].waitForExistence(timeout: 1) else {
-            throw XCTSkip("Forgot password feature not yet implemented - button exists but doesn't navigate")
-        }
-
         forgotPasswordPage
+            .assertScreenDisplayed()
             .enterEmail("test@example.com")
             .tapSubmit()
             .assertSuccessDisplayed()
@@ -170,19 +160,10 @@ final class AuthenticationUITests: XCTestCase {
     @MainActor
     func testForgotPasswordWithInvalidEmail() throws {
         let loginPage = LoginPage(app: app)
-
-        guard loginPage.forgotPasswordButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Forgot password feature not yet implemented")
-        }
-
         let forgotPasswordPage = loginPage.tapForgotPassword()
 
-        // Check if we actually navigated to forgot password screen
-        guard !app.buttons["login-button"].waitForExistence(timeout: 1) else {
-            throw XCTSkip("Forgot password feature not yet implemented - button exists but doesn't navigate")
-        }
-
         forgotPasswordPage
+            .assertScreenDisplayed()
             .enterEmail("nonexistent@example.com")
             .tapSubmit()
             .assertErrorDisplayed()

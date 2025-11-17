@@ -167,6 +167,32 @@ class AuthViewModel: ObservableObject {
         biometricService.setBiometricEnabled(false)
     }
 
+    // MARK: - Password Reset
+
+    func sendPasswordReset(email: String) async {
+        guard !email.isEmpty else {
+            errorMessage = "Please enter your email address"
+            return
+        }
+
+        guard isValidEmail(email) else {
+            errorMessage = "Please enter a valid email address"
+            return
+        }
+
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            try await repository.sendPasswordReset(email: email)
+            analyticsService.track(.custom(name: "password_reset_requested", properties: nil))
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
     // MARK: - Validation
 
     private func isValidEmail(_ email: String) -> Bool {
