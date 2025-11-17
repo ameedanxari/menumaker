@@ -344,4 +344,171 @@ describe('OrderService', () => {
       expect(result.fulfilled_at).toBeDefined();
     });
   });
+
+  describe('getOrderById', () => {
+    it('should get order by ID', async () => {
+      const mockOrder = {
+        id: 'order-123',
+        business_id: 'business-123',
+        customer_id: 'customer-123',
+        order_status: 'pending',
+      };
+
+      mockOrderRepository.findOne.mockResolvedValue(mockOrder);
+
+      const result = await orderService.getOrderById('order-123');
+
+      expect(result).toEqual(mockOrder);
+      expect(mockOrderRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'order-123' },
+        relations: expect.arrayContaining(['business', 'items']),
+      });
+    });
+
+    it('should throw error if order not found', async () => {
+      mockOrderRepository.findOne.mockResolvedValue(null);
+
+      await expect(orderService.getOrderById('nonexistent')).rejects.toThrow('Order not found');
+    });
+  });
+
+  describe('getOrderSummary', () => {
+    it('should calculate order summary correctly', async () => {
+      const mockDish1 = {
+        id: 'dish-1',
+        name: 'Pizza',
+        price_cents: 2000,
+      };
+
+      const mockDish2 = {
+        id: 'dish-2',
+        name: 'Burger',
+        price_cents: 1500,
+      };
+
+      const items = [
+        { dish_id: 'dish-1', quantity: 2 },
+        { dish_id: 'dish-2', quantity: 1 },
+      ];
+
+      mockDishRepository.findOne
+        .mockResolvedValueOnce(mockDish1)
+        .mockResolvedValueOnce(mockDish2);
+
+      const result = await orderService.getOrderSummary(
+        'business-123',
+        items,
+        'delivery',
+        undefined
+      );
+
+      expect(result.subtotal_cents).toBe(5500); // 2*2000 + 1*1500
+      expect(result.delivery_fee_cents).toBeGreaterThan(0);
+      expect(result.total_cents).toBeGreaterThan(5500);
+      expect(result.items).toHaveLength(2);
+    });
+
+    it('should apply coupon discount to total', async () => {
+      const mockDish = {
+        id: 'dish-1',
+        name: 'Pizza',
+        price_cents: 2000,
+      };
+
+      const items = [{ dish_id: 'dish-1', quantity: 2 }];
+
+      mockDishRepository.findOne.mockResolvedValue(mockDish);
+
+      const result = await orderService.getOrderSummary(
+        'business-123',
+        items,
+        'delivery',
+        1000 // 1000 cents discount
+      );
+
+      expect(result.discount_cents).toBe(1000);
+      expect(result.total_cents).toBeLessThan(result.subtotal_cents);
+    });
+
+    it('should throw error if dish not found', async () => {
+      const items = [{ dish_id: 'nonexistent', quantity: 1 }];
+
+      mockDishRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        orderService.getOrderSummary('business-123', items, 'delivery', undefined)
+      ).rejects.toThrow('Dish not found');
+    });
+
+    it('should calculate pickup order without delivery fee', async () => {
+      const mockDish = {
+        id: 'dish-1',
+        name: 'Pizza',
+        price_cents: 2000,
+      };
+
+      const items = [{ dish_id: 'dish-1', quantity: 1 }];
+
+      mockDishRepository.findOne.mockResolvedValue(mockDish);
+
+      const result = await orderService.getOrderSummary(
+        'business-123',
+        items,
+        'pickup',
+        undefined
+      );
+
+      expect(result.delivery_fee_cents).toBe(0);
+      expect(result.total_cents).toBe(result.subtotal_cents);
+    });
+  });
+
+  describe('order validation', () => {
+    it('should validate minimum order value', async () => {
+      const mockBusiness = {
+        id: 'business-123',
+        settings: {
+          min_order_value_cents: 5000, // Rs. 50 minimum
+        },
+      };
+
+      mockBusinessRepository.findOne.mockResolvedValue(mockBusiness);
+
+      const mockDish = {
+        id: 'dish-1',
+        price_cents: 1000,
+      };
+
+      mockDishRepository.findOne.mockResolvedValue(mockDish);
+
+      const orderData = {
+        business_id: 'business-123',
+        customer_id: 'customer-123',
+        items: [{ dish_id: 'dish-1', quantity: 1 }], // Only 10 Rs
+        order_type: 'delivery' as const,
+      };
+
+      await expect(orderService.createOrder(orderData)).rejects.toThrow(
+        'Minimum order value not met'
+      );
+    });
+  });
+
+  describe('error handling', () => {
+    it('should handle database errors gracefully', async () => {
+      mockOrderRepository.findOne.mockRejectedValue(new Error('Database connection failed'));
+
+      await expect(orderService.getOrderById('order-123')).rejects.toThrow(
+        'Database connection failed'
+      );
+    });
+
+    it('should handle update errors when order not found', async () => {
+      mockOrderRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        orderService.updateOrder('nonexistent', 'user-123', { order_status: 'confirmed' })
+      ).rejects.toThrow('Order not found');
+    });
+  });
 });

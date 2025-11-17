@@ -463,4 +463,191 @@ describe('CouponService', () => {
       expect(result.error).toBe('Coupon usage limit reached');
     });
   });
+
+  describe('getBusinessCoupons', () => {
+    it('should get all coupons for a business', async () => {
+      const mockCoupons = [
+        { id: 'coupon-1', code: 'CODE1' },
+        { id: 'coupon-2', code: 'CODE2' },
+      ];
+
+      mockCouponRepository.find.mockResolvedValue(mockCoupons);
+
+      const result = await couponService.getBusinessCoupons('business-123');
+
+      expect(result).toEqual(mockCoupons);
+      expect(mockCouponRepository.find).toHaveBeenCalledWith({
+        where: { business_id: 'business-123' },
+        order: { created_at: 'DESC' },
+      });
+    });
+  });
+
+  describe('getPublicCoupons', () => {
+    it('should get public active coupons', async () => {
+      const mockCoupons = [
+        { id: 'coupon-1', code: 'PUBLIC1', is_public: true, status: 'active' },
+      ];
+
+      mockCouponRepository.find.mockResolvedValue(mockCoupons);
+
+      const result = await couponService.getPublicCoupons('business-123');
+
+      expect(result).toEqual(mockCoupons);
+    });
+  });
+
+  describe('archiveCoupon', () => {
+    it('should archive a coupon', async () => {
+      await couponService.archiveCoupon('coupon-123');
+
+      expect(mockCouponRepository.update).toHaveBeenCalledWith('coupon-123', {
+        status: 'archived',
+      });
+    });
+  });
+
+  describe('expireCoupons', () => {
+    it('should expire coupons past their validity date', async () => {
+      const expiredCoupons = [
+        { id: 'coupon-1', status: 'active' },
+        { id: 'coupon-2', status: 'active' },
+      ];
+
+      mockCouponRepository.find.mockResolvedValue(expiredCoupons);
+      mockCouponRepository.save.mockImplementation((data) => Promise.resolve(data));
+
+      const result = await couponService.expireCoupons();
+
+      expect(result).toBe(2);
+      expect(mockCouponRepository.save).toHaveBeenCalledTimes(2);
+    });
+
+    it('should return 0 if no expired coupons', async () => {
+      mockCouponRepository.find.mockResolvedValue([]);
+
+      const result = await couponService.expireCoupons();
+
+      expect(result).toBe(0);
+    });
+  });
+
+  describe('getCouponAnalytics', () => {
+    it('should return coupon analytics', async () => {
+      const mockCoupon = {
+        id: 'coupon-123',
+        total_usage_count: 50,
+        total_revenue_impact_cents: 10000,
+      };
+
+      const mockUsages = [
+        { used_at: new Date('2025-01-15'), discount_amount_cents: 500 },
+        { used_at: new Date('2025-01-20'), discount_amount_cents: 300 },
+      ];
+
+      mockCouponRepository.findOne.mockResolvedValue(mockCoupon);
+      mockUsageRepository.find.mockResolvedValue(mockUsages);
+
+      const result = await couponService.getCouponAnalytics('coupon-123');
+
+      expect(result.total_uses).toBe(50);
+      expect(result.total_discount_given_cents).toBe(10000);
+    });
+
+    it('should throw error if coupon not found', async () => {
+      mockCouponRepository.findOne.mockResolvedValue(null);
+
+      await expect(couponService.getCouponAnalytics('nonexistent')).rejects.toThrow(
+        'Coupon not found'
+      );
+    });
+  });
+
+  describe('getBusinessCouponStats', () => {
+    it('should return business-wide coupon statistics', async () => {
+      const mockCoupons = [
+        {
+          id: 'coupon-1',
+          status: 'active',
+          total_usage_count: 100,
+          total_revenue_impact_cents: 50000,
+        },
+        {
+          id: 'coupon-2',
+          status: 'active',
+          total_usage_count: 50,
+          total_revenue_impact_cents: 25000,
+        },
+      ];
+
+      mockCouponRepository.find.mockResolvedValue(mockCoupons);
+      mockUsageRepository.count.mockResolvedValue(150);
+
+      const result = await couponService.getBusinessCouponStats('business-123');
+
+      expect(result.total_coupons).toBe(2);
+      expect(result.total_usages).toBe(150);
+    });
+  });
+
+  describe('applyCoupon', () => {
+    it('should apply coupon and record usage', async () => {
+      const validStart = new Date();
+      validStart.setDate(validStart.getDate() - 1);
+      const validEnd = new Date();
+      validEnd.setFullYear(validEnd.getFullYear() + 1);
+
+      const mockCoupon = {
+        id: 'coupon-123',
+        code: 'SAVE20',
+        status: 'active',
+        min_order_value_cents: 0,
+        valid_from: validStart,
+        valid_until: validEnd,
+        usage_limit_type: 'unlimited' as UsageLimitType,
+        applicable_to: 'all_dishes',
+        discount_type: 'percentage' as DiscountType,
+        discount_value: 20,
+        total_usage_count: 0,
+        total_revenue_impact_cents: 0,
+      };
+
+      mockCouponRepository.findOne.mockResolvedValue(mockCoupon);
+      mockUsageRepository.create.mockImplementation((data) => data);
+      mockUsageRepository.save.mockImplementation((data) => Promise.resolve(data));
+      mockCouponRepository.save.mockImplementation((data) => Promise.resolve(data));
+
+      await couponService.applyCoupon('SAVE20', 'customer-123', 'order-123', 10000, 2000);
+
+      expect(mockUsageRepository.save).toHaveBeenCalled();
+      expect(mockCouponRepository.save).toHaveBeenCalled();
+    });
+  });
+
+  describe('updateCoupon', () => {
+    it('should update coupon details', async () => {
+      const mockCoupon = {
+        id: 'coupon-123',
+        code: 'SAVE20',
+        name: 'Old Name',
+      };
+
+      mockCouponRepository.findOne.mockResolvedValue(mockCoupon);
+      mockCouponRepository.save.mockImplementation((data) => Promise.resolve(data));
+
+      const result = await couponService.updateCoupon('coupon-123', {
+        name: 'New Name',
+      });
+
+      expect(result.name).toBe('New Name');
+    });
+
+    it('should throw error if coupon not found', async () => {
+      mockCouponRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        couponService.updateCoupon('nonexistent', { name: 'New' })
+      ).rejects.toThrow('Coupon not found');
+    });
+  });
 });
