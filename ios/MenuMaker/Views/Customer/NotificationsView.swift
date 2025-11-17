@@ -25,18 +25,16 @@ struct NotificationsView: View {
             .accessibilityIdentifier("notifications-screen")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
+                    HStack(spacing: 16) {
                         Button(action: { Task { await viewModel.markAllAsRead() } }) {
-                            Label("Mark All Read", systemImage: "checkmark.circle")
+                            Image(systemName: "checkmark.circle")
                         }
                         .accessibilityIdentifier("mark-all-read-button")
 
                         Button(action: { showingSettings = true }) {
-                            Label("Settings", systemImage: "gear")
+                            Image(systemName: "gear")
                         }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                            .accessibilityIdentifier("notification-menu-button")
+                        .accessibilityIdentifier("settings-button")
                     }
                 }
             }
