@@ -550,8 +550,8 @@ describe('CouponService', () => {
 
       const result = await couponService.getCouponAnalytics('coupon-123');
 
-      expect(result.total_uses).toBe(50);
-      expect(result.total_discount_given_cents).toBe(10000);
+      expect(result.total_usages).toBe(50);
+      expect(result.total_discount_given).toBe(10000);
     });
 
     it('should throw error if coupon not found', async () => {
@@ -586,7 +586,7 @@ describe('CouponService', () => {
       const result = await couponService.getBusinessCouponStats('business-123');
 
       expect(result.total_coupons).toBe(2);
-      expect(result.total_usages).toBe(150);
+      expect(result.total_redemptions).toBe(150);
     });
   });
 
@@ -617,7 +617,7 @@ describe('CouponService', () => {
       mockUsageRepository.save.mockImplementation((data) => Promise.resolve(data));
       mockCouponRepository.save.mockImplementation((data) => Promise.resolve(data));
 
-      await couponService.applyCoupon('SAVE20', 'customer-123', 'order-123', 10000, 2000);
+      await couponService.applyCoupon('order-123', 'coupon-123', 'customer-123', 'business-123', 10000, 2000);
 
       expect(mockUsageRepository.save).toHaveBeenCalled();
       expect(mockCouponRepository.save).toHaveBeenCalled();
