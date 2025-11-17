@@ -206,8 +206,7 @@ final class OrderFlowUITests: XCTestCase {
             cartButton.tap()
 
             // Find and tap remove button
-            let removeButton = app.buttons.containing(NSPredicate(format: "label CONTAINS 'remove' OR label CONTAINS 'delete' OR label CONTAINS '-'")).firstMatch ??
-                             app.swipeActions.buttons["Delete"].firstMatch
+            let removeButton = app.buttons.containing(NSPredicate(format: "label CONTAINS 'remove' OR label CONTAINS 'delete' OR label CONTAINS '-'")).firstMatch
 
             if removeButton.waitForExistence(timeout: 2) {
                 removeButton.tap()
@@ -368,7 +367,7 @@ final class OrderFlowUITests: XCTestCase {
         if addButton.waitForExistence(timeout: 3) {
             measure {
                 addButton.tap()
-                sleep(0.5)
+                usleep(500000) // 0.5 seconds in microseconds
             }
         }
     }
