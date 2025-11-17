@@ -243,8 +243,8 @@ class AuthViewModelTest {
         assertTrue(viewModel.isAuthenticated.value)
 
         // Mock logout flow
-        val logoutFlow = flow<Unit> {
-            emit(Unit)
+        val logoutFlow = flow {
+            emit(Resource.Success(Unit))
         }
         `when`(authRepository.logout()).thenReturn(logoutFlow)
 
