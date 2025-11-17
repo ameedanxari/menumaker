@@ -40,23 +40,21 @@ struct MarketplaceView: View {
         .background(Color.theme.background)
         .navigationTitle("Marketplace")
         .navigationBarTitleDisplayMode(.large)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Menu {
-                    Button("Sort by Distance") {
-                        viewModel.sortByDistance()
-                    }
-                    Button("Sort by Rating") {
-                        viewModel.sortByRating()
-                    }
-                    Button("Sort by Reviews") {
-                        viewModel.sortByReviews()
-                    }
-                } label: {
-                    Image(systemName: "arrow.up.arrow.down")
+        .navigationBarItems(trailing:
+            Menu {
+                Button("Sort by Distance") {
+                    viewModel.sortByDistance()
                 }
+                Button("Sort by Rating") {
+                    viewModel.sortByRating()
+                }
+                Button("Sort by Reviews") {
+                    viewModel.sortByReviews()
+                }
+            } label: {
+                Image(systemName: "arrow.up.arrow.down")
             }
-        }
+        )
         .refreshable {
             await viewModel.refreshSellers()
         }
