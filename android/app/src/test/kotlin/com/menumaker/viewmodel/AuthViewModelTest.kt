@@ -134,6 +134,11 @@ class AuthViewModelTest {
         // Given
         val email = ""
         val password = "password123"
+        val errorFlow = flow {
+            emit(Resource.Error("Email cannot be empty"))
+        }
+
+        `when`(authRepository.login(email, password)).thenReturn(errorFlow)
 
         // When - ViewModel should validate before calling repository
         // This test verifies that empty inputs are handled
@@ -227,12 +232,14 @@ class AuthViewModelTest {
         `when`(authRepository.login("test@example.com", "password123")).thenReturn(successFlow)
         viewModel.login("test@example.com", "password123")
 
+        // Verify user is authenticated before logout
+        assertTrue(viewModel.isAuthenticated.value)
+
         // When
         viewModel.logout()
 
         // Then
-        val isAuthenticated = viewModel.isAuthenticated.value ?: false
-        assertFalse(isAuthenticated)
+        assertFalse(viewModel.isAuthenticated.value)
     }
 
     // MARK: - State Management Tests
@@ -333,12 +340,16 @@ class AuthViewModelTest {
         `when`(authRepository.login("test@example.com", "pass")).thenReturn(loginFlow)
         `when`(authRepository.signup("new@example.com", "pass", "Name")).thenReturn(signupFlow)
 
-        // When
+        // When - Execute login
         viewModel.login("test@example.com", "pass")
+
+        // Then - Login should complete successfully
+        assertTrue(viewModel.loginState.value is Resource.Success)
+
+        // When - Execute signup
         viewModel.signup("new@example.com", "pass", "Name")
 
-        // Then - Both requests should complete successfully
-        assertTrue(viewModel.loginState.value is Resource.Success)
+        // Then - Signup should complete successfully
         assertTrue(viewModel.signupState.value is Resource.Success)
     }
 }
