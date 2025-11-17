@@ -116,7 +116,7 @@ class AuthViewModelTest {
         val email = "test@example.com"
         val password = "password123"
         val loadingFlow = flow {
-            emit(Resource.Loading())
+            emit(Resource.Loading)
         }
 
         `when`(authRepository.login(email, password)).thenReturn(loadingFlow)
@@ -316,10 +316,10 @@ class AuthViewModelTest {
     fun `concurrent login and signup requests handle state correctly`() = runTest {
         // Given
         val loginFlow = flow {
-            emit(Resource.Loading())
+            emit(Resource.Loading)
         }
         val signupFlow = flow {
-            emit(Resource.Loading())
+            emit(Resource.Loading)
         }
 
         `when`(authRepository.login("test@example.com", "pass")).thenReturn(loginFlow)
