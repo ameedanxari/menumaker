@@ -22,9 +22,12 @@ class MarketplaceFlowTests {
         // Login before tests
         val loginPage = LoginPage(composeTestRule)
         Thread.sleep(2000)
-        if (loginPage.emailField.exists) {
+        try {
+            composeTestRule.onNodeWithText("Email", substring = true, useUnmergedTree = true).assertExists()
             loginPage.login("test@example.com", "password123")
             Thread.sleep(2000)
+        } catch (e: AssertionError) {
+            // Already logged in
         }
     }
 

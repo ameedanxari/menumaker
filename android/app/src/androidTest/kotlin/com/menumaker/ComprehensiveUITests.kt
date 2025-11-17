@@ -22,9 +22,12 @@ class ComprehensiveUITests {
     fun setup() {
         val loginPage = LoginPage(composeTestRule)
         Thread.sleep(2000)
-        if (loginPage.emailField.exists) {
+        try {
+            composeTestRule.onNodeWithText("Email", substring = true, useUnmergedTree = true).assertExists()
             loginPage.login("test@example.com", "password123")
             Thread.sleep(2000)
+        } catch (e: AssertionError) {
+            // Already logged in
         }
     }
 
@@ -524,7 +527,7 @@ class ComprehensiveUITests {
     // MARK: - Helper Methods
 
     private fun navigateToProfile() {
-        composeTestRule.onNodeWithContentDescription("Profile", ignoreCase = true).performClick()
+        composeTestRule.onNode(hasContentDescription("Profile", substring = true, ignoreCase = true)).performClick()
         Thread.sleep(1000)
     }
 
@@ -535,14 +538,14 @@ class ComprehensiveUITests {
     }
 
     private fun navigateToActiveOrder() {
-        composeTestRule.onNodeWithContentDescription("Orders", ignoreCase = true).performClick()
+        composeTestRule.onNode(hasContentDescription("Orders", substring = true, ignoreCase = true)).performClick()
         Thread.sleep(1000)
         composeTestRule.onAllNodes(hasTestTag("OrderItem")).onFirst().performClick()
         Thread.sleep(1000)
     }
 
     private fun navigateToCompletedOrder() {
-        composeTestRule.onNodeWithContentDescription("Orders", ignoreCase = true).performClick()
+        composeTestRule.onNode(hasContentDescription("Orders", substring = true, ignoreCase = true)).performClick()
         Thread.sleep(1000)
         composeTestRule.onNodeWithText("Completed", ignoreCase = true).performClick()
         Thread.sleep(500)
