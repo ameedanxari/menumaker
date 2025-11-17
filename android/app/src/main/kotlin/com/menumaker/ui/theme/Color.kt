@@ -2,44 +2,44 @@ package com.menumaker.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Primary Colors (Orange - matching web)
-val Primary50 = Color(0xFFFFF3E0)
-val Primary100 = Color(0xFFFFE0B2)
-val Primary200 = Color(0xFFFFCC80)
-val Primary300 = Color(0xFFFFB74D)
-val Primary400 = Color(0xFFFFA726)
-val Primary500 = Color(0xFFFF9800)
-val Primary600 = Color(0xFFFB8C00)
-val Primary700 = Color(0xFFF57C00)
-val Primary800 = Color(0xFFEF6C00)
-val Primary900 = Color(0xFFE65100)
+// Primary Colors (MenuMaker Orange - Brand Guideline: #FF6B35)
+val Primary50 = Color(0xFFFFEEE8)
+val Primary100 = Color(0xFFFFD5C6)
+val Primary200 = Color(0xFFFFB99E)
+val Primary300 = Color(0xFFFF9D76)
+val Primary400 = Color(0xFFFF8658)
+val Primary500 = Color(0xFFFF6B35)  // Brand primary color
+val Primary600 = Color(0xFFE65620)  // Darker for accessibility
+val Primary700 = Color(0xFFCC4D1C)
+val Primary800 = Color(0xFFB34318)
+val Primary900 = Color(0xFF993A14)
 
-// Secondary Colors (Blue)
-val Secondary50 = Color(0xFFE3F2FD)
-val Secondary500 = Color(0xFF2196F3)
-val Secondary700 = Color(0xFF1976D2)
+// Secondary Colors (Trust Blue - Brand Guideline: #004E89)
+val Secondary50 = Color(0xFFE0EBF4)
+val Secondary500 = Color(0xFF004E89)  // Brand secondary color
+val Secondary700 = Color(0xFF003A68)
 
-// Neutral Colors
-val Neutral50 = Color(0xFFFAFAFA)
+// Neutral Colors (Brand Guidelines)
+val Neutral50 = Color(0xFFF8F9FA)   // Brand guideline
 val Neutral100 = Color(0xFFF5F5F5)
-val Neutral200 = Color(0xFFEEEEEE)
+val Neutral200 = Color(0xFFE9ECEF)  // Brand guideline for borders
 val Neutral300 = Color(0xFFE0E0E0)
 val Neutral400 = Color(0xFFBDBDBD)
 val Neutral500 = Color(0xFF9E9E9E)
-val Neutral600 = Color(0xFF757575)
+val Neutral600 = Color(0xFF6C757D)  // Brand guideline for secondary text
 val Neutral700 = Color(0xFF616161)
 val Neutral800 = Color(0xFF424242)
-val Neutral900 = Color(0xFF212121)
+val Neutral900 = Color(0xFF212529)  // Brand guideline for primary text
 
-// Semantic Colors
-val Success500 = Color(0xFF4CAF50)
-val Error500 = Color(0xFFF44336)
-val Warning500 = Color(0xFFFFC107)
+// Semantic Colors (Brand Guidelines)
+val Success500 = Color(0xFF28A745)  // Brand guideline: Success Green
+val Error500 = Color(0xFFDC3545)    // Brand guideline: Error Red
+val Warning500 = Color(0xFFFFC107)  // Brand guideline: Warning Yellow
 
-// Background
-val BackgroundLight = Color(0xFFFFFFFF)
-val BackgroundDark = Color(0xFF121212)
+// Background (Brand Guidelines)
+val BackgroundLight = Color(0xFFF8F9FA)  // Neutral 50 from brand guidelines
+val BackgroundDark = Color(0xFF212529)   // Neutral 900 from brand guidelines
 
 // Surface
-val SurfaceLight = Color(0xFFFFFFFF)
-val SurfaceDark = Color(0xFF1E1E1E)
+val SurfaceLight = Color(0xFFFFFFFF)     // White from brand guidelines
+val SurfaceDark = Color(0xFF2D3238)      // Slightly lighter than background for dark mode
