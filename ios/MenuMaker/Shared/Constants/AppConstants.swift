@@ -56,6 +56,9 @@ enum AppConstants {
             static let referrals = "/referrals"
             static func referralCode(_ code: String) -> String { "/referrals/code/\(code)" }
 
+            // Notifications
+            static let notifications = "/notifications"
+
             // Subscriptions
             static let subscriptions = "/subscriptions"
             static let currentSubscription = "/subscriptions/current"
