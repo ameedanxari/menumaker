@@ -1,5 +1,7 @@
 package com.menumaker.utils
 
+import com.menumaker.BuildConfig
+
 object Constants {
     // API
     const val BASE_URL = BuildConfig.API_BASE_URL

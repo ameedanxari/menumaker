@@ -14,12 +14,13 @@ class MenuMakerApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var workConfiguration: Configuration
 
+    override val workManagerConfiguration: Configuration
+        get() = workConfiguration
+
     override fun onCreate() {
         super.onCreate()
         createNotificationChannels()
     }
-
-    override fun getWorkManagerConfiguration() = workConfiguration
 
     private fun createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
