@@ -1,0 +1,31 @@
+# google-services.json - Dummy File for Testing
+
+⚠️ **IMPORTANT**: This is a DUMMY Firebase configuration file for testing and CI/CD purposes only.
+
+## Purpose
+This file allows the Android app to build and run tests without requiring a real Firebase project.
+It contains fake API keys and project IDs that will NOT work with actual Firebase services.
+
+## For Production
+To use real Firebase services (push notifications, analytics, etc.):
+
+1. Create a Firebase project at https://console.firebase.google.com
+2. Add your Android app with package name: `com.menumaker`
+3. Download the real `google-services.json` file
+4. Replace this dummy file with the real one
+5. **NEVER commit the real file to version control** (it's in .gitignore)
+
+## For Development/Testing
+The dummy file is sufficient for:
+- Running unit tests
+- Running instrumented tests
+- Building debug APKs
+- CI/CD pipelines
+
+## Credentials in This File
+All values in this file are FAKE and safe to commit:
+- Project ID: menumaker-test (doesn't exist)
+- API Key: AIzaSyDummyKeyForTestingPurposesOnly123456 (invalid)
+- App ID: 1:123456789000:android:abcdef1234567890 (fake)
+
+These values satisfy the Google Services plugin requirements but won't connect to real services.
