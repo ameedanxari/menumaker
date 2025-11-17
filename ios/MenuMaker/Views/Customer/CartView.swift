@@ -191,7 +191,7 @@ struct CheckoutView: View {
     @State private var customerEmail = ""
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 Section("Customer Information") {
                     TextField("Name", text: $customerName)
@@ -242,7 +242,7 @@ struct CheckoutView: View {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         CartView()
     }
 }

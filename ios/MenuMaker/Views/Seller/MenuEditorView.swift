@@ -170,7 +170,7 @@ struct AddDishView: View {
     @State private var isAvailable = true
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 Section("Basic Information") {
                     TextField("Name", text: $name)
@@ -222,7 +222,7 @@ struct AddDishView: View {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         MenuEditorView()
     }
 }

@@ -84,7 +84,7 @@ struct ContentView: View {
             if authViewModel.isAuthenticated {
                 MainTabView()
             } else {
-                NavigationStack {
+                NavigationView {
                     LoginView()
                 }
             }
@@ -102,7 +102,7 @@ struct MainTabView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             // Seller Dashboard
-            NavigationStack {
+            NavigationView {
                 SellerDashboardView()
             }
             .tabItem {
@@ -111,7 +111,7 @@ struct MainTabView: View {
             .tag(0)
 
             // Orders
-            NavigationStack {
+            NavigationView {
                 OrdersListView()
             }
             .tabItem {
@@ -120,7 +120,7 @@ struct MainTabView: View {
             .tag(1)
 
             // Menu
-            NavigationStack {
+            NavigationView {
                 MenuEditorView()
             }
             .tabItem {
@@ -129,7 +129,7 @@ struct MainTabView: View {
             .tag(2)
 
             // More
-            NavigationStack {
+            NavigationView {
                 MoreView()
             }
             .tabItem {

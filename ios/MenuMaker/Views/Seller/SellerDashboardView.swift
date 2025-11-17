@@ -224,7 +224,7 @@ struct ReviewRowView: View {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         SellerDashboardView()
             .environmentObject(SellerViewModel())
     }

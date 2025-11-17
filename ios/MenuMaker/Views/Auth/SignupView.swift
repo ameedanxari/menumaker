@@ -10,7 +10,7 @@ struct SignupView: View {
     @State private var confirmPassword = ""
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             ScrollView {
                 VStack(spacing: 24) {
                     // Header

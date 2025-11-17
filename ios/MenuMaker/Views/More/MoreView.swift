@@ -114,7 +114,7 @@ struct SettingsView: View {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         MoreView()
             .environmentObject(AuthViewModel())
     }

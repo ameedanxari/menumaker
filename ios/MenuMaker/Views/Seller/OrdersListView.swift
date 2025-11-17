@@ -163,7 +163,7 @@ struct OrderDetailCard: View {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         OrdersListView()
     }
 }

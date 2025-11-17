@@ -133,7 +133,7 @@ struct AddCouponView: View {
     @State private var validUntil: Date? = nil
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 Section("Coupon Details") {
                     TextField("Code (e.g., SAVE20)", text: $code)
@@ -202,7 +202,7 @@ struct AddCouponView: View {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         CouponsView()
     }
 }

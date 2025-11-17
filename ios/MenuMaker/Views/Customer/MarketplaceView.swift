@@ -156,7 +156,7 @@ struct SellerCard: View {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         MarketplaceView()
     }
 }
