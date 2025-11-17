@@ -59,7 +59,11 @@ struct ForgotPasswordPage {
 
     @discardableResult
     func assertScreenDisplayed(timeout: TimeInterval = 2) -> ForgotPasswordPage {
-        XCTAssertTrue(emailField.waitForExistence(timeout: timeout), "Forgot password screen should be displayed")
+        // Check if we actually navigated to a forgot password screen
+        // For now, check if the email field exists and login button doesn't exist
+        let onForgotPasswordScreen = emailField.waitForExistence(timeout: timeout) &&
+                                     !app.buttons["login-button"].exists
+        XCTAssertTrue(onForgotPasswordScreen, "Forgot password screen should be displayed")
         return self
     }
 
