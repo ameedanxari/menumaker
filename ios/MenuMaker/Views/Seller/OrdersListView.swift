@@ -42,7 +42,7 @@ struct OrdersListView: View {
         .refreshable {
             await viewModel.refreshOrders()
         }
-        .onChange(of: selectedFilter) { _, newValue in
+        .onChange(of: selectedFilter) { newValue in
             viewModel.filterByStatus(newValue)
         }
     }

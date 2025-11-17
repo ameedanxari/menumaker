@@ -78,7 +78,7 @@ struct LoginView: View {
                             showSignup = true
                         }
                         .foregroundColor(.theme.primary)
-                        .fontWeight(.semibold)
+                        .font(.body.weight(.semibold))
                     }
                     .padding(.top, 8)
                 }

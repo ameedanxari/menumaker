@@ -174,7 +174,14 @@ struct AddDishView: View {
             Form {
                 Section("Basic Information") {
                     TextField("Name", text: $name)
-                    TextField("Description", text: $description, axis: .vertical)
+                    // Multi-line text field for description (iOS 15 compatible)
+                    VStack(alignment: .leading) {
+                        Text("Description")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        TextEditor(text: $description)
+                            .frame(minHeight: 80)
+                    }
                     TextField("Price", text: $price)
                         .keyboardType(.decimalPad)
                     TextField("Category", text: $category)

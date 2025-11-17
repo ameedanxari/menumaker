@@ -21,8 +21,8 @@ struct MenuMakerApp: App {
                         await authViewModel.checkAuthentication()
                     }
                 }
-                .onChange(of: scenePhase) { oldPhase, newPhase in
-                    handleScenePhaseChange(from: oldPhase, to: newPhase)
+                .onChange(of: scenePhase) { newPhase in
+                    handleScenePhaseChange(to: newPhase)
                 }
         }
     }
@@ -51,7 +51,7 @@ struct MenuMakerApp: App {
         NotificationService.shared.requestAuthorization()
     }
 
-    private func handleScenePhaseChange(from oldPhase: ScenePhase, to newPhase: ScenePhase) {
+    private func handleScenePhaseChange(to newPhase: ScenePhase) {
         switch newPhase {
         case .active:
             // App became active

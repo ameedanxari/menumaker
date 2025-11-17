@@ -39,6 +39,7 @@ struct MarketplaceView: View {
         }
         .background(Color.theme.background)
         .navigationTitle("Marketplace")
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
@@ -59,7 +60,7 @@ struct MarketplaceView: View {
         .refreshable {
             await viewModel.refreshSellers()
         }
-        .onChange(of: selectedCuisine) { _, newValue in
+        .onChange(of: selectedCuisine) { newValue in
             viewModel.filterByCuisine(newValue)
         }
     }
