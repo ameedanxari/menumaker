@@ -29,7 +29,7 @@ struct CartPage {
     }
 
     var totalPrice: XCUIElement {
-        app.staticTexts.matching(NSPredicate(format: "label CONTAINS '₹'")).lastMatch
+        app.staticTexts.matching(NSPredicate(format: "label CONTAINS '₹'")).element(boundBy: 0)
     }
 
     var incrementButtons: XCUIElementQuery {

@@ -73,7 +73,7 @@ struct SellerAnalyticsPage {
     }
 
     var repeatCustomersLabel: XCUIElement {
-        app.staticTexs.matching(NSPredicate(format: "label CONTAINS[c] 'repeat' AND label MATCHES '.*\\\\d+.*'")).firstMatch
+        app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'repeat' AND label MATCHES '.*\\\\d+.*'")).firstMatch
     }
 
     var averageRatingLabel: XCUIElement {
