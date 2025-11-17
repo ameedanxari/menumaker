@@ -60,7 +60,8 @@ struct MarketplacePage {
 
     @discardableResult
     func clearSearch() -> MarketplacePage {
-        if let clearButton = searchBar.buttons["Clear text"].firstMatch, clearButton.exists {
+        let clearButton = searchBar.buttons["Clear text"].firstMatch
+        if clearButton.exists {
             clearButton.tap()
         }
         return self

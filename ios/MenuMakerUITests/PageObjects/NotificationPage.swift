@@ -240,7 +240,8 @@ struct NotificationPage {
     func assertNotificationBadgeCount(_ count: Int) -> NotificationPage {
         if count > 0 {
             XCTAssertTrue(notificationBadge.exists, "Notification badge should be visible")
-            if let badgeText = notificationBadge.label, let badgeCount = Int(badgeText) {
+            let badgeText = notificationBadge.label
+            if let badgeCount = Int(badgeText) {
                 XCTAssertEqual(badgeCount, count, "Badge should show \(count) notifications")
             }
         } else {
