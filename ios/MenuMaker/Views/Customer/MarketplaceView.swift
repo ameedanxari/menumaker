@@ -41,7 +41,7 @@ struct MarketplaceView: View {
         .navigationTitle("Marketplace")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
-            ToolbarItemGroup(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button("Sort by Distance") {
                         viewModel.sortByDistance()
