@@ -55,6 +55,13 @@ class AuthViewModelTest {
     fun setup() {
         MockitoAnnotations.openMocks(this)
         Dispatchers.setMain(testDispatcher)
+
+        // Mock isAuthenticated() which is called in init
+        val isAuthenticatedFlow = flow {
+            emit(false)
+        }
+        `when`(authRepository.isAuthenticated()).thenReturn(isAuthenticatedFlow)
+
         viewModel = AuthViewModel(authRepository)
     }
 
@@ -234,6 +241,12 @@ class AuthViewModelTest {
 
         // Verify user is authenticated before logout
         assertTrue(viewModel.isAuthenticated.value)
+
+        // Mock logout flow
+        val logoutFlow = flow<Unit> {
+            emit(Unit)
+        }
+        `when`(authRepository.logout()).thenReturn(logoutFlow)
 
         // When
         viewModel.logout()
