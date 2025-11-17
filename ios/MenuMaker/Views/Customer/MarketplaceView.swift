@@ -3,6 +3,7 @@ import SwiftUI
 struct MarketplaceView: View {
     @StateObject private var viewModel = MarketplaceViewModel()
     @State private var selectedCuisine: String?
+    @State private var showSortOptions = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -40,21 +41,28 @@ struct MarketplaceView: View {
         .background(Color.theme.background)
         .navigationTitle("Marketplace")
         .navigationBarTitleDisplayMode(.large)
-        .navigationBarItems(trailing:
-            Menu {
-                Button("Sort by Distance") {
-                    viewModel.sortByDistance()
-                }
-                Button("Sort by Rating") {
-                    viewModel.sortByRating()
-                }
-                Button("Sort by Reviews") {
-                    viewModel.sortByReviews()
-                }
-            } label: {
-                Image(systemName: "arrow.up.arrow.down")
-            }
-        )
+        .navigationBarItems(trailing: Button(action: {
+            showSortOptions = true
+        }) {
+            Image(systemName: "arrow.up.arrow.down")
+        })
+        .actionSheet(isPresented: $showSortOptions) {
+            ActionSheet(
+                title: Text("Sort By"),
+                buttons: [
+                    .default(Text("Distance")) {
+                        viewModel.sortByDistance()
+                    },
+                    .default(Text("Rating")) {
+                        viewModel.sortByRating()
+                    },
+                    .default(Text("Reviews")) {
+                        viewModel.sortByReviews()
+                    },
+                    .cancel()
+                ]
+            )
+        }
         .refreshable {
             await viewModel.refreshSellers()
         }
