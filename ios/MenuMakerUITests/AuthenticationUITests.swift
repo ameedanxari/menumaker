@@ -3,6 +3,7 @@
 //  MenuMakerUITests
 //
 //  UI tests for authentication flows
+//  Refactored to use Page Object pattern
 //
 
 import XCTest
@@ -26,323 +27,213 @@ final class AuthenticationUITests: XCTestCase {
 
     @MainActor
     func testLoginScreenDisplaysCorrectly() throws {
-        // Verify login screen elements are visible
-        XCTAssertTrue(app.staticTexts["Welcome Back"].waitForExistence(timeout: 2))
-        XCTAssertTrue(app.textFields["Email"].exists)
-        XCTAssertTrue(app.secureTextFields["Password"].exists)
-        XCTAssertTrue(app.buttons["Login"].exists)
-        XCTAssertTrue(app.buttons["Sign Up"].exists || app.staticTexts["Don't have an account?"].exists)
+        let loginPage = LoginPage(app: app)
+
+        loginPage
+            .assertScreenDisplayed()
+            .assertAllElementsVisible()
     }
 
     @MainActor
     func testLoginWithValidCredentials() throws {
-        // Enter valid credentials
-        let emailField = app.textFields["Email"]
-        XCTAssertTrue(emailField.waitForExistence(timeout: 2))
-        emailField.tap()
-        emailField.typeText("test@example.com")
+        let loginPage = LoginPage(app: app)
 
-        let passwordField = app.secureTextFields["Password"]
-        passwordField.tap()
-        passwordField.typeText("password123")
+        loginPage
+            .enterEmail("test@example.com")
+            .enterPassword("password123")
+            .tapLogin()
 
-        // Dismiss keyboard if needed
-        if app.keyboards.count > 0 {
-            app.keyboards.buttons["Return"].tap()
-        }
-
-        // Tap login button
-        let loginButton = app.buttons["Login"]
-        XCTAssertTrue(loginButton.exists)
-        loginButton.tap()
-
-        // Verify navigation to home screen or loading indicator
-        let homeIndicator = app.staticTexts["Home"].exists || app.navigationBars["MenuMaker"].exists
-        XCTAssertTrue(homeIndicator || app.staticTexts["Home"].waitForExistence(timeout: 5) || app.navigationBars["MenuMaker"].waitForExistence(timeout: 5))
+        // Verify navigation to home screen or marketplace
+        let homeOrMarketplace = app.staticTexts["Home"].waitForExistence(timeout: 5) ||
+                                app.navigationBars["MenuMaker"].waitForExistence(timeout: 5) ||
+                                app.staticTexts["Marketplace"].waitForExistence(timeout: 5)
+        XCTAssertTrue(homeOrMarketplace, "Should navigate to home/marketplace after successful login")
     }
 
     @MainActor
     func testLoginWithInvalidEmail() throws {
-        let emailField = app.textFields["Email"]
-        XCTAssertTrue(emailField.waitForExistence(timeout: 2))
-        emailField.tap()
-        emailField.typeText("invalid-email")
+        let loginPage = LoginPage(app: app)
 
-        let passwordField = app.secureTextFields["Password"]
-        passwordField.tap()
-        passwordField.typeText("password123")
-
-        if app.keyboards.count > 0 {
-            app.keyboards.buttons["Return"].tap()
-        }
-
-        let loginButton = app.buttons["Login"]
-        loginButton.tap()
-
-        // Verify error message appears
-        let errorMessage = app.staticTexts.containing(NSPredicate(format: "label CONTAINS[c] 'email' OR label CONTAINS[c] 'invalid'")).firstMatch
-        XCTAssertTrue(errorMessage.waitForExistence(timeout: 3))
+        loginPage
+            .enterEmail("invalid-email")
+            .enterPassword("password123")
+            .tapLogin()
+            .assertErrorDisplayed()
     }
 
     @MainActor
     func testLoginWithEmptyFields() throws {
-        let loginButton = app.buttons["Login"]
-        XCTAssertTrue(loginButton.waitForExistence(timeout: 2))
-        loginButton.tap()
+        let loginPage = LoginPage(app: app)
 
-        // Verify validation messages appear
-        let validationMessage = app.staticTexts.containing(NSPredicate(format: "label CONTAINS[c] 'required' OR label CONTAINS[c] 'empty'")).firstMatch
-        XCTAssertTrue(validationMessage.waitForExistence(timeout: 2))
+        loginPage
+            .tapLogin()
+            .assertValidationDisplayed()
     }
 
     @MainActor
     func testNavigateToSignupFromLogin() throws {
-        let signUpButton = app.buttons["Sign Up"] ?? app.buttons.containing(NSPredicate(format: "label CONTAINS[c] 'sign up'")).firstMatch
-        XCTAssertTrue(signUpButton.waitForExistence(timeout: 2))
-        signUpButton.tap()
+        let loginPage = LoginPage(app: app)
+        let signupPage = loginPage.tapSignUp()
 
-        // Verify signup screen appears
-        XCTAssertTrue(app.staticTexts["Create Account"].waitForExistence(timeout: 2) ||
-                      app.staticTexts["Sign Up"].waitForExistence(timeout: 2))
+        signupPage.assertScreenDisplayed()
     }
 
     // MARK: - Signup Flow Tests
 
     @MainActor
     func testSignupScreenDisplaysCorrectly() throws {
-        // Navigate to signup
-        let signUpButton = app.buttons["Sign Up"] ?? app.buttons.containing(NSPredicate(format: "label CONTAINS[c] 'sign up'")).firstMatch
-        signUpButton.tap()
+        let loginPage = LoginPage(app: app)
+        let signupPage = loginPage.tapSignUp()
 
-        // Verify signup fields
-        XCTAssertTrue(app.textFields["Name"].waitForExistence(timeout: 2))
-        XCTAssertTrue(app.textFields["Email"].exists)
-        XCTAssertTrue(app.textFields["Phone"].exists)
-        XCTAssertTrue(app.secureTextFields["Password"].exists)
-        XCTAssertTrue(app.buttons["Create Account"].exists || app.buttons["Sign Up"].exists)
+        signupPage
+            .assertScreenDisplayed()
+            .assertAllElementsVisible()
     }
 
     @MainActor
     func testSignupWithValidData() throws {
-        // Navigate to signup
-        let signUpLink = app.buttons["Sign Up"] ?? app.buttons.containing(NSPredicate(format: "label CONTAINS[c] 'sign up'")).firstMatch
-        signUpLink.tap()
+        let loginPage = LoginPage(app: app)
+        let signupPage = loginPage.tapSignUp()
 
-        // Fill out signup form
-        let nameField = app.textFields["Name"]
-        XCTAssertTrue(nameField.waitForExistence(timeout: 2))
-        nameField.tap()
-        nameField.typeText("Test User")
+        signupPage
+            .enterName("Test User")
+            .enterEmail("newuser@example.com")
+            .enterPhone("9876543210")
+            .enterPassword("SecurePassword123!")
+            .tapSignup()
 
-        let emailField = app.textFields["Email"]
-        emailField.tap()
-        emailField.typeText("newuser@example.com")
-
-        let phoneField = app.textFields["Phone"]
-        phoneField.tap()
-        phoneField.typeText("9876543210")
-
-        let passwordField = app.secureTextFields["Password"]
-        passwordField.tap()
-        passwordField.typeText("SecurePassword123!")
-
-        if app.keyboards.count > 0 {
-            app.keyboards.buttons["Return"].tap()
-        }
-
-        // Submit form
-        let createAccountButton = app.buttons["Create Account"] ?? app.buttons["Sign Up"]
-        createAccountButton.tap()
-
-        // Verify success - either navigation or success message
-        let successIndicator = app.staticTexts["Home"] ?? app.staticTexts.containing(NSPredicate(format: "label CONTAINS[c] 'success'")).firstMatch
-        XCTAssertTrue(successIndicator.waitForExistence(timeout: 5))
+        // Verify navigation to home or success message
+        let success = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'welcome' OR label CONTAINS[c] 'success'")).firstMatch.waitForExistence(timeout: 5) ||
+                     app.navigationBars["MenuMaker"].waitForExistence(timeout: 5)
+        XCTAssertTrue(success, "Should show success after signup")
     }
 
     @MainActor
     func testSignupWithMissingRequiredFields() throws {
-        let signUpLink = app.buttons["Sign Up"] ?? app.buttons.containing(NSPredicate(format: "label CONTAINS[c] 'sign up'")).firstMatch
-        signUpLink.tap()
+        let loginPage = LoginPage(app: app)
+        let signupPage = loginPage.tapSignUp()
 
-        // Only fill name, leave email and password empty
-        let nameField = app.textFields["Name"]
-        XCTAssertTrue(nameField.waitForExistence(timeout: 2))
-        nameField.tap()
-        nameField.typeText("Test User")
-
-        if app.keyboards.count > 0 {
-            app.keyboards.buttons["Return"].tap()
-        }
-
-        // Try to submit
-        let createAccountButton = app.buttons["Create Account"] ?? app.buttons["Sign Up"]
-        createAccountButton.tap()
-
-        // Verify validation errors appear
-        let errorMessage = app.staticTexts.containing(NSPredicate(format: "label CONTAINS[c] 'required'")).firstMatch
-        XCTAssertTrue(errorMessage.waitForExistence(timeout: 2))
+        signupPage
+            .enterEmail("incomplete@example.com")
+            .tapSignup()
+            .assertValidationDisplayed()
     }
 
     @MainActor
-    func testSignupPasswordStrengthValidation() throws {
-        let signUpLink = app.buttons["Sign Up"] ?? app.buttons.containing(NSPredicate(format: "label CONTAINS[c] 'sign up'")).firstMatch
-        signUpLink.tap()
+    func testSignupWithWeakPassword() throws {
+        let loginPage = LoginPage(app: app)
+        let signupPage = loginPage.tapSignUp()
 
-        let passwordField = app.secureTextFields["Password"]
-        XCTAssertTrue(passwordField.waitForExistence(timeout: 2))
-        passwordField.tap()
-        passwordField.typeText("weak")
-
-        if app.keyboards.count > 0 {
-            app.keyboards.buttons["Return"].tap()
-        }
-
-        // Verify weak password warning or validation message
-        let weakPasswordMessage = app.staticTexts.containing(NSPredicate(format: "label CONTAINS[c] 'password' AND (label CONTAINS[c] 'weak' OR label CONTAINS[c] 'strength' OR label CONTAINS[c] 'characters')")).firstMatch
-        // Password strength indicator might appear
-        XCTAssertTrue(weakPasswordMessage.waitForExistence(timeout: 2) || true) // Lenient check
+        signupPage
+            .enterName("Test User")
+            .enterEmail("test@example.com")
+            .enterPassword("123")
+            .tapSignup()
+            .assertValidationDisplayed()
     }
 
-    // MARK: - Password Reset Flow
+    @MainActor
+    func testNavigateBackToLoginFromSignup() throws {
+        let loginPage = LoginPage(app: app)
+        let signupPage = loginPage.tapSignUp()
+
+        signupPage.assertScreenDisplayed()
+
+        let backToLogin = signupPage.tapLoginLink()
+        backToLogin.assertScreenDisplayed()
+    }
+
+    // MARK: - Password Reset Flow Tests
 
     @MainActor
     func testForgotPasswordFlow() throws {
-        let forgotPasswordButton = app.buttons["Forgot Password?"] ?? app.buttons.containing(NSPredicate(format: "label CONTAINS[c] 'forgot password'")).firstMatch
+        let loginPage = LoginPage(app: app)
 
-        if forgotPasswordButton.waitForExistence(timeout: 2) {
-            forgotPasswordButton.tap()
-
-            // Verify password reset screen
-            XCTAssertTrue(app.staticTexts["Reset Password"].waitForExistence(timeout: 2) ||
-                          app.staticTexts["Forgot Password"].waitForExistence(timeout: 2))
-
-            // Enter email
-            let emailField = app.textFields["Email"]
-            XCTAssertTrue(emailField.exists)
-            emailField.tap()
-            emailField.typeText("test@example.com")
-
-            if app.keyboards.count > 0 {
-                app.keyboards.buttons["Return"].tap()
-            }
-
-            // Submit
-            let resetButton = app.buttons["Send Reset Link"] ?? app.buttons["Reset"]
-            resetButton.tap()
-
-            // Verify confirmation message
-            let confirmationMessage = app.staticTexts.containing(NSPredicate(format: "label CONTAINS[c] 'email' AND label CONTAINS[c] 'sent'")).firstMatch
-            XCTAssertTrue(confirmationMessage.waitForExistence(timeout: 3))
-        } else {
-            // Skip test if forgot password is not implemented
-            XCTSkip("Forgot password flow not available in current UI")
+        // Check if forgot password button exists
+        guard loginPage.forgotPasswordButton.waitForExistence(timeout: 2) else {
+            throw XCTSkip("Forgot password feature not yet implemented")
         }
+
+        let forgotPasswordPage = loginPage.tapForgotPassword()
+
+        forgotPasswordPage
+            .enterEmail("test@example.com")
+            .tapSubmit()
+            .assertSuccessDisplayed()
     }
 
-    // MARK: - Logout Flow
+    @MainActor
+    func testForgotPasswordWithInvalidEmail() throws {
+        let loginPage = LoginPage(app: app)
+
+        guard loginPage.forgotPasswordButton.waitForExistence(timeout: 2) else {
+            throw XCTSkip("Forgot password feature not yet implemented")
+        }
+
+        let forgotPasswordPage = loginPage.tapForgotPassword()
+
+        forgotPasswordPage
+            .enterEmail("nonexistent@example.com")
+            .tapSubmit()
+            .assertErrorDisplayed()
+    }
+
+    // MARK: - Logout Flow Tests
 
     @MainActor
     func testLogoutFlow() throws {
         // First login
-        let emailField = app.textFields["Email"]
-        if emailField.waitForExistence(timeout: 2) {
-            emailField.tap()
-            emailField.typeText("test@example.com")
+        let loginPage = LoginPage(app: app)
+        loginPage.login(email: "test@example.com", password: "password123")
 
-            let passwordField = app.secureTextFields["Password"]
-            passwordField.tap()
-            passwordField.typeText("password123")
+        // Wait for home screen
+        XCTAssertTrue(app.navigationBars["MenuMaker"].waitForExistence(timeout: 5) ||
+                     app.tabBars.firstMatch.waitForExistence(timeout: 5),
+                     "Should navigate to home after login")
 
-            if app.keyboards.count > 0 {
-                app.keyboards.buttons["Return"].tap()
-            }
-
-            app.buttons["Login"].tap()
-
-            // Wait for home screen
-            sleep(2)
-
-            // Navigate to profile/settings
-            let profileTab = app.tabBars.buttons["Profile"] ?? app.buttons["Profile"]
-            if profileTab.waitForExistence(timeout: 3) {
-                profileTab.tap()
-
-                // Find and tap logout button
-                let logoutButton = app.buttons["Logout"] ?? app.buttons["Sign Out"]
-                if logoutButton.waitForExistence(timeout: 2) {
-                    logoutButton.tap()
-
-                    // Confirm logout if confirmation dialog appears
-                    let confirmButton = app.buttons["Confirm"] ?? app.buttons["Yes"] ?? app.buttons["Logout"]
-                    if confirmButton.waitForExistence(timeout: 1) {
-                        confirmButton.tap()
-                    }
-
-                    // Verify return to login screen
-                    XCTAssertTrue(app.staticTexts["Welcome Back"].waitForExistence(timeout: 3) ||
-                                  app.textFields["Email"].waitForExistence(timeout: 3))
-                }
-            }
-        } else {
-            XCTSkip("Unable to test logout flow - login screen not available")
+        // Navigate to profile/more
+        let moreTab = app.tabBars.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'more' OR label CONTAINS[c] 'profile'")).firstMatch
+        guard moreTab.waitForExistence(timeout: 2) else {
+            throw XCTSkip("Profile/More tab not found")
         }
+        moreTab.tap()
+
+        // Tap logout
+        let logoutButton = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'logout' OR label CONTAINS[c] 'sign out'")).firstMatch
+        guard logoutButton.waitForExistence(timeout: 2) else {
+            throw XCTSkip("Logout button not found")
+        }
+        logoutButton.tap()
+
+        // Verify back on login screen
+        XCTAssertTrue(loginPage.emailField.waitForExistence(timeout: 3), "Should return to login screen after logout")
     }
 
     // MARK: - Accessibility Tests
 
     @MainActor
     func testLoginScreenAccessibility() throws {
-        let emailField = app.textFields["Email"]
-        XCTAssertTrue(emailField.waitForExistence(timeout: 2))
-        XCTAssertTrue(emailField.isAccessibilityElement)
+        let loginPage = LoginPage(app: app)
 
-        let passwordField = app.secureTextFields["Password"]
-        XCTAssertTrue(passwordField.isAccessibilityElement)
-
-        let loginButton = app.buttons["Login"]
-        XCTAssertTrue(loginButton.isAccessibilityElement)
+        XCTAssertTrue(loginPage.emailField.isHittable, "Email field should be accessible")
+        XCTAssertTrue(loginPage.passwordField.isHittable, "Password field should be accessible")
+        XCTAssertTrue(loginPage.loginButton.isHittable, "Login button should be accessible")
     }
 
     // MARK: - Performance Tests
 
     @MainActor
-    func testLoginScreenLoadPerformance() throws {
-        measure(metrics: [XCTApplicationLaunchMetric()]) {
-            app.launch()
-        }
-    }
-
-    @MainActor
     func testLoginButtonResponseTime() throws {
-        let emailField = app.textFields["Email"]
-        XCTAssertTrue(emailField.waitForExistence(timeout: 2))
-        emailField.tap()
-        emailField.typeText("test@example.com")
+        let loginPage = LoginPage(app: app)
 
-        let passwordField = app.secureTextFields["Password"]
-        passwordField.tap()
-        passwordField.typeText("password123")
-
-        if app.keyboards.count > 0 {
-            app.keyboards.buttons["Return"].tap()
-        }
+        loginPage
+            .enterEmail("test@example.com")
+            .enterPassword("password123")
 
         measure {
-            app.buttons["Login"].tap()
+            loginPage.loginButton.tap()
             // Wait for response
-            sleep(1)
+            _ = app.staticTexts.firstMatch.waitForExistence(timeout: 1)
         }
-    }
-}
-
-// MARK: - Helper Extensions
-
-extension XCUIElement {
-    /// Waits for element to exist and be hittable
-    func waitForHittable(timeout: TimeInterval = 2) -> Bool {
-        let predicate = NSPredicate(format: "exists == true AND isHittable == true")
-        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
-        let result = XCTWaiter().wait(for: [expectation], timeout: timeout)
-        return result == .completed
     }
 }

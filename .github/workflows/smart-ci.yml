@@ -610,7 +610,7 @@ jobs:
       - name: Install xcpretty
         run: gem install xcpretty
 
-      - name: Run unit tests
+      - name: Run unit and UI tests
         working-directory: ./ios
         run: |
           set -o pipefail
@@ -619,11 +619,10 @@ jobs:
             -scheme MenuMaker \
             -sdk iphonesimulator \
             -destination 'platform=iOS Simulator,name=iPhone 16' \
-            -only-testing:MenuMakerTests \
             -enableCodeCoverage YES \
             CODE_SIGNING_ALLOWED=NO \
             | xcpretty
-          echo "⚠️  Note: UI tests (MenuMakerUITests) temporarily skipped - need expansion to cover all user stories"
+          echo "✅ iOS unit tests and UI tests completed"
 
       - name: Upload test results
         if: always()
