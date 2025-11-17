@@ -498,10 +498,10 @@ jobs:
             -project MenuMaker.xcodeproj \
             -scheme MenuMaker \
             -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
             -enableCodeCoverage YES \
             CODE_SIGNING_ALLOWED=NO \
-            | xcpretty || true
+            | xcpretty
 
       - name: Upload test results
         if: always()
@@ -517,7 +517,7 @@ jobs:
         run: |
           echo "✅ iOS tests completed"
           echo "Test target: MenuMakerTests"
-          echo "Simulator: iPhone 15"
+          echo "Simulator: iPhone 16"
 
   # ============================================
   # SUMMARY JOB
