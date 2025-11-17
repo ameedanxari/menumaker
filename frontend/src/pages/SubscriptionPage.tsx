@@ -83,7 +83,7 @@ export default function SubscriptionPage() {
         if (subResponse.success) {
           setCurrentSubscription(subResponse.data.subscription);
         }
-      } catch (err: any) {
+      } catch (_err: any) {
         // No subscription yet
         console.log('No subscription found');
       }
@@ -94,7 +94,7 @@ export default function SubscriptionPage() {
         if (usageResponse.success) {
           setUsage(usageResponse.data.usage);
         }
-      } catch (err: any) {
+      } catch (_err: any) {
         console.log('Could not fetch usage');
       }
     } catch (err: any) {

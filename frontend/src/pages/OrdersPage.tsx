@@ -40,8 +40,8 @@ export default function OrdersPage() {
           setSelectedOrder(updatedOrder);
         }
       }
-    } catch (error) {
-      console.error('Failed to update order status:', error);
+    } catch (_error) {
+      console.error('Failed to update order status:', _error);
     } finally {
       setIsUpdating(false);
     }

@@ -37,8 +37,8 @@ export default function IntegrationsPage() {
 
       setPosIntegrations(posRes.data.data.integrations || []);
       setDeliveryIntegrations(deliveryRes.data.data.integrations || []);
-    } catch (error) {
-      console.error('Failed to load integrations:', error);
+    } catch (_error) {
+      console.error('Failed to load integrations:', _error);
     } finally {
       setLoading(false);
     }
@@ -54,8 +54,8 @@ export default function IntegrationsPage() {
         alert('POS integration configured successfully');
         loadIntegrations();
       }
-    } catch (error) {
-      console.error('Failed to connect POS:', error);
+    } catch (_error) {
+      console.error('Failed to connect POS:', _error);
       alert('Failed to connect POS system');
     }
   };
@@ -69,8 +69,8 @@ export default function IntegrationsPage() {
 
       alert('Delivery partner connected successfully');
       loadIntegrations();
-    } catch (error) {
-      console.error('Failed to connect delivery partner:', error);
+    } catch (_error) {
+      console.error('Failed to connect delivery partner:', _error);
       alert('Failed to connect delivery partner');
     }
   };
@@ -81,8 +81,8 @@ export default function IntegrationsPage() {
     try {
       await api.delete(`/pos/${id}`);
       loadIntegrations();
-    } catch (error) {
-      console.error('Failed to disconnect POS:', error);
+    } catch (_error) {
+      console.error('Failed to disconnect POS:', _error);
       alert('Failed to disconnect POS');
     }
   };
@@ -93,8 +93,8 @@ export default function IntegrationsPage() {
     try {
       await api.delete(`/delivery/${id}`);
       loadIntegrations();
-    } catch (error) {
-      console.error('Failed to disconnect delivery partner:', error);
+    } catch (_error) {
+      console.error('Failed to disconnect delivery partner:', _error);
       alert('Failed to disconnect delivery partner');
     }
   };

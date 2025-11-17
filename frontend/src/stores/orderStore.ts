@@ -80,8 +80,8 @@ export const useOrderStore = create<OrderState>((set, _get) => ({
         return response.data.order;
       }
       return null;
-    } catch (error: any) {
-      console.error('Failed to fetch order:', error);
+    } catch (_error: any) {
+      console.error('Failed to fetch order:', _error);
       return null;
     }
   },

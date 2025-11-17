@@ -57,8 +57,8 @@ export default function PayoutsPage() {
           auto_payout_enabled: scheduleRes.data.data.schedule.auto_payout_enabled,
         });
       }
-    } catch (error) {
-      console.error('Failed to load payouts:', error);
+    } catch (_error) {
+      console.error('Failed to load payouts:', _error);
     } finally {
       setLoading(false);
     }
@@ -72,8 +72,8 @@ export default function PayoutsPage() {
       setEditMode(false);
       loadData();
       alert('Payout schedule updated successfully');
-    } catch (error) {
-      console.error('Failed to update schedule:', error);
+    } catch (_error) {
+      console.error('Failed to update schedule:', _error);
       alert('Failed to update payout schedule');
     }
   };

@@ -40,7 +40,7 @@ export function SubscriptionStatusWidget() {
         if (subResponse.success) {
           setSubscription(subResponse.data.subscription);
         }
-      } catch (err) {
+      } catch (_err) {
         // No subscription
       }
 
@@ -50,11 +50,11 @@ export function SubscriptionStatusWidget() {
         if (usageResponse.success) {
           setUsage(usageResponse.data.usage);
         }
-      } catch (err) {
+      } catch (_err) {
         // No usage data
       }
-    } catch (err) {
-      console.error('Failed to fetch subscription data:', err);
+    } catch (_err) {
+      console.error('Failed to fetch subscription data:', _err);
     } finally {
       setIsLoading(false);
     }

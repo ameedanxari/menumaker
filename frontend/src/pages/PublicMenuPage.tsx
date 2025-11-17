@@ -119,7 +119,7 @@ export default function PublicMenuPage() {
           if (menuResponse.success) {
             setMenu(menuResponse.data.menu);
           }
-        } catch (err) {
+        } catch (_err) {
           setError('No active menu available');
         }
       } catch (err: any) {

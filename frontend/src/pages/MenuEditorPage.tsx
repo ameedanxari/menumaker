@@ -90,8 +90,8 @@ export default function MenuEditorPage() {
       await createCategory(currentBusiness.id, newCategoryName);
       setNewCategoryName('');
       setShowNewCategoryInput(false);
-    } catch (error) {
-      console.error('Failed to create category:', error);
+    } catch (_error) {
+      console.error('Failed to create category:', _error);
     }
   };
 
@@ -102,8 +102,8 @@ export default function MenuEditorPage() {
       setNewMenuName('');
       setNewMenuDescription('');
       setShowNewMenuModal(false);
-    } catch (error) {
-      console.error('Failed to create menu:', error);
+    } catch (_error) {
+      console.error('Failed to create menu:', _error);
     }
   };
 
@@ -114,8 +114,8 @@ export default function MenuEditorPage() {
     }
     try {
       await addDishToMenu(currentMenu.id, dishId);
-    } catch (error) {
-      console.error('Failed to add dish to menu:', error);
+    } catch (_error) {
+      console.error('Failed to add dish to menu:', _error);
     }
   };
 
@@ -123,8 +123,8 @@ export default function MenuEditorPage() {
     if (!currentMenu) return;
     try {
       await removeDishFromMenu(currentMenu.id, dishId);
-    } catch (error) {
-      console.error('Failed to remove dish from menu:', error);
+    } catch (_error) {
+      console.error('Failed to remove dish from menu:', _error);
     }
   };
 
@@ -133,8 +133,8 @@ export default function MenuEditorPage() {
     if (confirm('Are you sure you want to publish this menu? This will replace your current active menu.')) {
       try {
         await publishMenu(currentMenu.id);
-      } catch (error) {
-        console.error('Failed to publish menu:', error);
+      } catch (_error) {
+        console.error('Failed to publish menu:', _error);
       }
     }
   };
@@ -144,8 +144,8 @@ export default function MenuEditorPage() {
     if (confirm('Are you sure you want to archive this menu?')) {
       try {
         await archiveMenu(currentMenu.id);
-      } catch (error) {
-        console.error('Failed to archive menu:', error);
+      } catch (_error) {
+        console.error('Failed to archive menu:', _error);
       }
     }
   };

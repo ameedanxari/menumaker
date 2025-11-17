@@ -188,8 +188,8 @@ export const useMenuStore = create<MenuState>((set, _get) => ({
       if (response.success) {
         set({ categories: response.data.categories });
       }
-    } catch (error: any) {
-      console.error('Failed to fetch categories:', error);
+    } catch (_error: any) {
+      console.error('Failed to fetch categories:', _error);
     }
   },
 
@@ -229,7 +229,7 @@ export const useMenuStore = create<MenuState>((set, _get) => ({
       if (response.success) {
         set({ activeMenu: response.data.menu });
       }
-    } catch (error: any) {
+    } catch (_error: any) {
       // No active menu is not an error
       set({ activeMenu: null });
     }

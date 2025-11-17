@@ -51,7 +51,10 @@ render.experimental.xml
 .cxx/
 
 # Google Services (e.g. APIs or Firebase)
-google-services.json
+# Note: A dummy google-services.json is committed for CI/CD
+# Real google-services.json files should be kept local
+google-services-prod.json
+google-services-staging.json
 
 # Freeline
 freeline.py

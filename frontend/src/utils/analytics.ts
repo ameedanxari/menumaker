@@ -246,8 +246,8 @@ export const performance = {
 
           return measure.duration;
         }
-      } catch (error) {
-        console.error('[Performance] Measurement error:', error);
+      } catch (_error) {
+        console.error('[Performance] Measurement error:', _error);
       }
     }
     return null;

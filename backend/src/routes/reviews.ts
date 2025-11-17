@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { authenticate } from '../middleware/auth.js';
 import { ReviewService } from '../services/ReviewService.js';
-import { ReviewStatus, Review } from '../models/Review.js';
+import { ReviewStatus } from '../models/Review.js';
 import { Business } from '../models/Business.js';
 
 /**

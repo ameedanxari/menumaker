@@ -95,7 +95,7 @@ jobs:
           DB_NAME: menumaker_test
           DB_USER: menumaker_test
           DB_PASSWORD: test_password
-          JWT_SECRET: test-secret-key-nightly
+          JWT_SECRET: test-secret-key-for-ci-testing-32-chars-minimum-key-for-ci-testing-32-chars-minimum
           JWT_ACCESS_EXPIRES_IN: 15m
           JWT_REFRESH_EXPIRES_IN: 7d
           S3_ENDPOINT: localhost
@@ -214,7 +214,7 @@ jobs:
           DB_NAME: menumaker_test
           DB_USER: menumaker_test
           DB_PASSWORD: test_password
-          JWT_SECRET: test-secret
+          JWT_SECRET: test-secret-key-for-ci-testing-32-chars-minimum
           VITE_API_URL: http://localhost:3001/api/v1
 
       - name: Run mobile E2E tests

@@ -122,7 +122,7 @@ jobs:
           DB_NAME: menumaker_test
           DB_USER: menumaker_test
           DB_PASSWORD: test_password
-          JWT_SECRET: test-secret-key
+          JWT_SECRET: test-secret-key-for-ci-testing-32-chars-minimum
         run: npm run test:coverage
 
       - name: Upload coverage
@@ -184,6 +184,75 @@ jobs:
       - name: Type check
         working-directory: ./backend
         run: npx tsc --noEmit
+
+  backend-security:
+    name: Backend - Security Analysis
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run npm audit
+        working-directory: ./backend
+        run: |
+          echo "🔍 Checking for dependency vulnerabilities..."
+          npm audit --audit-level=moderate || true
+          npm audit --audit-level=high --json > audit-results.json || true
+          if [ -s audit-results.json ]; then
+            echo "⚠️  High/Critical vulnerabilities found - please review"
+            cat audit-results.json
+          fi
+
+      - name: Install security linting plugins
+        working-directory: ./backend
+        run: |
+          npm install --no-save eslint-plugin-security@latest eslint-plugin-no-secrets@latest
+
+      - name: Run security-focused ESLint
+        working-directory: ./backend
+        run: |
+          echo "🔒 Running security analysis..."
+          npx eslint src --ext .ts --plugin security --plugin no-secrets \
+            --rule 'security/detect-object-injection: error' \
+            --rule 'security/detect-non-literal-regexp: warn' \
+            --rule 'security/detect-unsafe-regex: error' \
+            --rule 'security/detect-buffer-noassert: error' \
+            --rule 'security/detect-child-process: warn' \
+            --rule 'security/detect-disable-mustache-escape: error' \
+            --rule 'security/detect-eval-with-expression: error' \
+            --rule 'security/detect-no-csrf-before-method-override: error' \
+            --rule 'security/detect-non-literal-fs-filename: warn' \
+            --rule 'security/detect-non-literal-require: warn' \
+            --rule 'security/detect-possible-timing-attacks: warn' \
+            --rule 'security/detect-pseudoRandomBytes: error' \
+            --rule 'no-secrets/no-secrets: error' \
+            --format stylish || echo "⚠️  Security issues detected"
+
+      - name: Check for hardcoded secrets
+        run: |
+          echo "🔑 Scanning for hardcoded secrets..."
+          git diff-tree --no-commit-id --name-only -r HEAD | xargs grep -E "(password|secret|key|token|api_key|apikey|auth)" --color=always || echo "✅ No obvious secrets in commit"
+
+      - name: Upload security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-security-report
+          path: backend/audit-results.json
+          retention-days: 30
+          if-no-files-found: ignore
 
   # ============================================
   # FRONTEND JOBS
@@ -289,6 +358,78 @@ jobs:
         working-directory: ./frontend
         run: npx tsc --noEmit
 
+  frontend-security:
+    name: Frontend - Security Analysis
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Run npm audit
+        working-directory: ./frontend
+        run: |
+          echo "🔍 Checking for dependency vulnerabilities..."
+          npm audit --audit-level=moderate || true
+          npm audit --audit-level=high --json > audit-results.json || true
+          if [ -s audit-results.json ]; then
+            echo "⚠️  High/Critical vulnerabilities found - please review"
+            cat audit-results.json
+          fi
+
+      - name: Install security linting plugins
+        working-directory: ./frontend
+        run: |
+          npm install --no-save eslint-plugin-security@latest eslint-plugin-no-secrets@latest
+
+      - name: Run security-focused ESLint
+        working-directory: ./frontend
+        run: |
+          echo "🔒 Running security analysis..."
+          npx eslint src --ext .ts,.tsx --plugin security --plugin no-secrets \
+            --rule 'security/detect-object-injection: warn' \
+            --rule 'security/detect-non-literal-regexp: warn' \
+            --rule 'security/detect-unsafe-regex: error' \
+            --rule 'security/detect-eval-with-expression: error' \
+            --rule 'security/detect-non-literal-fs-filename: warn' \
+            --rule 'no-secrets/no-secrets: error' \
+            --format stylish || echo "⚠️  Security issues detected"
+
+      - name: Check for XSS vulnerabilities
+        working-directory: ./frontend
+        run: |
+          echo "🛡️  Scanning for XSS vulnerabilities..."
+          # Check for dangerouslySetInnerHTML usage
+          grep -r "dangerouslySetInnerHTML" src/ && echo "⚠️  Found dangerouslySetInnerHTML - ensure input is sanitized" || echo "✅ No dangerouslySetInnerHTML found"
+          # Check for eval usage
+          grep -r "\beval(" src/ && echo "❌ Found eval() usage - this is dangerous!" || echo "✅ No eval() found"
+
+      - name: Check for hardcoded API keys
+        working-directory: ./frontend
+        run: |
+          echo "🔑 Scanning for hardcoded secrets..."
+          grep -r "VITE_" src/ --include="*.ts" --include="*.tsx" && echo "⚠️  Found VITE_ env vars in source - should use import.meta.env" || echo "✅ No hardcoded env vars"
+
+      - name: Upload security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-security-report
+          path: frontend/audit-results.json
+          retention-days: 30
+          if-no-files-found: ignore
+
   # ============================================
   # ANDROID JOBS
   # ============================================
@@ -392,6 +533,74 @@ jobs:
           name: android-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
           retention-days: 7
+
+  android-security:
+    name: Android - Security Analysis
+    needs: detect-changes
+    if: needs.detect-changes.outputs.android == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./android
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Check for Gradle dependency vulnerabilities
+        run: |
+          echo "🔍 Checking for known vulnerabilities in Gradle dependencies..."
+          ./gradlew dependencyCheckAnalyze || echo "⚠️  Dependency check completed with warnings"
+
+      - name: Run Android Lint with security focus
+        run: |
+          echo "🔒 Running Android Lint with security checks..."
+          ./gradlew lint
+          echo "Checking for specific security issues..."
+
+      - name: Check for hardcoded secrets in Kotlin files
+        run: |
+          echo "🔑 Scanning for hardcoded secrets..."
+          grep -r "password\|secret\|api_key\|token" app/src/main/kotlin --include="*.kt" || echo "✅ No obvious secrets found"
+          grep -r "http://" app/src/main/kotlin --include="*.kt" && echo "⚠️  Found non-HTTPS URLs" || echo "✅ All URLs use HTTPS"
+
+      - name: Check for security-sensitive Android APIs
+        run: |
+          echo "🔒 Checking for security-sensitive API usage..."
+          grep -r "WebView.setJavaScriptEnabled(true)" app/src --include="*.kt" && echo "⚠️  JavaScript enabled in WebView" || echo "✅ No risky WebView usage"
+          grep -r "MODE_WORLD_READABLE\|MODE_WORLD_WRITEABLE" app/src --include="*.kt" && echo "❌ Insecure file permissions" || echo "✅ No world-accessible files"
+          grep -r "TrustAllCertificates\|SSLSocketFactory" app/src --include="*.kt" && echo "⚠️  Custom SSL handling detected" || echo "✅ No custom SSL handling"
+
+      - name: Check ProGuard/R8 configuration
+        run: |
+          echo "🛡️  Checking code obfuscation configuration..."
+          if [ -f "app/proguard-rules.pro" ]; then
+            echo "ProGuard rules file found"
+            grep -i "minifyEnabled" app/build.gradle.kts && echo "✅ Minification configured" || echo "⚠️  Minification not enabled"
+          else
+            echo "⚠️  No ProGuard rules file found"
+          fi
+
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-security-reports
+          path: |
+            android/app/build/reports/lint-results*.html
+            android/app/build/reports/dependency-check-report.html
+          retention-days: 30
+          if-no-files-found: ignore
 
   # ============================================
   # iOS JOBS
@@ -498,10 +707,10 @@ jobs:
             -project MenuMaker.xcodeproj \
             -scheme MenuMaker \
             -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
             -enableCodeCoverage YES \
             CODE_SIGNING_ALLOWED=NO \
-            | xcpretty || true
+            | xcpretty
 
       - name: Upload test results
         if: always()
@@ -517,7 +726,77 @@ jobs:
         run: |
           echo "✅ iOS tests completed"
           echo "Test target: MenuMakerTests"
-          echo "Simulator: iPhone 15"
+          echo "Simulator: iPhone 16"
+
+  ios-security:
+    name: iOS - Security Analysis
+    needs: detect-changes
+    if: needs.detect-changes.outputs.ios == 'true'
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Run SwiftLint with security rules
+        working-directory: ./ios
+        run: |
+          echo "🔒 Running SwiftLint with security focus..."
+          swiftlint lint --strict --reporter json > swiftlint-results.json || echo "⚠️  SwiftLint found issues"
+          swiftlint lint --reporter github-actions-logging
+
+      - name: Check for hardcoded secrets in Swift files
+        working-directory: ./ios
+        run: |
+          echo "🔑 Scanning for hardcoded secrets..."
+          grep -r "password\|secret\|apiKey\|token" MenuMaker --include="*.swift" || echo "✅ No obvious secrets found"
+          grep -r "http://" MenuMaker --include="*.swift" && echo "⚠️  Found non-HTTPS URLs" || echo "✅ All URLs use HTTPS"
+
+      - name: Check for insecure API usage
+        working-directory: ./ios
+        run: |
+          echo "🔒 Checking for security-sensitive API usage..."
+          grep -r "NSAllowsArbitraryLoads" MenuMaker --include="*.plist" && echo "❌ App Transport Security disabled" || echo "✅ ATS enabled"
+          grep -r "UIWebView" MenuMaker --include="*.swift" && echo "⚠️  Deprecated UIWebView usage" || echo "✅ No UIWebView usage"
+          grep -r "NSTemporaryDirectory()" MenuMaker --include="*.swift" && echo "⚠️  Using temp directory" || echo "✅ No temp directory usage"
+
+      - name: Check for insecure data storage
+        working-directory: ./ios
+        run: |
+          echo "🗄️  Checking data storage security..."
+          grep -r "UserDefaults" MenuMaker --include="*.swift" && echo "⚠️  UserDefaults usage detected - ensure no sensitive data" || echo "✅ No UserDefaults usage"
+          grep -r "kSecAttrAccessible" MenuMaker --include="*.swift" || echo "💡 Consider using Keychain for sensitive data"
+
+      - name: Check CocoaPods for vulnerabilities (if Podfile exists)
+        working-directory: ./ios
+        run: |
+          if [ -f "Podfile.lock" ]; then
+            echo "📦 Checking CocoaPods dependencies..."
+            grep -A 3 "PODS:" Podfile.lock | head -20
+            echo "⚠️  Manual review recommended for CocoaPods vulnerabilities"
+          else
+            echo "✅ No CocoaPods dependencies"
+          fi
+
+      - name: Check for debug/logging in release builds
+        working-directory: ./ios
+        run: |
+          echo "🪲 Checking for debug code..."
+          grep -r "print(" MenuMaker --include="*.swift" && echo "💡 Consider removing debug print statements" || echo "✅ No print statements"
+          grep -r "#if DEBUG" MenuMaker --include="*.swift" && echo "✅ Debug flags used properly" || echo "💡 No debug flags found"
+
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-security-reports
+          path: |
+            ios/swiftlint-results.json
+          retention-days: 30
+          if-no-files-found: ignore
 
   # ============================================
   # SUMMARY JOB
@@ -531,16 +810,20 @@ jobs:
       - backend-test
       - backend-build
       - backend-typecheck
+      - backend-security
       - frontend-lint
       - frontend-test
       - frontend-build
       - frontend-typecheck
+      - frontend-security
       - android-lint
       - android-test
       - android-build
+      - android-security
       - ios-lint
       - ios-build
       - ios-test
+      - ios-security
     if: always()
 
     steps:

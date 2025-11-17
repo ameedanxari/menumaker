@@ -74,8 +74,8 @@ export default function ReportsPage() {
       if (response.success) {
         setStats(response.data.stats);
       }
-    } catch (error) {
-      console.error('Failed to fetch stats:', error);
+    } catch (_error) {
+      console.error('Failed to fetch stats:', _error);
     } finally {
       setIsLoadingStats(false);
     }
@@ -109,8 +109,8 @@ export default function ReportsPage() {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Failed to export orders:', error);
+    } catch (_error) {
+      console.error('Failed to export orders:', _error);
       alert('Failed to export orders. Please try again.');
     } finally {
       setIsExporting(false);

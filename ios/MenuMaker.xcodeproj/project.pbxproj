@@ -29,9 +29,22 @@
 		E2804F9F2EC9DD6D00A24630 /* MenuMakerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MenuMakerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		E2E989102ECA16980099E5F4 /* Exceptions for "MenuMaker" folder in "MenuMaker" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = E2804F872EC9DD6B00A24630 /* MenuMaker */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E2804F8A2EC9DD6B00A24630 /* MenuMaker */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E2E989102ECA16980099E5F4 /* Exceptions for "MenuMaker" folder in "MenuMaker" target */,
+			);
 			path = MenuMaker;
 			sourceTree = "<group>";
 		};

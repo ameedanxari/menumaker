@@ -89,9 +89,11 @@ android/
    ```
 
 2. **Configure Firebase**
-   - Download `google-services.json` from Firebase Console
-   - Place it in `android/app/`
+   - **For Testing/CI**: A dummy `google-services.json` is included for running tests
+   - **For Production**: Download real `google-services.json` from Firebase Console
+   - Place production file in `android/app/` (it will override the dummy)
    - Update project configuration with your Firebase project
+   - **Note**: The included file uses dummy credentials and won't work with real Firebase services
 
 3. **Configure backend API**
    - Edit `local.properties` or set environment variable:
