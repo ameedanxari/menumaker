@@ -175,24 +175,28 @@ class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
     ) {
         let userInfo = response.notification.request.content.userInfo
 
+        // Extract values before entering Task to avoid Sendable issues
+        let type = userInfo["type"] as? String
+        let orderId = userInfo["orderId"] as? String
+
         Task { @MainActor in
-            handleNotificationTap(userInfo: userInfo)
+            handleNotificationTap(type: type, orderId: orderId)
             completionHandler()
         }
     }
 
-    private func handleNotificationTap(userInfo: [AnyHashable: Any]) {
+    private func handleNotificationTap(type: String?, orderId: String?) {
         // Handle different notification types
-        if let type = userInfo["type"] as? String {
-            switch type {
-            case "new_order", "order_status":
-                if let orderId = userInfo["orderId"] as? String {
-                    // Navigate to order details
-                    print("Navigate to order: \(orderId)")
-                }
-            default:
-                break
+        guard let type = type else { return }
+
+        switch type {
+        case "new_order", "order_status":
+            if let orderId = orderId {
+                // Navigate to order details
+                print("Navigate to order: \(orderId)")
             }
+        default:
+            break
         }
     }
 }

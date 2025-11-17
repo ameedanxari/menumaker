@@ -36,7 +36,8 @@ struct ColorTheme {
 
     // Default fallbacks for asset catalog colors
     static func withFallback(_ name: String, _ fallback: Color) -> Color {
-        return Color(name, bundle: nil) ?? fallback
+        // Note: Color(name, bundle:) returns the fallback system color if asset not found
+        return Color(name, bundle: nil)
     }
 }
 
