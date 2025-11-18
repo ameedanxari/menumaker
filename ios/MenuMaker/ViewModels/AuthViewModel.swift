@@ -185,7 +185,7 @@ class AuthViewModel: ObservableObject {
 
         do {
             try await repository.sendPasswordReset(email: email)
-            analyticsService.track(.custom(name: "password_reset_requested", properties: nil))
+            analyticsService.track(.passwordResetRequested)
         } catch {
             errorMessage = error.localizedDescription
         }

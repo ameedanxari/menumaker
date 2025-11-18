@@ -8,6 +8,7 @@ enum AnalyticsEvent: String {
     case login
     case signup
     case logout
+    case passwordResetRequested = "password_reset_requested"
 
     // Business events
     case businessCreated = "business_created"
