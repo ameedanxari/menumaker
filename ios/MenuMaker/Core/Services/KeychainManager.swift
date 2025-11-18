@@ -164,4 +164,16 @@ class KeychainManager {
             throw KeychainError.unhandledError(status: status)
         }
     }
+
+    // MARK: - Testing Support
+
+    /// Synchronous version of deleteAll for use in app initialization during testing
+    func deleteAllSync() {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: serviceName
+        ]
+
+        SecItemDelete(query as CFDictionary)
+    }
 }
