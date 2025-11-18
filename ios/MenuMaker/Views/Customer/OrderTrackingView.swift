@@ -5,6 +5,7 @@ struct OrderTrackingView: View {
     let order: Order
     @Environment(\.dismiss) var dismiss
     @State private var showCancelConfirmation = false
+    @State private var showReviewForm = false
     @State private var region = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 28.6139, longitude: 77.2090),
         span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
@@ -160,13 +161,14 @@ struct OrderTrackingView: View {
                 VStack(spacing: 12) {
                     if order.isDelivered {
                         Button(action: {
-                            // Navigate to rate order
+                            showReviewForm = true
                         }) {
                             Text("Rate Order")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
                         .accessibilityIdentifier("rate-order-button")
+                        .accessibilityLabel("Rate")
                     }
 
                     if order.canBeCancelled {
@@ -203,6 +205,9 @@ struct OrderTrackingView: View {
             }
         } message: {
             Text("Are you sure you want to cancel this order?")
+        }
+        .sheet(isPresented: $showReviewForm) {
+            ReviewsView(businessId: order.businessId, orderId: order.id)
         }
     }
 

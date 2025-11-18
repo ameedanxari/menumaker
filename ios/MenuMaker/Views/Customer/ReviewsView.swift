@@ -41,10 +41,18 @@ struct ReviewsView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .accessibilityLabel("Cancel")
                 }
             }
             .sheet(isPresented: $showingImagePicker) {
                 ImagePicker(images: $selectedImages, selectionLimit: 3)
+            }
+            .alert("Thank You!", isPresented: $viewModel.showSuccessMessage) {
+                Button("OK") {
+                    dismiss()
+                }
+            } message: {
+                Text(viewModel.successMessage ?? "Your review has been submitted successfully!")
             }
         }
     }
@@ -143,6 +151,7 @@ struct ReviewsView: View {
                     .cornerRadius(12)
                 }
                 .accessibilityIdentifier("add-photos-button")
+                .accessibilityLabel("Add Photos")
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
@@ -154,7 +163,7 @@ struct ReviewsView: View {
                                     .frame(width: 100, height: 100)
                                     .clipped()
                                     .cornerRadius(12)
-                                    .accessibilityIdentifier("review-photo-\(index)")
+                                    .accessibilityIdentifier("ReviewPhoto")
 
                                 Button(action: { selectedImages.remove(at: index) }) {
                                     Image(systemName: "xmark.circle.fill")
@@ -207,6 +216,7 @@ struct ReviewsView: View {
         .cornerRadius(12)
         .disabled(!isFormValid || viewModel.isLoading)
         .accessibilityIdentifier("submit-review-button")
+        .accessibilityLabel("Submit")
     }
 
     private var ratingDescription: String {

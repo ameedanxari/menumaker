@@ -13,6 +13,9 @@ class ReviewViewModel: ObservableObject {
     @Published var selectedRatingFilter: Int?
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var showSuccessMessage = false
+    @Published var successMessage: String?
+    @Published var sortOrder: SortOrder = .mostRecent
 
     private let repository = ReviewRepository.shared
     private let analyticsService = AnalyticsService.shared
@@ -123,6 +126,10 @@ class ReviewViewModel: ObservableObject {
             ratingDistribution = repository.getRatingDistribution()
             filterReviews()
 
+            // Show success message
+            successMessage = "Your review has been submitted successfully!"
+            showSuccessMessage = true
+
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -185,9 +192,124 @@ class ReviewViewModel: ObservableObject {
         reviews.filter { $0.rating == rating }.count
     }
 
+    // MARK: - Review Interactions
+
+    func markReviewAsHelpful(_ reviewId: String) async {
+        guard let index = reviews.firstIndex(where: { $0.id == reviewId }) else { return }
+
+        isLoading = true
+
+        do {
+            try await repository.markReviewAsHelpful(reviewId)
+
+            // Update local review
+            var review = reviews[index]
+            review.isHelpful = !review.isHelpful
+            if review.isHelpful {
+                review.helpfulCount += 1
+            } else {
+                review.helpfulCount -= 1
+            }
+            reviews[index] = review
+            filterReviews()
+
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
+    func reportReview(_ reviewId: String, reason: String) async {
+        guard let index = reviews.firstIndex(where: { $0.id == reviewId }) else { return }
+
+        isLoading = true
+
+        do {
+            try await repository.reportReview(reviewId, reason: reason)
+
+            // Update local review
+            var review = reviews[index]
+            review.isReported = true
+            reviews[index] = review
+            filterReviews()
+
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
+    func replyToReview(_ reviewId: String, reply: String) async {
+        guard let index = reviews.firstIndex(where: { $0.id == reviewId }),
+              let businessId = try? await KeychainManager.shared.getBusinessId() else { return }
+
+        isLoading = true
+
+        do {
+            let sellerReply = try await repository.replyToReview(reviewId, businessId: businessId, reply: reply)
+
+            // Update local review
+            var review = reviews[index]
+            review.sellerReply = sellerReply
+            reviews[index] = review
+            filterReviews()
+
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
+    // MARK: - Sorting
+
+    func sortByMostRecent() {
+        sortOrder = .mostRecent
+        applySorting()
+    }
+
+    func sortByMostHelpful() {
+        sortOrder = .mostHelpful
+        applySorting()
+    }
+
+    func sortByHighestRating() {
+        sortOrder = .highestRating
+        applySorting()
+    }
+
+    func sortByLowestRating() {
+        sortOrder = .lowestRating
+        applySorting()
+    }
+
+    private func applySorting() {
+        switch sortOrder {
+        case .mostRecent:
+            filteredReviews.sort { $0.createdAt > $1.createdAt }
+        case .mostHelpful:
+            filteredReviews.sort { $0.helpfulCount > $1.helpfulCount }
+        case .highestRating:
+            filteredReviews.sort { $0.rating > $1.rating }
+        case .lowestRating:
+            filteredReviews.sort { $0.rating < $1.rating }
+        }
+    }
+
     // MARK: - Error Handling
 
     func clearError() {
         errorMessage = nil
     }
+}
+
+// MARK: - Sort Order
+
+enum SortOrder {
+    case mostRecent
+    case mostHelpful
+    case highestRating
+    case lowestRating
 }

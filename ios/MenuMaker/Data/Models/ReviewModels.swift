@@ -10,6 +10,24 @@ struct Review: Codable, Identifiable {
     let comment: String?
     let imageUrls: [String]?
     let createdAt: String
+    var helpfulCount: Int
+    var isHelpful: Bool
+    var isReported: Bool
+    var sellerReply: SellerReply?
+
+    init(id: String, businessId: String, customerName: String, rating: Int, comment: String?, imageUrls: [String]?, createdAt: String, helpfulCount: Int = 0, isHelpful: Bool = false, isReported: Bool = false, sellerReply: SellerReply? = nil) {
+        self.id = id
+        self.businessId = businessId
+        self.customerName = customerName
+        self.rating = rating
+        self.comment = comment
+        self.imageUrls = imageUrls
+        self.createdAt = createdAt
+        self.helpfulCount = helpfulCount
+        self.isHelpful = isHelpful
+        self.isReported = isReported
+        self.sellerReply = sellerReply
+    }
 
     var ratingStars: String {
         String(repeating: "⭐️", count: rating)
@@ -31,6 +49,10 @@ struct Review: Codable, Identifiable {
 
     var displayComment: String {
         comment ?? "No comment provided"
+    }
+
+    var hasSellerReply: Bool {
+        sellerReply != nil
     }
 }
 
@@ -158,5 +180,25 @@ struct RatingDistribution: Codable {
         }
 
         return distribution
+    }
+}
+
+// MARK: - Seller Reply
+
+struct SellerReply: Codable {
+    let id: String
+    let reviewId: String
+    let sellerName: String
+    let reply: String
+    let createdAt: String
+
+    var formattedDate: String {
+        guard let date = ISO8601DateFormatter().date(from: createdAt) else {
+            return createdAt
+        }
+
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        return formatter.localizedString(for: date, relativeTo: Date())
     }
 }
