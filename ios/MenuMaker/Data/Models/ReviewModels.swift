@@ -202,3 +202,14 @@ struct SellerReply: Codable {
         return formatter.localizedString(for: date, relativeTo: Date())
     }
 }
+
+// MARK: - Reply Response
+
+struct ReplyResponse: Codable {
+    let success: Bool
+    let data: ReplyData
+}
+
+struct ReplyData: Codable {
+    let sellerReply: SellerReply
+}

@@ -78,6 +78,51 @@ class ReviewRepository: ObservableObject {
         try await ImageService.shared.uploadImage(image, to: "/upload/review-image")
     }
 
+    // MARK: - Review Actions
+
+    func markReviewAsHelpful(_ reviewId: String) async throws {
+        let _: EmptyResponse = try await apiClient.request(
+            endpoint: AppConstants.API.Endpoints.reviews + "/\(reviewId)/helpful",
+            method: .post
+        )
+    }
+
+    func reportReview(_ reviewId: String, reason: String) async throws {
+        struct ReportRequest: Encodable {
+            let reason: String
+        }
+
+        let _: EmptyResponse = try await apiClient.request(
+            endpoint: AppConstants.API.Endpoints.reviews + "/\(reviewId)/report",
+            method: .post,
+            body: ReportRequest(reason: reason)
+        )
+    }
+
+    func replyToReview(_ reviewId: String, businessId: String, reply: String) async throws -> SellerReply {
+        struct ReplyRequest: Encodable {
+            let businessId: String
+            let reply: String
+        }
+
+        struct ReplyResponse: Decodable {
+            let success: Bool
+            let data: ReplyData
+        }
+
+        struct ReplyData: Decodable {
+            let sellerReply: SellerReply
+        }
+
+        let response: ReplyResponse = try await apiClient.request(
+            endpoint: AppConstants.API.Endpoints.reviews + "/\(reviewId)/reply",
+            method: .post,
+            body: ReplyRequest(businessId: businessId, reply: reply)
+        )
+
+        return response.data.sellerReply
+    }
+
     // MARK: - Filtering and Sorting
 
     func filterReviews(minRating: Int? = nil, maxRating: Int? = nil) -> [Review] {

@@ -1,4 +1,29 @@
 import Foundation
+import SwiftUI
+
+// MARK: - Referral Status
+
+enum ReferralStatus: String, Codable {
+    case pending = "pending"
+    case completed = "completed"
+    case expired = "expired"
+
+    var displayName: String {
+        switch self {
+        case .pending: return "Pending"
+        case .completed: return "Completed"
+        case .expired: return "Expired"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .pending: return .orange
+        case .completed: return .green
+        case .expired: return .gray
+        }
+    }
+}
 
 // MARK: - Referral Models
 
@@ -8,6 +33,8 @@ struct ReferralStats: Codable {
     let pendingReferrals: Int
     let monthlyReferrals: Int
     let totalEarningsCents: Int
+    let availableCreditsCents: Int
+    let pendingRewardsCents: Int
     let referralCode: String
     let leaderboardPosition: Int?
 
@@ -17,6 +44,22 @@ struct ReferralStats: Codable {
 
     var formattedEarnings: String {
         String(format: "₹%.2f", totalEarnings)
+    }
+
+    var availableCredits: Double {
+        Double(availableCreditsCents) / 100.0
+    }
+
+    var formattedAvailableCredits: String {
+        String(format: "₹%.2f", availableCredits)
+    }
+
+    var pendingRewards: Double {
+        Double(pendingRewardsCents) / 100.0
+    }
+
+    var formattedPendingRewards: String {
+        String(format: "₹%.2f", pendingRewards)
     }
 
     var successRate: Double {
@@ -70,6 +113,54 @@ struct ReferralStatsResponse: Decodable {
 struct ReferralStatsData: Decodable {
     let stats: ReferralStats
     let leaderboard: [ReferralLeaderboard]
+}
+
+struct ReferralHistory: Codable, Identifiable {
+    let id: String
+    let referredUserName: String
+    let referredAt: Date
+    let status: ReferralStatus
+    let rewardCents: Int
+
+    var reward: Double {
+        Double(rewardCents) / 100.0
+    }
+
+    var formattedReward: String {
+        String(format: "₹%.2f", reward)
+    }
+
+    var formattedDate: String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        return formatter.localizedString(for: referredAt, relativeTo: Date())
+    }
+
+    var rewardAmountCents: Int {
+        rewardCents
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case referredUserName = "referred_user_name"
+        case referredAt = "referred_at"
+        case status
+        case rewardCents = "reward_cents"
+    }
+}
+
+struct ReferralHistoryResponse: Decodable {
+    let success: Bool
+    let data: ReferralHistoryData
+}
+
+struct ReferralHistoryData: Decodable {
+    let referrals: [ReferralHistory]
+}
+
+struct ApplyReferralResponse: Decodable {
+    let success: Bool
+    let message: String?
 }
 
 // MARK: - Integration Models

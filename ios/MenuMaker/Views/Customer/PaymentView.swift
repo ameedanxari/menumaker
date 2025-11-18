@@ -226,14 +226,11 @@ struct CardPaymentForm: View {
                 }
                 .foregroundColor(.theme.primary)
                 .accessibility(label: Text("Add New Card"))
-
-                if !viewModel.showNewCardForm {
-                    return AnyView(EmptyView())
-                }
             }
 
             // New Card Form
-            VStack(spacing: 12) {
+            if viewModel.savedCards.isEmpty || viewModel.showNewCardForm {
+                VStack(spacing: 12) {
                 TextField("Card Number", text: $viewModel.cardNumber)
                     .keyboardType(.numberPad)
                     .textContentType(.creditCardNumber)
@@ -269,17 +266,18 @@ struct CardPaymentForm: View {
 
                 Toggle("Save card for future payments", isOn: $viewModel.saveCard)
                     .accessibilityIdentifier("saveCardToggle")
-            }
 
-            if let error = viewModel.cardValidationError {
-                Text(error)
-                    .font(.caption)
-                    .foregroundColor(.theme.error)
+                if let error = viewModel.cardValidationError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(.theme.error)
+                }
+                }
+                .padding()
+                .background(Color.theme.surface)
+                .cornerRadius(AppConstants.UI.cornerRadius)
             }
         }
-        .padding()
-        .background(Color.theme.surface)
-        .cornerRadius(AppConstants.UI.cornerRadius)
     }
 }
 

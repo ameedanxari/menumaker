@@ -13,11 +13,18 @@ class SellerViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
 
+    // Analytics data
+    @Published var selectedPeriod: TimePeriod = .today
+    @Published var analyticsData: AnalyticsData?
+    @Published var customerInsights: CustomerInsights?
+    @Published var payoutInfo: PayoutInfo?
+
     private let businessRepository = BusinessRepository.shared
     private let orderRepository = OrderRepository.shared
     private let dishRepository = DishRepository.shared
     private let reviewRepository = ReviewRepository.shared
     private let analyticsService = AnalyticsService.shared
+    private let apiClient = APIClient.shared
 
     init() {
         Task {
@@ -62,6 +69,7 @@ class SellerViewModel: ObservableObject {
 
     func refreshData() async {
         await loadDashboardData()
+        await loadAnalytics(for: selectedPeriod)
     }
 
     private func updateStatistics() {
@@ -69,6 +77,76 @@ class SellerViewModel: ObservableObject {
         todayRevenue = orderRepository.getTodayRevenue()
         pendingOrders = orderRepository.getOrdersCount(for: .pending)
         recentReviews = reviewRepository.getRecentReviews(count: 5)
+    }
+
+    // MARK: - Analytics
+
+    func loadAnalytics(for period: TimePeriod) async {
+        guard let businessId = business?.id else { return }
+
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let response: AnalyticsResponse = try await apiClient.request(
+                endpoint: AppConstants.API.Endpoints.businessAnalytics(businessId) + "?period=\(period.rawValue.lowercased())",
+                method: .get
+            )
+
+            analyticsData = response.data.analytics
+            customerInsights = response.data.customerInsights
+            payoutInfo = response.data.payouts
+
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
+    func switchPeriod(to period: TimePeriod) async {
+        selectedPeriod = period
+        await loadAnalytics(for: period)
+    }
+
+    func exportAnalytics(format: ExportFormat) async {
+        guard let businessId = business?.id else { return }
+
+        let request = ExportRequest(
+            businessId: businessId,
+            period: selectedPeriod.rawValue.lowercased(),
+            format: format.rawValue,
+            startDate: nil,
+            endDate: nil
+        )
+
+        do {
+            let _: MessageResponse = try await apiClient.request(
+                endpoint: AppConstants.API.Endpoints.exportAnalytics,
+                method: .post,
+                body: request
+            )
+
+            // Success - show message
+            analyticsService.track(.screenView, parameters: ["screen": "Analytics Export"])
+
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    // MARK: - Analytics Helpers
+
+    func getPopularItems() -> [PopularItem] {
+        analyticsData?.popularItems ?? []
+    }
+
+    func getSalesData() -> [SalesDataPoint] {
+        analyticsData?.salesData ?? []
+    }
+
+    func getPeakHours() -> [PeakHour] {
+        analyticsData?.peakHours ?? []
     }
 
     // MARK: - Business Management
@@ -150,7 +228,7 @@ class SellerViewModel: ObservableObject {
 
     func markOrderAsFulfilled(_ orderId: String) async {
         do {
-            _ = try await orderRepository.updateOrderStatus(orderId, status: .fulfilled)
+            _ = try await orderRepository.updateOrderStatus(orderId, status: .delivered)
             updateStatistics()
 
             analyticsService.track(.orderCompleted, parameters: ["order_id": orderId])

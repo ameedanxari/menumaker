@@ -77,6 +77,11 @@ enum AppConstants {
             static let integrations = "/integrations"
             static let posIntegrations = "/pos"
             static let deliveryIntegrations = "/delivery"
+
+            // Analytics
+            static let analytics = "/analytics"
+            static func businessAnalytics(_ businessId: String) -> String { "/businesses/\(businessId)/analytics" }
+            static let exportAnalytics = "/analytics/export"
         }
     }
 

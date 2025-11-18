@@ -7,14 +7,19 @@ struct NotificationsView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
+                // Filter buttons
+                if !viewModel.notifications.isEmpty {
+                    filterButtons
+                }
+
                 if viewModel.isLoading && viewModel.notifications.isEmpty {
                     ProgressView()
                         .padding()
-                } else if viewModel.notifications.isEmpty {
+                } else if viewModel.filteredNotifications.isEmpty {
                     EmptyState(
                         icon: "bell.slash",
                         title: "No Notifications",
-                        message: "You're all caught up!"
+                        message: viewModel.notifications.isEmpty ? "You're all caught up!" : "No notifications match this filter"
                     )
                     .accessibilityIdentifier("empty-notifications")
                 } else {
@@ -26,14 +31,26 @@ struct NotificationsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 16) {
-                        Button(action: { Task { await viewModel.markAllAsRead() } }) {
-                            Image(systemName: "checkmark.circle")
+                        if !viewModel.notifications.isEmpty {
+                            Button(action: { Task { await viewModel.clearAllNotifications() } }) {
+                                Text("Clear All")
+                                    .font(.caption)
+                            }
+                            .accessibilityLabel("Clear All")
+                            .accessibilityIdentifier("clear-all-button")
+
+                            Button(action: { Task { await viewModel.markAllAsRead() } }) {
+                                Text("Mark All Read")
+                                    .font(.caption)
+                            }
+                            .accessibilityLabel("Mark All Read")
+                            .accessibilityIdentifier("mark-all-read-button")
                         }
-                        .accessibilityIdentifier("mark-all-read-button")
 
                         Button(action: { showingSettings = true }) {
                             Image(systemName: "gear")
                         }
+                        .accessibilityLabel("Settings")
                         .accessibilityIdentifier("settings-button")
                     }
                 }
@@ -42,20 +59,59 @@ struct NotificationsView: View {
                 await viewModel.refreshNotifications()
             }
             .sheet(isPresented: $showingSettings) {
-                NotificationSettingsView()
+                NavigationView {
+                    SettingsView()
+                }
             }
+        }
+    }
+
+    private var filterButtons: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(NotificationFilter.allCases, id: \.self) { filter in
+                    Button(action: {
+                        viewModel.selectedFilter = filter
+                    }) {
+                        Text(filter.rawValue)
+                            .font(.subheadline)
+                            .fontWeight(viewModel.selectedFilter == filter ? .semibold : .regular)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(
+                                viewModel.selectedFilter == filter ?
+                                Color.blue : Color.gray.opacity(0.2)
+                            )
+                            .foregroundColor(viewModel.selectedFilter == filter ? .white : .primary)
+                            .cornerRadius(20)
+                    }
+                    .accessibilityLabel(filter.rawValue)
+                    .accessibilityIdentifier("filter-\(filter.rawValue.lowercased())")
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
         }
     }
 
     private var notificationsList: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
-                ForEach(viewModel.notifications) { notification in
+                ForEach(viewModel.filteredNotifications) { notification in
                     NotificationRow(
                         notification: notification,
                         onTap: { Task { await viewModel.markAsRead(notification.id) } }
                     )
-                    .accessibilityIdentifier("notification-\(notification.id)")
+                    .accessibilityIdentifier("NotificationItem")
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button(role: .destructive) {
+                            Task {
+                                await viewModel.deleteNotification(notification.id)
+                            }
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
 
                     Divider()
                 }
@@ -136,45 +192,6 @@ struct NotificationRow: View {
             return ("star.fill", .white, .yellow)
         case .system:
             return ("bell.fill", .white, .gray)
-        }
-    }
-}
-
-struct NotificationSettingsView: View {
-    @StateObject private var viewModel = NotificationViewModel()
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationView {
-            Form {
-                Section("Notification Types") {
-                    Toggle("Order Updates", isOn: $viewModel.orderNotificationsEnabled)
-                        .accessibilityIdentifier("toggle-order-notifications")
-
-                    Toggle("Promotions", isOn: $viewModel.promotionNotificationsEnabled)
-                        .accessibilityIdentifier("toggle-promotion-notifications")
-
-                    Toggle("Reviews", isOn: $viewModel.reviewNotificationsEnabled)
-                        .accessibilityIdentifier("toggle-review-notifications")
-                }
-
-                Section("Delivery") {
-                    Toggle("Push Notifications", isOn: $viewModel.pushNotificationsEnabled)
-                        .accessibilityIdentifier("toggle-push-notifications")
-
-                    Toggle("Email Notifications", isOn: $viewModel.emailNotificationsEnabled)
-                        .accessibilityIdentifier("toggle-email-notifications")
-                }
-            }
-            .navigationTitle("Notification Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
         }
     }
 }
