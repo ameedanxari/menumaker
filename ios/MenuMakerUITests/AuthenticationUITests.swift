@@ -134,6 +134,39 @@ final class AuthenticationUITests: XCTestCase {
     }
 
     @MainActor
+    func testSignupWithMismatchedPasswords() throws {
+        let loginPage = LoginPage(app: app)
+        let signupPage = loginPage.tapSignUp()
+
+        signupPage
+            .enterName("Test User")
+            .enterEmail("newuser@example.com")
+            .enterPassword("SecurePassword123!")
+            .enterConfirmPassword("DifferentPassword456!")
+            .tapSignup()
+
+        // Verify validation error is displayed
+        XCTAssertTrue(signupPage.errorMessage.waitForExistence(timeout: 2), "Should show error for mismatched passwords")
+        XCTAssertTrue(signupPage.errorMessage.label.contains("do not match") || signupPage.errorMessage.label.contains("Passwords"), "Error should mention password mismatch")
+    }
+
+    @MainActor
+    func testSignupWithEmptyConfirmPassword() throws {
+        let loginPage = LoginPage(app: app)
+        let signupPage = loginPage.tapSignUp()
+
+        signupPage
+            .enterName("Test User")
+            .enterEmail("newuser@example.com")
+            .enterPassword("SecurePassword123!")
+            .tapSignup()
+
+        // Verify validation error is displayed
+        XCTAssertTrue(signupPage.errorMessage.waitForExistence(timeout: 2), "Should show error for empty confirm password")
+        XCTAssertTrue(signupPage.errorMessage.label.contains("confirm") || signupPage.errorMessage.label.contains("Confirm"), "Error should mention confirm password")
+    }
+
+    @MainActor
     func testNavigateBackToLoginFromSignup() throws {
         let loginPage = LoginPage(app: app)
         let signupPage = loginPage.tapSignUp()
