@@ -1237,15 +1237,6 @@ class APIClient {
                 createdAt: ISO8601DateFormatter().string(from: now)
             )
 
-            struct ReplyResponse: Codable {
-                let success: Bool
-                let data: ReplyData
-            }
-
-            struct ReplyData: Codable {
-                let sellerReply: SellerReply
-            }
-
             let response = ReplyResponse(
                 success: true,
                 data: ReplyData(sellerReply: sellerReply)

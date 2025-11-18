@@ -228,7 +228,7 @@ class SellerViewModel: ObservableObject {
 
     func markOrderAsFulfilled(_ orderId: String) async {
         do {
-            _ = try await orderRepository.updateOrderStatus(orderId, status: .fulfilled)
+            _ = try await orderRepository.updateOrderStatus(orderId, status: .delivered)
             updateStatistics()
 
             analyticsService.track(.orderCompleted, parameters: ["order_id": orderId])
