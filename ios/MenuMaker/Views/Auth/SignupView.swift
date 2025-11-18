@@ -77,7 +77,7 @@ struct SignupView: View {
                             }
                         }
                         .buttonStyle(PrimaryButtonStyle())
-                        .disabled(authViewModel.isLoading || !isFormValid)
+                        .disabled(authViewModel.isLoading)
                         .accessibilityIdentifier("signup-button")
                     }
                     .padding(.horizontal, 24)

@@ -71,7 +71,7 @@ struct ForgotPasswordView: View {
                             }
                         }
                         .buttonStyle(PrimaryButtonStyle())
-                        .disabled(authViewModel.isLoading || email.isEmpty)
+                        .disabled(authViewModel.isLoading)
                         .accessibilityIdentifier("submit-button")
                     }
                     .padding(.horizontal, 24)

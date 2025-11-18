@@ -68,7 +68,7 @@ struct LoginView: View {
                         }
                     }
                     .buttonStyle(PrimaryButtonStyle())
-                    .disabled(authViewModel.isLoading || email.isEmpty || password.isEmpty)
+                    .disabled(authViewModel.isLoading)
                     .accessibilityIdentifier("login-button")
 
                     // Forgot Password Link
