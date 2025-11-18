@@ -15,6 +15,10 @@ enum AppConstants {
             static let logout = "/auth/logout"
             static let me = "/auth/me"
             static let refreshToken = "/auth/refresh"
+            static let forgotPassword = "/auth/forgot-password"
+            static let updateProfile = "/auth/profile"
+            static let changePassword = "/auth/change-password"
+            static let updatePhoto = "/auth/photo"
 
             // Business
             static let businesses = "/businesses"
@@ -34,6 +38,7 @@ enum AppConstants {
             static let orders = "/orders"
             static func order(_ id: String) -> String { "/orders/\(id)" }
             static func businessOrders(_ businessId: String) -> String { "/businesses/\(businessId)/orders" }
+            static let customerOrders = "/orders/my-orders"
 
             // Payments
             static let payments = "/payments"
@@ -58,6 +63,11 @@ enum AppConstants {
 
             // Notifications
             static let notifications = "/notifications"
+
+            // Favorites
+            static let favorites = "/favorites"
+            static func favorite(_ id: String) -> String { "/favorites/\(id)" }
+            static func favoriteBusiness(_ businessId: String) -> String { "/favorites/business/\(businessId)" }
 
             // Subscriptions
             static let subscriptions = "/subscriptions"

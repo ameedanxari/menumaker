@@ -63,6 +63,24 @@ class DishViewModel: ObservableObject {
         await loadDishes()
     }
 
+    func loadDishesByBusiness(_ businessId: String) async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            dishes = try await repository.getDishesByBusiness(businessId)
+            categories = repository.getCategories()
+            filterDishes()
+
+            analyticsService.trackScreen("Seller Menu")
+
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
     // MARK: - Filtering
 
     private func filterDishes() {
@@ -261,6 +279,10 @@ class DishViewModel: ObservableObject {
 
     func getDishesByCategory() -> [String: [Dish]] {
         Dictionary(grouping: dishes) { $0.category ?? "Uncategorized" }
+    }
+
+    func getCategories() -> [String] {
+        repository.getCategories()
     }
 
     // MARK: - Error Handling

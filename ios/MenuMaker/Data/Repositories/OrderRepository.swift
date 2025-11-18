@@ -45,6 +45,26 @@ class OrderRepository: ObservableObject {
         return response.data.order
     }
 
+    func getCustomerOrders(page: Int? = nil, limit: Int? = nil) async throws -> (orders: [Order], total: Int) {
+        var endpoint = AppConstants.API.Endpoints.customerOrders
+
+        if let page = page {
+            endpoint += "?page=\(page)"
+        }
+
+        if let limit = limit {
+            endpoint += endpoint.contains("?") ? "&limit=\(limit)" : "?limit=\(limit)"
+        }
+
+        let response: OrderListResponse = try await apiClient.request(
+            endpoint: endpoint,
+            method: .get
+        )
+
+        orders = response.data.orders
+        return (response.data.orders, response.data.total)
+    }
+
     // MARK: - Create Operations
 
     func createOrder(

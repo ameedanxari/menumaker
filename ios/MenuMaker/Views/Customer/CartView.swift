@@ -21,7 +21,7 @@ struct CartView: View {
                         // Items List
                         ForEach(viewModel.cart?.items ?? []) { item in
                             CartItemRow(item: item, viewModel: viewModel)
-                                .accessibilityIdentifier("cart-item-\(item.dishId)")
+                                .accessibilityIdentifier("CartItem")
                         }
 
                         // Coupon Section
@@ -81,23 +81,26 @@ struct CartItemRow: View {
             // Quantity Controls
             HStack(spacing: 12) {
                 Button(action: { viewModel.decrementQuantity(item.dishId) }) {
-                    Image(systemName: "minus.circle.fill")
+                    Text("-")
                         .font(.title3)
+                        .fontWeight(.semibold)
                         .foregroundColor(.theme.primary)
+                        .frame(width: 32, height: 32)
                 }
-                .accessibilityIdentifier("decrease-quantity-\(item.dishId)")
+                .accessibilityLabel("-")
 
                 Text("\(item.quantity)")
                     .font(.headline)
                     .frame(minWidth: 30)
-                    .accessibilityIdentifier("quantity-\(item.dishId)")
 
                 Button(action: { viewModel.incrementQuantity(item.dishId) }) {
-                    Image(systemName: "plus.circle.fill")
+                    Text("+")
                         .font(.title3)
+                        .fontWeight(.semibold)
                         .foregroundColor(.theme.primary)
+                        .frame(width: 32, height: 32)
                 }
-                .accessibilityIdentifier("increase-quantity-\(item.dishId)")
+                .accessibilityLabel("+")
             }
 
             // Total

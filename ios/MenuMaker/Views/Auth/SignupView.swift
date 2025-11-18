@@ -8,6 +8,37 @@ struct SignupView: View {
     @State private var phone = ""
     @State private var password = ""
     @State private var confirmPassword = ""
+    @State private var attemptedSubmit = false
+
+    private var validationError: String? {
+        guard attemptedSubmit else { return nil }
+
+        if name.isEmpty {
+            return "Please enter your name"
+        }
+
+        if email.isEmpty {
+            return "Please enter your email"
+        }
+
+        if password.isEmpty {
+            return "Please enter a password"
+        }
+
+        if password.count < 8 {
+            return "Password must be at least 8 characters"
+        }
+
+        if confirmPassword.isEmpty {
+            return "Please confirm your password"
+        }
+
+        if password != confirmPassword {
+            return "Passwords do not match"
+        }
+
+        return nil
+    }
 
     var body: some View {
         NavigationView {
@@ -43,7 +74,7 @@ struct SignupView: View {
                         CustomTextField(
                             placeholder: "Phone (Optional)",
                             text: $phone,
-                            keyboardType: .phonePad
+                            keyboardType: .numberPad
                         )
                         .accessibilityIdentifier("phone-field")
 
@@ -51,15 +82,17 @@ struct SignupView: View {
                             placeholder: "Password",
                             text: $password
                         )
+                        .textContentType(.newPassword)
                         .accessibilityIdentifier("password-field")
 
                         CustomSecureField(
                             placeholder: "Confirm Password",
                             text: $confirmPassword
                         )
+                        .textContentType(.newPassword)
                         .accessibilityIdentifier("confirm-password-field")
 
-                        if let errorMessage = authViewModel.errorMessage {
+                        if let errorMessage = validationError ?? authViewModel.errorMessage {
                             Text(errorMessage)
                                 .font(.caption)
                                 .foregroundColor(.theme.error)
@@ -77,7 +110,7 @@ struct SignupView: View {
                             }
                         }
                         .buttonStyle(PrimaryButtonStyle())
-                        .disabled(authViewModel.isLoading || !isFormValid)
+                        .disabled(authViewModel.isLoading)
                         .accessibilityIdentifier("signup-button")
                     }
                     .padding(.horizontal, 24)
@@ -99,10 +132,20 @@ struct SignupView: View {
 
     private var isFormValid: Bool {
         !name.isEmpty && !email.isEmpty && !password.isEmpty &&
-        password == confirmPassword
+        password == confirmPassword && password.count >= 8
     }
 
     private func signup() {
+        attemptedSubmit = true
+
+        // Clear previous API errors
+        authViewModel.errorMessage = nil
+
+        // Check validation
+        guard validationError == nil else {
+            return
+        }
+
         Task {
             await authViewModel.signup(
                 email: email,
@@ -110,10 +153,6 @@ struct SignupView: View {
                 name: name,
                 phone: phone.isEmpty ? nil : phone
             )
-
-            if authViewModel.isAuthenticated {
-                dismiss()
-            }
         }
     }
 }

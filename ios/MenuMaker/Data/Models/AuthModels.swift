@@ -18,6 +18,21 @@ struct RefreshTokenRequest: Encodable {
     let refreshToken: String
 }
 
+struct ForgotPasswordRequest: Encodable {
+    let email: String
+}
+
+struct UpdateProfileRequest: Encodable {
+    let name: String?
+    let phone: String?
+    let address: String?
+}
+
+struct ChangePasswordRequest: Encodable {
+    let currentPassword: String
+    let newPassword: String
+}
+
 // MARK: - Response Models
 
 struct AuthResponse: Decodable {
@@ -31,11 +46,27 @@ struct AuthData: Decodable {
     let user: User
 }
 
+struct UserResponse: Decodable {
+    let success: Bool
+    let data: UserData
+}
+
+struct UserData: Decodable {
+    let user: User
+}
+
+struct MessageResponse: Decodable {
+    let success: Bool
+    let message: String
+}
+
 struct User: Codable, Identifiable {
     let id: String
     let email: String
     let name: String
     let phone: String?
+    let address: String?
+    let photoUrl: String?
     let role: String
     let createdAt: String
     let updatedAt: String?
@@ -56,5 +87,13 @@ struct User: Codable, Identifiable {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         return formatter.string(from: date)
+    }
+
+    var formattedPhone: String {
+        phone ?? "Not provided"
+    }
+
+    var formattedAddress: String {
+        address ?? "Not provided"
     }
 }

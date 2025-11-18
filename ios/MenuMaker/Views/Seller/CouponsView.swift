@@ -45,6 +45,7 @@ struct CouponsView: View {
                 Button(action: { showAddCoupon = true }) {
                     Image(systemName: "plus.circle.fill")
                 }
+                .accessibilityLabel("Create Coupon")
                 .accessibilityIdentifier("add-coupon-button")
             }
         }
@@ -83,6 +84,7 @@ struct CouponCard: View {
                     .font(.title3)
                     .fontWeight(.bold)
                     .foregroundColor(.theme.primary)
+                    .accessibilityIdentifier(coupon.code)
 
                 Spacer()
 
@@ -95,6 +97,7 @@ struct CouponCard: View {
                     }
                 ))
                 .labelsHidden()
+                .accessibilityIdentifier("coupon-active-toggle")
             }
 
             // Discount
@@ -119,6 +122,7 @@ struct CouponCard: View {
         .padding()
         .background(Color.theme.surface)
         .cornerRadius(AppConstants.UI.cornerRadius)
+        .accessibilityIdentifier("CouponItem")
     }
 }
 
@@ -143,26 +147,62 @@ struct AddCouponView: View {
     @State private var discountType: DiscountType = .percentage
     @State private var discountValue = ""
     @State private var minOrderValue = ""
+    @State private var maxDiscount = ""
+    @State private var usageLimit = ""
     @State private var validUntil: Date? = nil
 
     var body: some View {
         NavigationView {
             Form {
                 Section("Coupon Details") {
-                    TextField("Code (e.g., SAVE20)", text: $code)
+                    TextField("Coupon Code (e.g., SAVE20)", text: $code)
                         .textCase(.uppercase)
+                        .accessibilityIdentifier("coupon-code-field")
 
-                    Picker("Discount Type", selection: $discountType) {
-                        ForEach(DiscountType.allCases, id: \.self) { type in
-                            Text(type.displayName).tag(type)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Discount Type")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+
+                        HStack(spacing: 12) {
+                            Button(action: { discountType = .percentage }) {
+                                HStack {
+                                    Image(systemName: discountType == .percentage ? "checkmark.circle.fill" : "circle")
+                                    Text("Percentage (%)")
+                                }
+                                .foregroundColor(discountType == .percentage ? .theme.primary : .theme.text)
+                            }
+                            .accessibilityIdentifier("percentage-button")
+
+                            Button(action: { discountType = .fixed }) {
+                                HStack {
+                                    Image(systemName: discountType == .fixed ? "checkmark.circle.fill" : "circle")
+                                    Text("Fixed Amount (₹)")
+                                }
+                                .foregroundColor(discountType == .fixed ? .theme.primary : .theme.text)
+                            }
+                            .accessibilityIdentifier("fixed-amount-button")
                         }
                     }
+                    .padding(.vertical, 4)
 
                     TextField("Discount Value", text: $discountValue)
                         .keyboardType(.numberPad)
+                        .accessibilityIdentifier("discount-value-field")
 
                     TextField("Minimum Order Value", text: $minOrderValue)
                         .keyboardType(.decimalPad)
+                        .accessibilityIdentifier("min-order-field")
+                }
+
+                Section("Optional Settings") {
+                    TextField("Max Discount Amount (Optional)", text: $maxDiscount)
+                        .keyboardType(.decimalPad)
+                        .accessibilityIdentifier("max-discount-field")
+
+                    TextField("Usage Limit (Optional)", text: $usageLimit)
+                        .keyboardType(.numberPad)
+                        .accessibilityIdentifier("usage-limit-field")
                 }
 
                 Section("Validity") {
@@ -170,6 +210,7 @@ struct AddCouponView: View {
                         get: { validUntil ?? Date() },
                         set: { validUntil = $0 }
                     ), displayedComponents: .date)
+                    .accessibilityIdentifier("valid-until-picker")
                 }
             }
             .navigationTitle("Create Coupon")
@@ -177,6 +218,7 @@ struct AddCouponView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { dismiss() }
+                        .accessibilityIdentifier("cancel-button")
                 }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -186,6 +228,7 @@ struct AddCouponView: View {
                         }
                     }
                     .disabled(!isFormValid)
+                    .accessibilityIdentifier("save-coupon-button")
                 }
             }
         }
@@ -199,15 +242,19 @@ struct AddCouponView: View {
         guard let discount = Int(discountValue),
               let minOrder = Double(minOrderValue) else { return }
 
+        let maxDiscountValue = maxDiscount.isEmpty ? nil : Double(maxDiscount)
+        let usageLimitValue = usageLimit.isEmpty ? nil : Int(usageLimit)
+        let usageLimitType: UsageLimitType = usageLimitValue != nil ? .total : .unlimited
+
         await viewModel.createCoupon(CouponViewModel.CreateCouponParams(
             code: code,
             discountType: discountType,
             discountValue: discount,
-            maxDiscount: nil,
+            maxDiscount: maxDiscountValue,
             minOrderValue: minOrder,
             validUntil: validUntil,
-            usageLimitType: .unlimited,
-            totalUsageLimit: nil
+            usageLimitType: usageLimitType,
+            totalUsageLimit: usageLimitValue
         ))
 
         dismiss()

@@ -7,6 +7,11 @@ struct MenuMakerApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
+        // Reset state for UI testing
+        if CommandLine.arguments.contains("UI-Testing") {
+            resetAppStateForTesting()
+        }
+
         setupAppearance()
         setupNotifications()
     }
@@ -71,6 +76,22 @@ struct MenuMakerApp: App {
         @unknown default:
             break
         }
+    }
+
+    private func resetAppStateForTesting() {
+        // Clear keychain synchronously
+        KeychainManager.shared.deleteAllSync()
+
+        // Clear UserDefaults
+        if let domain = Bundle.main.bundleIdentifier {
+            UserDefaults.standard.removePersistentDomain(forName: domain)
+            UserDefaults.standard.synchronize()
+        }
+
+        // Clear any cached data
+        URLCache.shared.removeAllCachedResponses()
+
+        print("🧪 App state reset for UI testing")
     }
 }
 
@@ -137,6 +158,7 @@ struct MainTabView: View {
             }
             .tag(3)
         }
+        .accessibilityIdentifier("main-tab-view")
         .environmentObject(sellerViewModel)
         .environmentObject(marketplaceViewModel)
     }

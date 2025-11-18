@@ -12,12 +12,16 @@ struct ForgotPasswordPage {
 
     // MARK: - Elements
 
+    private var forgotPasswordScreen: XCUIElement {
+        app.scrollViews["forgot-password-screen"]
+    }
+
     var emailField: XCUIElement {
-        app.textFields["Email"]
+        forgotPasswordScreen.textFields["email-field"]
     }
 
     var submitButton: XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'submit' OR label CONTAINS[c] 'send' OR label CONTAINS[c] 'reset'")).firstMatch
+        app.buttons["submit-button"]
     }
 
     var backButton: XCUIElement {
@@ -25,11 +29,11 @@ struct ForgotPasswordPage {
     }
 
     var successMessage: XCUIElement {
-        app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'sent' OR label CONTAINS[c] 'check email'")).firstMatch
+        app.staticTexts["success-message"]
     }
 
     var errorMessage: XCUIElement {
-        app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'error' OR label CONTAINS[c] 'invalid'")).firstMatch
+        app.staticTexts["error-message"]
     }
 
     // MARK: - Actions
@@ -43,7 +47,7 @@ struct ForgotPasswordPage {
 
     @discardableResult
     func tapSubmit() -> ForgotPasswordPage {
-        dismissKeyboardIfNeeded()
+        // No need to dismiss keyboard - tapping button will dismiss it automatically
         submitButton.tap()
         return self
     }
@@ -58,7 +62,7 @@ struct ForgotPasswordPage {
 
     @discardableResult
     func assertScreenDisplayed(timeout: TimeInterval = 2) -> ForgotPasswordPage {
-        XCTAssertTrue(emailField.waitForExistence(timeout: timeout), "Forgot password screen should be displayed")
+        XCTAssertTrue(forgotPasswordScreen.waitForExistence(timeout: timeout), "Forgot password screen should be displayed")
         return self
     }
 

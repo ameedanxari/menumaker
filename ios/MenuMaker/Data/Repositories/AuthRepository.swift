@@ -98,6 +98,19 @@ class AuthRepository: ObservableObject {
     func getUserEmail() async throws -> String? {
         try await keychainManager.getUserEmail()
     }
+
+    // MARK: - Password Reset
+
+    func sendPasswordReset(email: String) async throws {
+        let request = ForgotPasswordRequest(email: email)
+
+        let _: EmptyResponse = try await apiClient.request(
+            endpoint: AppConstants.API.Endpoints.forgotPassword,
+            method: .post,
+            body: request,
+            requiresAuth: false
+        )
+    }
 }
 
 // MARK: - Empty Response

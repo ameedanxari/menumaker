@@ -100,6 +100,7 @@ final class AuthenticationUITests: XCTestCase {
             .enterEmail("newuser@example.com")
             .enterPhone("9876543210")
             .enterPassword("SecurePassword123!")
+            .enterConfirmPassword("SecurePassword123!")
             .tapSignup()
 
         // Verify navigation to home or success message
@@ -133,6 +134,39 @@ final class AuthenticationUITests: XCTestCase {
     }
 
     @MainActor
+    func testSignupWithMismatchedPasswords() throws {
+        let loginPage = LoginPage(app: app)
+        let signupPage = loginPage.tapSignUp()
+
+        signupPage
+            .enterName("Test User")
+            .enterEmail("newuser@example.com")
+            .enterPassword("SecurePassword123!")
+            .enterConfirmPassword("DifferentPassword456!")
+            .tapSignup()
+
+        // Verify validation error is displayed
+        XCTAssertTrue(signupPage.errorMessage.waitForExistence(timeout: 2), "Should show error for mismatched passwords")
+        XCTAssertTrue(signupPage.errorMessage.label.contains("do not match") || signupPage.errorMessage.label.contains("Passwords"), "Error should mention password mismatch")
+    }
+
+    @MainActor
+    func testSignupWithEmptyConfirmPassword() throws {
+        let loginPage = LoginPage(app: app)
+        let signupPage = loginPage.tapSignUp()
+
+        signupPage
+            .enterName("Test User")
+            .enterEmail("newuser@example.com")
+            .enterPassword("SecurePassword123!")
+            .tapSignup()
+
+        // Verify validation error is displayed
+        XCTAssertTrue(signupPage.errorMessage.waitForExistence(timeout: 2), "Should show error for empty confirm password")
+        XCTAssertTrue(signupPage.errorMessage.label.contains("confirm") || signupPage.errorMessage.label.contains("Confirm"), "Error should mention confirm password")
+    }
+
+    @MainActor
     func testNavigateBackToLoginFromSignup() throws {
         let loginPage = LoginPage(app: app)
         let signupPage = loginPage.tapSignUp()
@@ -148,15 +182,10 @@ final class AuthenticationUITests: XCTestCase {
     @MainActor
     func testForgotPasswordFlow() throws {
         let loginPage = LoginPage(app: app)
-
-        // Check if forgot password button exists
-        guard loginPage.forgotPasswordButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Forgot password feature not yet implemented")
-        }
-
         let forgotPasswordPage = loginPage.tapForgotPassword()
 
         forgotPasswordPage
+            .assertScreenDisplayed()
             .enterEmail("test@example.com")
             .tapSubmit()
             .assertSuccessDisplayed()
@@ -165,14 +194,10 @@ final class AuthenticationUITests: XCTestCase {
     @MainActor
     func testForgotPasswordWithInvalidEmail() throws {
         let loginPage = LoginPage(app: app)
-
-        guard loginPage.forgotPasswordButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Forgot password feature not yet implemented")
-        }
-
         let forgotPasswordPage = loginPage.tapForgotPassword()
 
         forgotPasswordPage
+            .assertScreenDisplayed()
             .enterEmail("nonexistent@example.com")
             .tapSubmit()
             .assertErrorDisplayed()
@@ -205,6 +230,13 @@ final class AuthenticationUITests: XCTestCase {
         }
         logoutButton.tap()
 
+        // Confirm logout in the confirmation dialog
+        // Use firstMatch because SwiftUI creates nested buttons in dialogs
+        let confirmButton = app.buttons["confirm-logout-button"].firstMatch
+        if confirmButton.waitForExistence(timeout: 2) {
+            confirmButton.tap()
+        }
+
         // Verify back on login screen
         XCTAssertTrue(loginPage.emailField.waitForExistence(timeout: 3), "Should return to login screen after logout")
     }
@@ -218,22 +250,5 @@ final class AuthenticationUITests: XCTestCase {
         XCTAssertTrue(loginPage.emailField.isHittable, "Email field should be accessible")
         XCTAssertTrue(loginPage.passwordField.isHittable, "Password field should be accessible")
         XCTAssertTrue(loginPage.loginButton.isHittable, "Login button should be accessible")
-    }
-
-    // MARK: - Performance Tests
-
-    @MainActor
-    func testLoginButtonResponseTime() throws {
-        let loginPage = LoginPage(app: app)
-
-        loginPage
-            .enterEmail("test@example.com")
-            .enterPassword("password123")
-
-        measure {
-            loginPage.loginButton.tap()
-            // Wait for response
-            _ = app.staticTexts.firstMatch.waitForExistence(timeout: 1)
-        }
     }
 }

@@ -17,6 +17,17 @@ class AuthViewModel: ObservableObject {
         Task {
             await checkAuthentication()
         }
+
+        // Listen for profile updates
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("UserProfileUpdated"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            if let user = notification.userInfo?["user"] as? User {
+                self?.currentUser = user
+            }
+        }
     }
 
     // MARK: - Authentication
@@ -24,6 +35,11 @@ class AuthViewModel: ObservableObject {
     func login(email: String, password: String) async {
         guard !email.isEmpty, !password.isEmpty else {
             errorMessage = "Please enter email and password"
+            return
+        }
+
+        guard isValidEmail(email) else {
+            errorMessage = "Please enter a valid email address"
             return
         }
 
@@ -91,15 +107,17 @@ class AuthViewModel: ObservableObject {
 
         do {
             try await repository.logout()
-            isAuthenticated = false
-            currentUser = nil
-
-            analyticsService.track(.logout)
-            analyticsService.resetSession()
-
         } catch {
             errorMessage = error.localizedDescription
+            // Continue with logout even if API call fails
+            print("Logout API call failed: \(error.localizedDescription)")
         }
+
+        // Always clear local auth state, even if API call fails
+        isAuthenticated = false
+        currentUser = nil
+        analyticsService.track(.logout)
+        analyticsService.resetSession()
 
         isLoading = false
     }
@@ -165,6 +183,32 @@ class AuthViewModel: ObservableObject {
 
     func disableBiometricAuth() {
         biometricService.setBiometricEnabled(false)
+    }
+
+    // MARK: - Password Reset
+
+    func sendPasswordReset(email: String) async {
+        guard !email.isEmpty else {
+            errorMessage = "Please enter your email address"
+            return
+        }
+
+        guard isValidEmail(email) else {
+            errorMessage = "Please enter a valid email address"
+            return
+        }
+
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            try await repository.sendPasswordReset(email: email)
+            analyticsService.track(.passwordResetRequested)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
     }
 
     // MARK: - Validation

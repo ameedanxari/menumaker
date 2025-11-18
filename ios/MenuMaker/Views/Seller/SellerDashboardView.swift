@@ -26,7 +26,7 @@ struct SellerDashboardView: View {
             .padding()
         }
         .background(Color.theme.background)
-        .navigationTitle("Dashboard")
+        .navigationTitle("MenuMaker")
         .accessibilityIdentifier("seller-dashboard-screen")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {

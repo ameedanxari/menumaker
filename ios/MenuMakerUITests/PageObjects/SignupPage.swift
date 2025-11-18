@@ -12,40 +12,45 @@ struct SignupPage {
 
     // MARK: - Elements
 
+    private var signupScreen: XCUIElement {
+        app.scrollViews["signup-screen"]
+    }
+
     var nameField: XCUIElement {
-        app.textFields["Name"]
+        signupScreen.textFields["name-field"]
     }
 
     var emailField: XCUIElement {
-        app.textFields["Email"]
+        signupScreen.textFields["email-field"]
     }
 
     var phoneField: XCUIElement {
-        app.textFields["Phone"]
+        signupScreen.textFields["phone-field"]
     }
 
     var passwordField: XCUIElement {
-        app.secureTextFields["Password"]
+        signupScreen.secureTextFields["password-field"]
     }
 
     var confirmPasswordField: XCUIElement {
-        app.secureTextFields.matching(NSPredicate(format: "placeholderValue CONTAINS[c] 'confirm'")).firstMatch
+        signupScreen.secureTextFields["confirm-password-field"]
     }
 
     var signupButton: XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'sign up' OR label CONTAINS[c] 'create account'")).firstMatch
+        app.buttons["signup-button"]
     }
 
     var loginLink: XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'log in' OR label CONTAINS[c] 'sign in'")).firstMatch
+        app.buttons["cancel-button"]
     }
 
     var errorMessage: XCUIElement {
-        app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'error' OR label CONTAINS[c] 'invalid' OR label CONTAINS[c] 'exists'")).firstMatch
+        signupScreen.staticTexts["error-message"]
     }
 
     var validationMessage: XCUIElement {
-        app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'required' OR label CONTAINS[c] 'weak password' OR label CONTAINS[c] 'strength'")).firstMatch
+        // Validation messages use the same error-message identifier
+        signupScreen.staticTexts["error-message"]
     }
 
     // MARK: - Actions
@@ -87,7 +92,7 @@ struct SignupPage {
 
     @discardableResult
     func tapSignup() -> SignupPage {
-        dismissKeyboardIfNeeded()
+        // No need to dismiss keyboard - tapping button will dismiss it automatically
         signupButton.tap()
         return self
     }
@@ -112,7 +117,7 @@ struct SignupPage {
 
     @discardableResult
     func assertScreenDisplayed(timeout: TimeInterval = 2) -> SignupPage {
-        XCTAssertTrue(nameField.waitForExistence(timeout: timeout), "Signup screen should be displayed")
+        XCTAssertTrue(signupScreen.waitForExistence(timeout: timeout), "Signup screen should be displayed")
         return self
     }
 

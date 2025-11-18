@@ -6,6 +6,7 @@ struct LoginView: View {
     @State private var password = ""
     @State private var showSignup = false
     @State private var showBiometric = false
+    @State private var showForgotPassword = false
 
     var body: some View {
         ScrollView {
@@ -47,6 +48,7 @@ struct LoginView: View {
                         placeholder: "Password",
                         text: $password
                     )
+                    .textContentType(.password)
                     .accessibilityIdentifier("password-field")
 
                     if let errorMessage = authViewModel.errorMessage {
@@ -67,12 +69,12 @@ struct LoginView: View {
                         }
                     }
                     .buttonStyle(PrimaryButtonStyle())
-                    .disabled(authViewModel.isLoading || email.isEmpty || password.isEmpty)
+                    .disabled(authViewModel.isLoading)
                     .accessibilityIdentifier("login-button")
 
                     // Forgot Password Link
                     Button("Forgot Password?") {
-                        // TODO: Navigate to forgot password screen
+                        showForgotPassword = true
                     }
                     .foregroundColor(.theme.textSecondary)
                     .font(.body)
@@ -113,6 +115,16 @@ struct LoginView: View {
         .accessibilityIdentifier("login-screen")
         .sheet(isPresented: $showSignup) {
             SignupView()
+        }
+        .sheet(isPresented: $showForgotPassword) {
+            ForgotPasswordView()
+        }
+        .onChange(of: authViewModel.isAuthenticated) { isAuthenticated in
+            // Dismiss sheets when user becomes authenticated
+            if isAuthenticated {
+                showSignup = false
+                showForgotPassword = false
+            }
         }
         .task {
             if showBiometric {

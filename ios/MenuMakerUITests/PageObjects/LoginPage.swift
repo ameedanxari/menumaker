@@ -12,37 +12,42 @@ struct LoginPage {
 
     // MARK: - Elements
 
+    private var loginScreen: XCUIElement {
+        app.scrollViews["login-screen"]
+    }
+
     var welcomeText: XCUIElement {
         app.staticTexts["Welcome Back"]
     }
 
     var emailField: XCUIElement {
-        app.textFields["Email"]
+        loginScreen.textFields["email-field"]
     }
 
     var passwordField: XCUIElement {
-        app.secureTextFields["Password"]
+        loginScreen.secureTextFields["password-field"]
     }
 
     var loginButton: XCUIElement {
-        // Updated to match actual button label
-        app.buttons["Log In"]
+        // Use accessibility identifier instead of label
+        app.buttons["login-button"]
     }
 
     var signUpButton: XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'sign up'")).firstMatch
+        app.buttons["signup-link-button"]
     }
 
     var forgotPasswordButton: XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'forgot password'")).firstMatch
+        app.buttons["forgot-password-link"]
     }
 
     var errorMessage: XCUIElement {
-        app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'error' OR label CONTAINS[c] 'invalid'")).firstMatch
+        loginScreen.staticTexts["error-message"]
     }
 
     var validationMessage: XCUIElement {
-        app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'required' OR label CONTAINS[c] 'empty'")).firstMatch
+        // Validation messages use the same error-message identifier
+        loginScreen.staticTexts["error-message"]
     }
 
     // MARK: - Actions
@@ -63,7 +68,7 @@ struct LoginPage {
 
     @discardableResult
     func tapLogin() -> LoginPage {
-        dismissKeyboardIfNeeded()
+        // No need to dismiss keyboard - tapping button will dismiss it automatically
         loginButton.tap()
         return self
     }
@@ -90,7 +95,7 @@ struct LoginPage {
 
     @discardableResult
     func assertScreenDisplayed(timeout: TimeInterval = 2) -> LoginPage {
-        XCTAssertTrue(emailField.waitForExistence(timeout: timeout), "Login screen should be displayed")
+        XCTAssertTrue(loginScreen.waitForExistence(timeout: timeout), "Login screen should be displayed")
         return self
     }
 
