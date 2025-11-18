@@ -96,15 +96,17 @@ class AuthViewModel: ObservableObject {
 
         do {
             try await repository.logout()
-            isAuthenticated = false
-            currentUser = nil
-
-            analyticsService.track(.logout)
-            analyticsService.resetSession()
-
         } catch {
             errorMessage = error.localizedDescription
+            // Continue with logout even if API call fails
+            print("Logout API call failed: \(error.localizedDescription)")
         }
+
+        // Always clear local auth state, even if API call fails
+        isAuthenticated = false
+        currentUser = nil
+        analyticsService.track(.logout)
+        analyticsService.resetSession()
 
         isLoading = false
     }
