@@ -18,6 +18,7 @@ struct Order: Codable, Identifiable {
     let estimatedDeliveryTime: String?
     let deliveryPersonName: String?
     let deliveryPersonPhone: String?
+    let deliveryFeeCents: Int?
 
     var total: Double {
         Double(totalCents) / 100.0
@@ -25,6 +26,26 @@ struct Order: Codable, Identifiable {
 
     var formattedTotal: String {
         String(format: "₹%.2f", total)
+    }
+
+    var subtotalCents: Int {
+        items.reduce(0) { $0 + $1.totalCents }
+    }
+
+    var subtotal: Double {
+        Double(subtotalCents) / 100.0
+    }
+
+    var formattedSubtotal: String {
+        String(format: "₹%.2f", subtotal)
+    }
+
+    var deliveryFee: Double {
+        Double(deliveryFeeCents ?? 0) / 100.0
+    }
+
+    var formattedDeliveryFee: String {
+        String(format: "₹%.2f", deliveryFee)
     }
 
     var orderStatus: OrderStatus {

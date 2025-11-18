@@ -44,7 +44,7 @@ struct FavoritesView: View {
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         ForEach(viewModel.filteredFavorites) { favorite in
-                            if let business = favorite.business {
+                            if favorite.business != nil {
                                 FavoriteCard(
                                     favorite: favorite,
                                     onRemove: {

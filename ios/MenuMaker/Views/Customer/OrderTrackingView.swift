@@ -305,7 +305,8 @@ struct TrackingStepView: View {
             deliveryAddress: "123 Test Street, Test City, 110001",
             estimatedDeliveryTime: ISO8601DateFormatter().string(from: Date().addingTimeInterval(1800)),
             deliveryPersonName: "Rajesh Kumar",
-            deliveryPersonPhone: "+919876543210"
+            deliveryPersonPhone: "+919876543210",
+            deliveryFeeCents: 5000
         ))
     }
 }

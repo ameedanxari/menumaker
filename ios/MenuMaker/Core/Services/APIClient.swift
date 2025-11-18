@@ -619,7 +619,8 @@ class APIClient {
                     deliveryAddress: "123 Test Street, Test City, 110001",
                     estimatedDeliveryTime: formatter.string(from: now.addingTimeInterval(900)),
                     deliveryPersonName: "Rajesh Kumar",
-                    deliveryPersonPhone: "+919876543210"
+                    deliveryPersonPhone: "+919876543210",
+                    deliveryFeeCents: 5000
                 ),
                 Order(
                     id: "ORDER002",
@@ -635,7 +636,8 @@ class APIClient {
                     deliveryAddress: "123 Test Street, Test City, 110001",
                     estimatedDeliveryTime: formatter.string(from: now.addingTimeInterval(1800)),
                     deliveryPersonName: nil,
-                    deliveryPersonPhone: nil
+                    deliveryPersonPhone: nil,
+                    deliveryFeeCents: 5000
                 ),
                 Order(
                     id: "ORDER003",
@@ -651,7 +653,8 @@ class APIClient {
                     deliveryAddress: "123 Test Street, Test City, 110001",
                     estimatedDeliveryTime: nil,
                     deliveryPersonName: "Amit Singh",
-                    deliveryPersonPhone: "+919876543211"
+                    deliveryPersonPhone: "+919876543211",
+                    deliveryFeeCents: 5000
                 )
             ]
 
@@ -680,7 +683,8 @@ class APIClient {
                 deliveryAddress: "123 Test Street, Test City, 110001",
                 estimatedDeliveryTime: formatter.string(from: now.addingTimeInterval(900)),
                 deliveryPersonName: "Rajesh Kumar",
-                deliveryPersonPhone: "+919876543210"
+                deliveryPersonPhone: "+919876543210",
+                deliveryFeeCents: 5000
             )
 
             let response = OrderResponse(success: true, data: OrderData(order: order))
@@ -706,7 +710,8 @@ class APIClient {
                 deliveryAddress: "123 Test Street, Test City, 110001",
                 estimatedDeliveryTime: formatter.string(from: now.addingTimeInterval(900)),
                 deliveryPersonName: "Rajesh Kumar",
-                deliveryPersonPhone: "+919876543210"
+                deliveryPersonPhone: "+919876543210",
+                deliveryFeeCents: 5000
             )
 
             let response = OrderResponse(success: true, data: OrderData(order: order))
@@ -1025,7 +1030,6 @@ class APIClient {
         try await Task.sleep(nanoseconds: 250_000_000) // 0.25 seconds
 
         let now = Date()
-        let formatter = ISO8601DateFormatter()
 
         let mockNotifications = [
             Notification(
