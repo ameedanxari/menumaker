@@ -35,6 +35,7 @@ enum AppConstants {
             static let orders = "/orders"
             static func order(_ id: String) -> String { "/orders/\(id)" }
             static func businessOrders(_ businessId: String) -> String { "/businesses/\(businessId)/orders" }
+            static let customerOrders = "/orders/my-orders"
 
             // Payments
             static let payments = "/payments"

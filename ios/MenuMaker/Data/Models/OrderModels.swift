@@ -14,6 +14,10 @@ struct Order: Codable, Identifiable {
     let items: [OrderItem]
     let createdAt: String
     let updatedAt: String
+    let deliveryAddress: String?
+    let estimatedDeliveryTime: String?
+    let deliveryPersonName: String?
+    let deliveryPersonPhone: String?
 
     var total: Double {
         Double(totalCents) / 100.0
@@ -48,6 +52,34 @@ struct Order: Codable, Identifiable {
 
     var itemsCount: Int {
         items.reduce(0) { $0 + $1.quantity }
+    }
+
+    var orderId: String {
+        // Format order ID for display
+        "#\(id.prefix(8).uppercased())"
+    }
+
+    var formattedEstimatedTime: String? {
+        guard let estimatedTime = estimatedDeliveryTime,
+              let date = ISO8601DateFormatter().date(from: estimatedTime) else {
+            return nil
+        }
+
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return "Estimated arrival: \(formatter.string(from: date))"
+    }
+
+    var canBeCancelled: Bool {
+        orderStatus == .pending || orderStatus == .confirmed
+    }
+
+    var isActive: Bool {
+        ![.delivered, .cancelled].contains(orderStatus)
+    }
+
+    var isDelivered: Bool {
+        orderStatus == .delivered
     }
 }
 
@@ -115,22 +147,34 @@ struct UpdateOrderStatusRequest: Encodable {
 // MARK: - Order Status
 
 enum OrderStatus: String, CaseIterable, Codable {
-    case pending
-    case confirmed
-    case ready
-    case fulfilled
-    case cancelled
+    case pending = "pending"
+    case confirmed = "confirmed"
+    case preparing = "preparing"
+    case ready = "ready"
+    case outForDelivery = "out_for_delivery"
+    case delivered = "delivered"
+    case cancelled = "cancelled"
 
     var displayName: String {
-        rawValue.capitalized
+        switch self {
+        case .pending: return "Order Placed"
+        case .confirmed: return "Confirmed"
+        case .preparing: return "Preparing"
+        case .ready: return "Ready for Pickup"
+        case .outForDelivery: return "Out for Delivery"
+        case .delivered: return "Delivered"
+        case .cancelled: return "Cancelled"
+        }
     }
 
     var color: Color {
         switch self {
         case .pending: return .orange
         case .confirmed: return .blue
-        case .ready: return .purple
-        case .fulfilled: return .green
+        case .preparing: return .purple
+        case .ready: return .indigo
+        case .outForDelivery: return .cyan
+        case .delivered: return .green
         case .cancelled: return .red
         }
     }
@@ -139,9 +183,27 @@ enum OrderStatus: String, CaseIterable, Codable {
         switch self {
         case .pending: return "clock"
         case .confirmed: return "checkmark.circle"
+        case .preparing: return "flame"
         case .ready: return "bell"
-        case .fulfilled: return "checkmark.circle.fill"
+        case .outForDelivery: return "shippingbox"
+        case .delivered: return "checkmark.circle.fill"
         case .cancelled: return "xmark.circle"
         }
+    }
+
+    var stepNumber: Int {
+        switch self {
+        case .pending: return 0
+        case .confirmed: return 1
+        case .preparing: return 2
+        case .ready: return 3
+        case .outForDelivery: return 4
+        case .delivered: return 5
+        case .cancelled: return -1
+        }
+    }
+
+    static var trackingStatuses: [OrderStatus] {
+        [.pending, .confirmed, .preparing, .ready, .outForDelivery, .delivered]
     }
 }

@@ -58,8 +58,35 @@ class OrderViewModel: ObservableObject {
         isLoading = false
     }
 
+    func fetchOrders() async {
+        // For customers, fetch their orders
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let (orders, _) = try await repository.getCustomerOrders()
+            self.orders = orders
+            filterOrders()
+
+            analyticsService.trackScreen("My Orders")
+
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
     func refreshOrders() async {
-        await loadOrders()
+        await fetchOrders()
+    }
+
+    var activeOrders: [Order] {
+        orders.filter { $0.isActive }
+    }
+
+    var completedOrders: [Order] {
+        orders.filter { !$0.isActive }
     }
 
     // MARK: - Filtering

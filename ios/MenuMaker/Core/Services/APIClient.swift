@@ -334,6 +334,9 @@ class APIClient {
         case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.coupons):
             return try await mockCouponResponse(endpoint: endpoint, method: method, body: body)
 
+        case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.orders) || endpoint.hasPrefix(AppConstants.API.Endpoints.customerOrders):
+            return try await mockOrderResponse(endpoint: endpoint, method: method, body: body)
+
         default:
             // For any other endpoint, return a generic success response
             throw APIError.serverError("Endpoint not mocked: \(endpoint)")
@@ -485,6 +488,155 @@ class APIClient {
         }
 
         throw APIError.serverError("Coupon endpoint not fully mocked: \(endpoint)")
+    }
+
+    // MARK: - Order Mock Responses
+
+    private func mockOrderResponse<T: Decodable>(endpoint: String, method: HTTPMethod, body: Encodable?) async throws -> T {
+        // Simulate network delay
+        try await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
+
+        let now = Date()
+        let formatter = ISO8601DateFormatter()
+
+        // Mock order items
+        let mockItems = [
+            OrderItem(
+                id: "item1",
+                dishId: "dish1",
+                dishName: "Paneer Tikka",
+                quantity: 2,
+                priceCents: 15000,
+                totalCents: 30000
+            ),
+            OrderItem(
+                id: "item2",
+                dishId: "dish2",
+                dishName: "Naan",
+                quantity: 3,
+                priceCents: 5000,
+                totalCents: 15000
+            )
+        ]
+
+        // Handle /orders/my-orders - Get customer orders
+        if endpoint == AppConstants.API.Endpoints.customerOrders || endpoint.starts(with: AppConstants.API.Endpoints.customerOrders + "?") {
+            let orders = [
+                Order(
+                    id: "ORDER001",
+                    businessId: "biz1",
+                    customerName: "Test User",
+                    customerPhone: "+919876543210",
+                    customerEmail: "test@example.com",
+                    totalCents: 45000,
+                    status: "out_for_delivery",
+                    items: mockItems,
+                    createdAt: formatter.string(from: now.addingTimeInterval(-1800)),
+                    updatedAt: formatter.string(from: now),
+                    deliveryAddress: "123 Test Street, Test City, 110001",
+                    estimatedDeliveryTime: formatter.string(from: now.addingTimeInterval(900)),
+                    deliveryPersonName: "Rajesh Kumar",
+                    deliveryPersonPhone: "+919876543210"
+                ),
+                Order(
+                    id: "ORDER002",
+                    businessId: "biz1",
+                    customerName: "Test User",
+                    customerPhone: "+919876543210",
+                    customerEmail: "test@example.com",
+                    totalCents: 35000,
+                    status: "preparing",
+                    items: mockItems,
+                    createdAt: formatter.string(from: now.addingTimeInterval(-900)),
+                    updatedAt: formatter.string(from: now),
+                    deliveryAddress: "123 Test Street, Test City, 110001",
+                    estimatedDeliveryTime: formatter.string(from: now.addingTimeInterval(1800)),
+                    deliveryPersonName: nil,
+                    deliveryPersonPhone: nil
+                ),
+                Order(
+                    id: "ORDER003",
+                    businessId: "biz1",
+                    customerName: "Test User",
+                    customerPhone: "+919876543210",
+                    customerEmail: "test@example.com",
+                    totalCents: 50000,
+                    status: "delivered",
+                    items: mockItems,
+                    createdAt: formatter.string(from: now.addingTimeInterval(-86400)),
+                    updatedAt: formatter.string(from: now.addingTimeInterval(-85000)),
+                    deliveryAddress: "123 Test Street, Test City, 110001",
+                    estimatedDeliveryTime: nil,
+                    deliveryPersonName: "Amit Singh",
+                    deliveryPersonPhone: "+919876543211"
+                )
+            ]
+
+            let response = OrderListResponse(
+                success: true,
+                data: OrderListData(orders: orders, total: orders.count)
+            )
+            return response as! T
+        }
+
+        // Handle /orders/:id - Get single order
+        if endpoint.starts(with: AppConstants.API.Endpoints.orders + "/") && method == .get {
+            let orderId = endpoint.replacingOccurrences(of: AppConstants.API.Endpoints.orders + "/", with: "")
+
+            let order = Order(
+                id: orderId,
+                businessId: "biz1",
+                customerName: "Test User",
+                customerPhone: "+919876543210",
+                customerEmail: "test@example.com",
+                totalCents: 45000,
+                status: "out_for_delivery",
+                items: mockItems,
+                createdAt: formatter.string(from: now.addingTimeInterval(-1800)),
+                updatedAt: formatter.string(from: now),
+                deliveryAddress: "123 Test Street, Test City, 110001",
+                estimatedDeliveryTime: formatter.string(from: now.addingTimeInterval(900)),
+                deliveryPersonName: "Rajesh Kumar",
+                deliveryPersonPhone: "+919876543210"
+            )
+
+            let response = OrderResponse(success: true, data: OrderData(order: order))
+            return response as! T
+        }
+
+        // Handle PATCH /orders/:id - Update order status
+        if endpoint.starts(with: AppConstants.API.Endpoints.orders + "/") && method == .patch {
+            let orderId = endpoint.replacingOccurrences(of: AppConstants.API.Endpoints.orders + "/", with: "")
+
+            // Return updated order with same data (status update simulated)
+            let order = Order(
+                id: orderId,
+                businessId: "biz1",
+                customerName: "Test User",
+                customerPhone: "+919876543210",
+                customerEmail: "test@example.com",
+                totalCents: 45000,
+                status: "out_for_delivery",
+                items: mockItems,
+                createdAt: formatter.string(from: now.addingTimeInterval(-1800)),
+                updatedAt: formatter.string(from: now),
+                deliveryAddress: "123 Test Street, Test City, 110001",
+                estimatedDeliveryTime: formatter.string(from: now.addingTimeInterval(900)),
+                deliveryPersonName: "Rajesh Kumar",
+                deliveryPersonPhone: "+919876543210"
+            )
+
+            let response = OrderResponse(success: true, data: OrderData(order: order))
+            return response as! T
+        }
+
+        // Handle DELETE /orders/:id - Cancel order
+        if endpoint.starts(with: AppConstants.API.Endpoints.orders + "/") && method == .delete {
+            let response = EmptyResponse(success: true)
+            return response as! T
+        }
+
+        throw APIError.serverError("Order endpoint not fully mocked: \(endpoint)")
     }
 
     // MARK: - Upload Methods
