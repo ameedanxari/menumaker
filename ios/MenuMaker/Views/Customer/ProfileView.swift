@@ -162,19 +162,19 @@ struct ProfileInfoSection: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            InfoRow(
+            ProfileInfoRow(
                 label: "Name",
                 value: user.name,
                 identifier: "UserName"
             )
 
-            InfoRow(
+            ProfileInfoRow(
                 label: "Email",
                 value: user.email,
                 identifier: "UserEmail"
             )
 
-            InfoRow(
+            ProfileInfoRow(
                 label: "Phone",
                 value: user.formattedPhone,
                 identifier: "UserPhone"
@@ -186,7 +186,7 @@ struct ProfileInfoSection: View {
     }
 }
 
-struct InfoRow: View {
+struct ProfileInfoRow: View {
     let label: String
     let value: String
     let identifier: String

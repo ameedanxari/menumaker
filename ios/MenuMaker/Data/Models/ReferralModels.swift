@@ -72,6 +72,44 @@ struct ReferralStatsData: Decodable {
     let leaderboard: [ReferralLeaderboard]
 }
 
+struct ReferralHistory: Codable, Identifiable {
+    let id: String
+    let referredUserName: String
+    let referredAt: Date
+    let status: String
+    let rewardCents: Int
+
+    var reward: Double {
+        Double(rewardCents) / 100.0
+    }
+
+    var formattedReward: String {
+        String(format: "₹%.2f", reward)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case referredUserName = "referred_user_name"
+        case referredAt = "referred_at"
+        case status
+        case rewardCents = "reward_cents"
+    }
+}
+
+struct ReferralHistoryResponse: Decodable {
+    let success: Bool
+    let data: ReferralHistoryData
+}
+
+struct ReferralHistoryData: Decodable {
+    let referrals: [ReferralHistory]
+}
+
+struct ApplyReferralResponse: Decodable {
+    let success: Bool
+    let message: String?
+}
+
 // MARK: - Integration Models
 
 struct Integration: Codable, Identifiable {

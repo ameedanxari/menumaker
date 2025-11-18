@@ -43,6 +43,9 @@ enum AnalyticsEvent: String {
     case favoriteSaved = "favorite_saved"
     case favoriteRemoved = "favorite_removed"
 
+    // Referral events
+    case referralCodeApplied = "referral_code_applied"
+
     // Screen views
     case screenView = "screen_view"
 }

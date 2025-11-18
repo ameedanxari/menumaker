@@ -90,7 +90,7 @@ class OrderViewModel: ObservableObject {
     }
 
     var completedOrders: [Order] {
-        orders.filter { $0.orderStatus == .fulfilled || $0.orderStatus == .delivered }
+        orders.filter { $0.orderStatus == .delivered }
     }
 
     var cancelledOrders: [Order] {

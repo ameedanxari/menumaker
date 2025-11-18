@@ -519,24 +519,6 @@ struct RejectOrderDialog: View {
     }
 }
 
-// MARK: - Badge Component
-
-struct Badge: View {
-    let text: String
-    let color: Color
-
-    var body: some View {
-        Text(text)
-            .font(.caption)
-            .fontWeight(.semibold)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(color.opacity(0.2))
-            .foregroundColor(color)
-            .cornerRadius(6)
-    }
-}
-
 #Preview {
     NavigationView {
         OrdersListView()
