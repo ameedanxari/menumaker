@@ -86,7 +86,11 @@ class OrderViewModel: ObservableObject {
     }
 
     var completedOrders: [Order] {
-        orders.filter { !$0.isActive }
+        orders.filter { !$0.isActive && $0.orderStatus != .cancelled }
+    }
+
+    var cancelledOrders: [Order] {
+        orders.filter { $0.orderStatus == .cancelled }
     }
 
     // MARK: - Filtering

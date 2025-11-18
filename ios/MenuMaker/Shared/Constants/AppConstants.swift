@@ -61,6 +61,11 @@ enum AppConstants {
             // Notifications
             static let notifications = "/notifications"
 
+            // Favorites
+            static let favorites = "/favorites"
+            static func favorite(_ id: String) -> String { "/favorites/\(id)" }
+            static func favoriteBusiness(_ businessId: String) -> String { "/favorites/business/\(businessId)" }
+
             // Subscriptions
             static let subscriptions = "/subscriptions"
             static let currentSubscription = "/subscriptions/current"

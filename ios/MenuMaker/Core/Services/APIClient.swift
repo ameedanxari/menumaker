@@ -337,6 +337,9 @@ class APIClient {
         case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.orders) || endpoint.hasPrefix(AppConstants.API.Endpoints.customerOrders):
             return try await mockOrderResponse(endpoint: endpoint, method: method, body: body)
 
+        case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.favorites):
+            return try await mockFavoriteResponse(endpoint: endpoint, method: method, body: body)
+
         default:
             // For any other endpoint, return a generic success response
             throw APIError.serverError("Endpoint not mocked: \(endpoint)")
@@ -637,6 +640,123 @@ class APIClient {
         }
 
         throw APIError.serverError("Order endpoint not fully mocked: \(endpoint)")
+    }
+
+    // MARK: - Favorite Mock Responses
+
+    private func mockFavoriteResponse<T: Decodable>(endpoint: String, method: HTTPMethod, body: Encodable?) async throws -> T {
+        // Simulate network delay
+        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+
+        let now = Date()
+        let formatter = ISO8601DateFormatter()
+
+        // Mock businesses for favorites
+        let mockBusiness1 = Business(
+            id: "business1",
+            name: "Tasty Bites Restaurant",
+            slug: "tasty-bites",
+            description: "Authentic Indian cuisine with a modern twist",
+            logoUrl: "https://example.com/logo1.jpg",
+            ownerId: "owner1",
+            isActive: true,
+            createdAt: formatter.string(from: now.addingTimeInterval(-86400 * 30)),
+            updatedAt: formatter.string(from: now)
+        )
+
+        let mockBusiness2 = Business(
+            id: "business2",
+            name: "Pizza Palace",
+            slug: "pizza-palace",
+            description: "Fresh wood-fired pizzas delivered to your door",
+            logoUrl: "https://example.com/logo2.jpg",
+            ownerId: "owner2",
+            isActive: true,
+            createdAt: formatter.string(from: now.addingTimeInterval(-86400 * 60)),
+            updatedAt: formatter.string(from: now)
+        )
+
+        let mockBusiness3 = Business(
+            id: "business3",
+            name: "Sushi Express",
+            slug: "sushi-express",
+            description: "Premium sushi and Japanese delicacies",
+            logoUrl: "https://example.com/logo3.jpg",
+            ownerId: "owner3",
+            isActive: true,
+            createdAt: formatter.string(from: now.addingTimeInterval(-86400 * 15)),
+            updatedAt: formatter.string(from: now)
+        )
+
+        // Handle GET /favorites - Get all favorites
+        if endpoint == AppConstants.API.Endpoints.favorites && method == .get {
+            let favorites = [
+                Favorite(
+                    id: "fav1",
+                    userId: "mock_user_id",
+                    businessId: "business1",
+                    business: mockBusiness1,
+                    createdAt: formatter.string(from: now.addingTimeInterval(-86400 * 7))
+                ),
+                Favorite(
+                    id: "fav2",
+                    userId: "mock_user_id",
+                    businessId: "business2",
+                    business: mockBusiness2,
+                    createdAt: formatter.string(from: now.addingTimeInterval(-86400 * 14))
+                ),
+                Favorite(
+                    id: "fav3",
+                    userId: "mock_user_id",
+                    businessId: "business3",
+                    business: mockBusiness3,
+                    createdAt: formatter.string(from: now.addingTimeInterval(-86400 * 3))
+                )
+            ]
+
+            let response = FavoriteListResponse(
+                success: true,
+                data: FavoriteListData(favorites: favorites)
+            )
+            return response as! T
+        }
+
+        // Handle POST /favorites - Add favorite
+        if endpoint == AppConstants.API.Endpoints.favorites && method == .post {
+            guard let addRequest = body as? AddFavoriteRequest else {
+                throw APIError.serverError("Invalid request body")
+            }
+
+            let favorite = Favorite(
+                id: UUID().uuidString,
+                userId: "mock_user_id",
+                businessId: addRequest.businessId,
+                business: mockBusiness1,
+                createdAt: formatter.string(from: now)
+            )
+
+            let response = FavoriteResponse(
+                success: true,
+                data: FavoriteData(favorite: favorite)
+            )
+            return response as! T
+        }
+
+        // Handle DELETE /favorites/:id - Remove favorite by ID
+        if endpoint.starts(with: AppConstants.API.Endpoints.favorites + "/") &&
+           !endpoint.contains("/business/") &&
+           method == .delete {
+            let response = EmptyResponse(success: true)
+            return response as! T
+        }
+
+        // Handle DELETE /favorites/business/:businessId - Remove favorite by business ID
+        if endpoint.contains("/business/") && method == .delete {
+            let response = EmptyResponse(success: true)
+            return response as! T
+        }
+
+        throw APIError.serverError("Favorite endpoint not fully mocked: \(endpoint)")
     }
 
     // MARK: - Upload Methods
