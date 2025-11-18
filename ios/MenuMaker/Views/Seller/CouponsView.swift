@@ -45,6 +45,7 @@ struct CouponsView: View {
                 Button(action: { showAddCoupon = true }) {
                     Image(systemName: "plus.circle.fill")
                 }
+                .accessibilityLabel("Create Coupon")
                 .accessibilityIdentifier("add-coupon-button")
             }
         }
@@ -83,6 +84,7 @@ struct CouponCard: View {
                     .font(.title3)
                     .fontWeight(.bold)
                     .foregroundColor(.theme.primary)
+                    .accessibilityIdentifier(coupon.code)
 
                 Spacer()
 
@@ -95,6 +97,7 @@ struct CouponCard: View {
                     }
                 ))
                 .labelsHidden()
+                .accessibilityIdentifier("coupon-active-toggle")
             }
 
             // Discount
@@ -119,6 +122,7 @@ struct CouponCard: View {
         .padding()
         .background(Color.theme.surface)
         .cornerRadius(AppConstants.UI.cornerRadius)
+        .accessibilityIdentifier("CouponItem")
     }
 }
 
@@ -149,20 +153,24 @@ struct AddCouponView: View {
         NavigationView {
             Form {
                 Section("Coupon Details") {
-                    TextField("Code (e.g., SAVE20)", text: $code)
+                    TextField("Coupon Code (e.g., SAVE20)", text: $code)
                         .textCase(.uppercase)
+                        .accessibilityIdentifier("coupon-code-field")
 
                     Picker("Discount Type", selection: $discountType) {
                         ForEach(DiscountType.allCases, id: \.self) { type in
                             Text(type.displayName).tag(type)
                         }
                     }
+                    .accessibilityIdentifier("discount-type-picker")
 
                     TextField("Discount Value", text: $discountValue)
                         .keyboardType(.numberPad)
+                        .accessibilityIdentifier("discount-value-field")
 
                     TextField("Minimum Order Value", text: $minOrderValue)
                         .keyboardType(.decimalPad)
+                        .accessibilityIdentifier("min-order-field")
                 }
 
                 Section("Validity") {
@@ -170,6 +178,7 @@ struct AddCouponView: View {
                         get: { validUntil ?? Date() },
                         set: { validUntil = $0 }
                     ), displayedComponents: .date)
+                    .accessibilityIdentifier("valid-until-picker")
                 }
             }
             .navigationTitle("Create Coupon")
@@ -177,6 +186,7 @@ struct AddCouponView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { dismiss() }
+                        .accessibilityIdentifier("cancel-button")
                 }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -186,6 +196,7 @@ struct AddCouponView: View {
                         }
                     }
                     .disabled(!isFormValid)
+                    .accessibilityIdentifier("save-coupon-button")
                 }
             }
         }

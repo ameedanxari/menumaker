@@ -23,6 +23,11 @@ struct MoreView: View {
 
             // Menu Sections
             Section("Business") {
+                NavigationLink(destination: CouponsView()) {
+                    Label("Coupons", systemImage: "ticket")
+                }
+                .accessibilityIdentifier("coupons-link")
+
                 NavigationLink(destination: Text("Reviews")) {
                     Label("Reviews", systemImage: "star")
                 }

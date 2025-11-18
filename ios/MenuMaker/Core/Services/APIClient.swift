@@ -331,10 +331,160 @@ class APIClient {
             let response = AuthResponse(success: true, data: authData)
             return response as! T
 
+        case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.coupons):
+            return try await mockCouponResponse(endpoint: endpoint, method: method, body: body)
+
         default:
             // For any other endpoint, return a generic success response
             throw APIError.serverError("Endpoint not mocked: \(endpoint)")
         }
+    }
+
+    // MARK: - Coupon Mock Responses
+
+    private func mockCouponResponse<T: Decodable>(endpoint: String, method: HTTPMethod, body: Encodable?) async throws -> T {
+        // Simulate network delay
+        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+
+        // Handle different coupon endpoints
+        if endpoint == AppConstants.API.Endpoints.coupons {
+            // GET /coupons - list coupons
+            if method == .get {
+                let coupons = [
+                    Coupon(
+                        id: "coupon1",
+                        businessId: "business1",
+                        code: "SAVE20",
+                        discountType: "percentage",
+                        discountValue: 20,
+                        maxDiscountCents: 50000,
+                        minOrderValueCents: 50000,
+                        validUntil: nil,
+                        usageLimitType: "unlimited",
+                        totalUsageLimit: nil,
+                        isActive: true,
+                        createdAt: ISO8601DateFormatter().string(from: Date())
+                    ),
+                    Coupon(
+                        id: "coupon2",
+                        businessId: "business1",
+                        code: "FLAT100",
+                        discountType: "fixed",
+                        discountValue: 10000,
+                        maxDiscountCents: nil,
+                        minOrderValueCents: 100000,
+                        validUntil: nil,
+                        usageLimitType: "unlimited",
+                        totalUsageLimit: nil,
+                        isActive: true,
+                        createdAt: ISO8601DateFormatter().string(from: Date())
+                    )
+                ]
+                let response = CouponListResponse(success: true, data: CouponListData(coupons: coupons))
+                return response as! T
+            }
+
+            // POST /coupons - create coupon
+            if method == .post, let createRequest = body as? CreateCouponRequest {
+                let coupon = Coupon(
+                    id: UUID().uuidString,
+                    businessId: createRequest.businessId,
+                    code: createRequest.code,
+                    discountType: createRequest.discountType,
+                    discountValue: createRequest.discountValue,
+                    maxDiscountCents: createRequest.maxDiscountCents,
+                    minOrderValueCents: createRequest.minOrderValueCents,
+                    validUntil: createRequest.validUntil,
+                    usageLimitType: createRequest.usageLimitType,
+                    totalUsageLimit: createRequest.totalUsageLimit,
+                    isActive: true,
+                    createdAt: ISO8601DateFormatter().string(from: Date())
+                )
+                let response = CouponResponse(success: true, data: CouponData(coupon: coupon))
+                return response as! T
+            }
+        }
+
+        // Handle /coupons/:id endpoints
+        if endpoint.contains("/coupons/") && endpoint.count > AppConstants.API.Endpoints.coupons.count {
+            let couponId = endpoint.replacingOccurrences(of: AppConstants.API.Endpoints.coupons + "/", with: "")
+
+            // Handle validate endpoint
+            if endpoint.contains("/validate/") {
+                let code = endpoint.replacingOccurrences(of: AppConstants.API.Endpoints.coupons + "/validate/", with: "")
+
+                // Check for invalid/expired codes
+                if code == "INVALIDCODE999" || code == "EXPIRED" {
+                    throw APIError.serverError("Invalid or expired coupon")
+                }
+
+                // Return mock valid coupon
+                let coupon = Coupon(
+                    id: "valid_coupon",
+                    businessId: "business1",
+                    code: code,
+                    discountType: "percentage",
+                    discountValue: 20,
+                    maxDiscountCents: nil,
+                    minOrderValueCents: 50000,
+                    validUntil: nil,
+                    usageLimitType: "unlimited",
+                    totalUsageLimit: nil,
+                    isActive: true,
+                    createdAt: ISO8601DateFormatter().string(from: Date())
+                )
+                let response = CouponResponse(success: true, data: CouponData(coupon: coupon))
+                return response as! T
+            }
+
+            // PATCH /coupons/:id - update coupon
+            if method == .patch {
+                let coupon = Coupon(
+                    id: couponId,
+                    businessId: "business1",
+                    code: "UPDATED",
+                    discountType: "percentage",
+                    discountValue: 25,
+                    maxDiscountCents: nil,
+                    minOrderValueCents: 50000,
+                    validUntil: nil,
+                    usageLimitType: "unlimited",
+                    totalUsageLimit: nil,
+                    isActive: true,
+                    createdAt: ISO8601DateFormatter().string(from: Date())
+                )
+                let response = CouponResponse(success: true, data: CouponData(coupon: coupon))
+                return response as! T
+            }
+
+            // DELETE /coupons/:id - delete coupon
+            if method == .delete {
+                let response = EmptyResponse(success: true)
+                return response as! T
+            }
+
+            // GET /coupons/:id - get single coupon
+            if method == .get {
+                let coupon = Coupon(
+                    id: couponId,
+                    businessId: "business1",
+                    code: "SAVE20",
+                    discountType: "percentage",
+                    discountValue: 20,
+                    maxDiscountCents: nil,
+                    minOrderValueCents: 50000,
+                    validUntil: nil,
+                    usageLimitType: "unlimited",
+                    totalUsageLimit: nil,
+                    isActive: true,
+                    createdAt: ISO8601DateFormatter().string(from: Date())
+                )
+                let response = CouponResponse(success: true, data: CouponData(coupon: coupon))
+                return response as! T
+            }
+        }
+
+        throw APIError.serverError("Coupon endpoint not fully mocked: \(endpoint)")
     }
 
     // MARK: - Upload Methods
