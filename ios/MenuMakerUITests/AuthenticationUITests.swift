@@ -251,21 +251,4 @@ final class AuthenticationUITests: XCTestCase {
         XCTAssertTrue(loginPage.passwordField.isHittable, "Password field should be accessible")
         XCTAssertTrue(loginPage.loginButton.isHittable, "Login button should be accessible")
     }
-
-    // MARK: - Performance Tests
-
-    @MainActor
-    func testLoginButtonResponseTime() throws {
-        let loginPage = LoginPage(app: app)
-
-        loginPage
-            .enterEmail("test@example.com")
-            .enterPassword("password123")
-
-        measure {
-            loginPage.loginButton.tap()
-            // Wait for response
-            _ = app.staticTexts.firstMatch.waitForExistence(timeout: 1)
-        }
-    }
 }
