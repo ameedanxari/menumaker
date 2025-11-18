@@ -27,9 +27,15 @@ struct MenuEditorView: View {
                         message: "Add your first dish to get started"
                     )
                 } else {
-                    LazyVStack(spacing: 12) {
-                        ForEach(viewModel.filteredDishes) { dish in
-                            DishCard(dish: dish, viewModel: viewModel)
+                    ForEach(viewModel.filteredDishes) { dish in
+                        DishCard(dish: dish, viewModel: viewModel)
+                    }
+                    .onDelete { indexSet in
+                        for index in indexSet {
+                            let dish = viewModel.filteredDishes[index]
+                            Task {
+                                await viewModel.deleteDish(dish.id)
+                            }
                         }
                     }
                 }
@@ -111,12 +117,17 @@ struct DishCard: View {
                 }
             ))
             .labelsHidden()
+            .accessibility(label: Text("Available"))
         }
         .padding()
         .background(Color.theme.surface)
         .cornerRadius(AppConstants.UI.cornerRadius)
+        .accessibilityIdentifier("MenuItemCell")
         .onTapGesture {
             showEdit = true
+        }
+        .sheet(isPresented: $showEdit) {
+            EditDishView(dish: dish, viewModel: viewModel)
         }
     }
 }
@@ -176,23 +187,49 @@ struct AddDishView: View {
         NavigationView {
             Form {
                 Section("Basic Information") {
-                    TextField("Name", text: $name)
-                    // Multi-line text field for description (iOS 15 compatible)
+                    TextField("Item Name", text: $name)
+                        .accessibilityIdentifier("item-name-field")
+
                     VStack(alignment: .leading) {
-                        Text("Description")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
                         TextEditor(text: $description)
                             .frame(minHeight: 80)
+                            .overlay(
+                                Group {
+                                    if description.isEmpty {
+                                        Text("Description")
+                                            .foregroundColor(.gray)
+                                            .padding(.leading, 4)
+                                            .padding(.top, 8)
+                                            .allowsHitTesting(false)
+                                    }
+                                },
+                                alignment: .topLeading
+                            )
                     }
+                    .accessibilityIdentifier("item-description-field")
+
                     TextField("Price", text: $price)
                         .keyboardType(.decimalPad)
+                        .accessibilityIdentifier("item-price-field")
+
                     TextField("Category", text: $category)
+                        .accessibilityIdentifier("item-category-field")
+
+                    Button(action: {
+                        // Photo upload functionality placeholder
+                    }) {
+                        HStack {
+                            Image(systemName: "photo")
+                            Text("Upload Photo")
+                        }
+                    }
+                    .accessibility(label: Text("Upload Photo"))
                 }
 
                 Section("Options") {
                     Toggle("Vegetarian", isOn: $isVegetarian)
                     Toggle("Available", isOn: $isAvailable)
+                        .accessibility(label: Text("Available"))
                 }
             }
             .navigationTitle("Add Dish")
@@ -218,6 +255,115 @@ struct AddDishView: View {
         guard let priceValue = Double(price) else { return }
 
         await viewModel.createDish(DishViewModel.CreateDishParams(
+            name: name,
+            description: description.isEmpty ? nil : description,
+            price: priceValue,
+            category: category.isEmpty ? nil : category,
+            isVegetarian: isVegetarian,
+            isAvailable: isAvailable,
+            image: nil
+        ))
+
+        dismiss()
+    }
+}
+
+// MARK: - Edit Dish View
+
+struct EditDishView: View {
+    let dish: Dish
+    @ObservedObject var viewModel: DishViewModel
+    @Environment(\.dismiss) var dismiss
+    @State private var name: String
+    @State private var description: String
+    @State private var price: String
+    @State private var category: String
+    @State private var isVegetarian: Bool
+    @State private var isAvailable: Bool
+
+    init(dish: Dish, viewModel: DishViewModel) {
+        self.dish = dish
+        self.viewModel = viewModel
+        _name = State(initialValue: dish.name)
+        _description = State(initialValue: dish.description ?? "")
+        _price = State(initialValue: String(format: "%.0f", Double(dish.priceCents) / 100.0))
+        _category = State(initialValue: dish.category ?? "")
+        _isVegetarian = State(initialValue: dish.isVegetarian)
+        _isAvailable = State(initialValue: dish.isAvailable)
+    }
+
+    var body: some View {
+        NavigationView {
+            Form {
+                Section("Basic Information") {
+                    TextField("Item Name", text: $name)
+                        .accessibilityIdentifier("item-name-field")
+
+                    VStack(alignment: .leading) {
+                        TextEditor(text: $description)
+                            .frame(minHeight: 80)
+                            .overlay(
+                                Group {
+                                    if description.isEmpty {
+                                        Text("Description")
+                                            .foregroundColor(.gray)
+                                            .padding(.leading, 4)
+                                            .padding(.top, 8)
+                                            .allowsHitTesting(false)
+                                    }
+                                },
+                                alignment: .topLeading
+                            )
+                    }
+                    .accessibilityIdentifier("item-description-field")
+
+                    TextField("Price", text: $price)
+                        .keyboardType(.decimalPad)
+                        .accessibilityIdentifier("item-price-field")
+
+                    TextField("Category", text: $category)
+                        .accessibilityIdentifier("item-category-field")
+
+                    Button(action: {
+                        // Photo upload functionality placeholder
+                    }) {
+                        HStack {
+                            Image(systemName: "photo")
+                            Text("Upload Photo")
+                        }
+                    }
+                    .accessibility(label: Text("Upload Photo"))
+                }
+
+                Section("Options") {
+                    Toggle("Vegetarian", isOn: $isVegetarian)
+                    Toggle("Available", isOn: $isAvailable)
+                        .accessibility(label: Text("Available"))
+                }
+            }
+            .navigationTitle("Edit Dish")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        Task {
+                            await updateDish()
+                        }
+                    }
+                    .disabled(name.isEmpty || price.isEmpty)
+                }
+            }
+        }
+    }
+
+    private func updateDish() async {
+        guard let priceValue = Double(price) else { return }
+
+        await viewModel.updateDish(dish.id, params: DishViewModel.CreateDishParams(
             name: name,
             description: description.isEmpty ? nil : description,
             price: priceValue,

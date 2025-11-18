@@ -81,12 +81,16 @@ class OrderViewModel: ObservableObject {
         await fetchOrders()
     }
 
+    var pendingOrders: [Order] {
+        orders.filter { $0.orderStatus == .pending }
+    }
+
     var activeOrders: [Order] {
-        orders.filter { $0.isActive }
+        orders.filter { $0.orderStatus == .confirmed || $0.orderStatus == .preparing || $0.orderStatus == .ready }
     }
 
     var completedOrders: [Order] {
-        orders.filter { !$0.isActive && $0.orderStatus != .cancelled }
+        orders.filter { $0.orderStatus == .fulfilled || $0.orderStatus == .delivered }
     }
 
     var cancelledOrders: [Order] {
@@ -137,6 +141,38 @@ class OrderViewModel: ObservableObject {
                 fromStatus: order.status,
                 toStatus: status.rawValue
             )
+
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
+    func rejectOrder(_ orderId: String, reason: String) async {
+        isLoading = true
+
+        do {
+            // Update order status to cancelled with reason
+            let order = try await repository.updateOrderStatus(orderId, status: .cancelled)
+
+            // Send notification
+            await notificationService.notifyOrderStatusChange(
+                orderId: orderId,
+                status: OrderStatus.cancelled.rawValue
+            )
+
+            // Update local list
+            if let index = orders.firstIndex(where: { $0.id == orderId }) {
+                orders[index] = order
+            }
+
+            filterOrders()
+
+            analyticsService.track(.orderCancelled, parameters: [
+                "order_id": orderId,
+                "reason": reason
+            ])
 
         } catch {
             errorMessage = error.localizedDescription
