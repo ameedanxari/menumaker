@@ -187,22 +187,24 @@ iOS implementation is significantly more feature-complete with **22 screens** vs
 
 ---
 
-## Phase 5: User Management Screens (MEDIUM PRIORITY)
+## Phase 5: User Management Screens (MEDIUM PRIORITY) ✅ COMPLETED
 
-### 5.1 Profile & Settings 🟡 PRIORITY 2
-- [ ] **ProfileScreen.kt** - User profile management
+### 5.1 Profile & Settings ✅ COMPLETED
+- [x] **ProfileScreen.kt** - User profile management
   - Reference: `/ios/MenuMaker/Views/Customer/ProfileView.swift` (468 lines)
-  - Location: `/android/app/src/main/kotlin/com/menumaker/ui/screens/customer/ProfileScreen.kt`
+  - Location: `/android/app/src/main/kotlin/com/menumaker/ui/screens/ProfileScreen.kt`
   - Route: Already defined in `Destinations.kt` as `Profile`
-  - Dependencies: ProfileViewModel ❌
-  - Complexity: HIGH (forms, validation, photo upload, preferences)
+  - Dependencies: ProfileViewModel ✅ (created in Phase 1), AuthViewModel ✅
+  - Status: ✅ Created (530+ lines)
+  - Features: Profile header with photo, profile info section, edit profile sheet, change password sheet, menu navigation (Orders, Favorites, Settings, Referrals, Help), logout confirmation
 
-- [ ] **MoreScreen.kt** / **SettingsScreen.kt** - App settings & options
-  - Reference: `/ios/MenuMaker/Views/More/MoreView.swift` (579 lines)
-  - Location: `/android/app/src/main/kotlin/com/menumaker/ui/screens/MoreScreen.kt`
+- [x] **SettingsScreen.kt** - App settings & options
+  - Reference: `/ios/MenuMaker/Views/More/MoreView.swift` and `SettingsView` (579 lines combined)
+  - Location: `/android/app/src/main/kotlin/com/menumaker/ui/screens/SettingsScreen.kt`
   - Route: Already defined in `Destinations.kt` as `Settings`
-  - Dependencies: Multiple ViewModels
-  - Complexity: HIGH (navigation hub, preferences, account management)
+  - Dependencies: AuthViewModel ✅
+  - Status: ✅ Created (430+ lines)
+  - Features: Notifications settings, language selection, appearance (dark mode, sound), security (biometric, change password), privacy (location, analytics), help & support, legal (terms, privacy policy), data management (clear cache/cart), about (version, build, developer)
 
 ---
 
