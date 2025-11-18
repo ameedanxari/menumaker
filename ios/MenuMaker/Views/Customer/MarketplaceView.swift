@@ -115,66 +115,73 @@ struct SellerCard: View {
     let seller: MarketplaceSeller
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Logo
-            if let logoUrl = seller.logoUrl {
-                AsyncImage(url: URL(string: logoUrl)) { image in
-                    image.resizable().scaledToFill()
-                } placeholder: {
-                    Image(systemName: "photo")
-                        .foregroundColor(.gray)
-                }
-                .frame(height: 150)
-                .frame(maxWidth: .infinity)
-                .clipped()
-            }
-
-            VStack(alignment: .leading, spacing: 8) {
-                // Name
-                Text(seller.name)
-                    .font(.headline)
-
-                // Cuisine
-                Text(seller.displayCuisine)
-                    .font(.caption)
-                    .foregroundColor(.theme.textSecondary)
-
-                // Rating and Distance
-                HStack {
-                    HStack(spacing: 4) {
-                        Image(systemName: "star.fill")
-                            .font(.caption)
-                            .foregroundColor(.yellow)
-
-                        Text(seller.formattedRating)
-                            .font(.caption)
-                            .fontWeight(.medium)
-
-                        Text("(\(seller.reviewCount))")
-                            .font(.caption)
-                            .foregroundColor(.theme.textSecondary)
+        NavigationLink(destination: SellerMenuView(businessId: seller.id)) {
+            VStack(alignment: .leading, spacing: 12) {
+                // Logo
+                if let logoUrl = seller.logoUrl {
+                    AsyncImage(url: URL(string: logoUrl)) { image in
+                        image.resizable().scaledToFill()
+                    } placeholder: {
+                        Image(systemName: "photo")
+                            .foregroundColor(.gray)
                     }
+                    .frame(height: 150)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
+                }
 
-                    Spacer()
+                VStack(alignment: .leading, spacing: 8) {
+                    // Name
+                    Text(seller.name)
+                        .font(.headline)
+                        .foregroundColor(.primary)
 
-                    if let distance = seller.formattedDistance {
+                    // Cuisine
+                    Text(seller.displayCuisine)
+                        .font(.caption)
+                        .foregroundColor(.theme.textSecondary)
+
+                    // Rating and Distance
+                    HStack {
                         HStack(spacing: 4) {
-                            Image(systemName: "location.fill")
+                            Image(systemName: "star.fill")
                                 .font(.caption)
-                                .foregroundColor(.theme.primary)
+                                .foregroundColor(.yellow)
 
-                            Text(distance)
+                            Text(seller.formattedRating)
                                 .font(.caption)
                                 .fontWeight(.medium)
+                                .foregroundColor(.primary)
+
+                            Text("(\(seller.reviewCount))")
+                                .font(.caption)
+                                .foregroundColor(.theme.textSecondary)
+                        }
+
+                        Spacer()
+
+                        if let distance = seller.formattedDistance {
+                            HStack(spacing: 4) {
+                                Image(systemName: "location.fill")
+                                    .font(.caption)
+                                    .foregroundColor(.theme.primary)
+
+                                Text(distance)
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.primary)
+                            }
                         }
                     }
                 }
+                .padding(.horizontal)
+                .padding(.bottom)
             }
-            .padding(.horizontal)
-            .padding(.bottom)
+            .background(Color.theme.surface)
+            .cornerRadius(AppConstants.UI.cornerRadius)
         }
-        .background(Color.theme.surface)
-        .cornerRadius(AppConstants.UI.cornerRadius)
+        .buttonStyle(PlainButtonStyle())
+        .accessibilityIdentifier("SellerCard")
     }
 }
 

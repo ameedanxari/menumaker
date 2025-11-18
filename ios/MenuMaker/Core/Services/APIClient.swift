@@ -340,6 +340,12 @@ class APIClient {
         case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.favorites):
             return try await mockFavoriteResponse(endpoint: endpoint, method: method, body: body)
 
+        case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.marketplace):
+            return try await mockMarketplaceResponse(endpoint: endpoint, method: method, body: body)
+
+        case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.dishes):
+            return try await mockDishResponse(endpoint: endpoint, method: method, body: body)
+
         default:
             // For any other endpoint, return a generic success response
             throw APIError.serverError("Endpoint not mocked: \(endpoint)")
@@ -757,6 +763,185 @@ class APIClient {
         }
 
         throw APIError.serverError("Favorite endpoint not fully mocked: \(endpoint)")
+    }
+
+    // MARK: - Marketplace Mock Responses
+
+    private func mockMarketplaceResponse<T: Decodable>(endpoint: String, method: HTTPMethod, body: Encodable?) async throws -> T {
+        // Simulate network delay
+        try await Task.sleep(nanoseconds: 250_000_000) // 0.25 seconds
+
+        let mockSellers = [
+            MarketplaceSeller(
+                id: "seller1",
+                name: "Tasty Bites Restaurant",
+                slug: "tasty-bites",
+                description: "Authentic Indian cuisine with a modern twist",
+                logoUrl: "https://example.com/logo1.jpg",
+                cuisineType: "Indian",
+                rating: 4.5,
+                reviewCount: 125,
+                latitude: 28.6139,
+                longitude: 77.2090,
+                distanceKm: 1.2
+            ),
+            MarketplaceSeller(
+                id: "seller2",
+                name: "Pizza Palace",
+                slug: "pizza-palace",
+                description: "Fresh wood-fired pizzas delivered to your door",
+                logoUrl: "https://example.com/logo2.jpg",
+                cuisineType: "Italian",
+                rating: 4.7,
+                reviewCount: 89,
+                latitude: 28.6149,
+                longitude: 77.2100,
+                distanceKm: 0.8
+            ),
+            MarketplaceSeller(
+                id: "seller3",
+                name: "Sushi Express",
+                slug: "sushi-express",
+                description: "Premium sushi and Japanese delicacies",
+                logoUrl: "https://example.com/logo3.jpg",
+                cuisineType: "Japanese",
+                rating: 4.8,
+                reviewCount: 156,
+                latitude: 28.6159,
+                longitude: 77.2110,
+                distanceKm: 2.5
+            ),
+            MarketplaceSeller(
+                id: "seller4",
+                name: "Burger Junction",
+                slug: "burger-junction",
+                description: "Juicy burgers and crispy fries",
+                logoUrl: "https://example.com/logo4.jpg",
+                cuisineType: "American",
+                rating: 4.3,
+                reviewCount: 67,
+                latitude: 28.6129,
+                longitude: 77.2080,
+                distanceKm: 1.5
+            )
+        ]
+
+        // Handle GET /marketplace - Get all sellers
+        if endpoint == AppConstants.API.Endpoints.marketplace || endpoint.starts(with: AppConstants.API.Endpoints.marketplace + "?") {
+            let response = MarketplaceResponse(
+                success: true,
+                data: MarketplaceData(sellers: mockSellers, total: mockSellers.count)
+            )
+            return response as! T
+        }
+
+        throw APIError.serverError("Marketplace endpoint not fully mocked: \(endpoint)")
+    }
+
+    // MARK: - Dish Mock Responses
+
+    private func mockDishResponse<T: Decodable>(endpoint: String, method: HTTPMethod, body: Encodable?) async throws -> T {
+        // Simulate network delay
+        try await Task.sleep(nanoseconds: 250_000_000) // 0.25 seconds
+
+        let now = Date()
+        let formatter = ISO8601DateFormatter()
+
+        let mockDishes = [
+            Dish(
+                id: "dish1",
+                businessId: "seller1",
+                name: "Paneer Tikka",
+                description: "Grilled cottage cheese marinated in spices",
+                priceCents: 25000,
+                imageUrl: "https://example.com/dish1.jpg",
+                category: "Appetizers",
+                isVegetarian: true,
+                isAvailable: true,
+                createdAt: formatter.string(from: now.addingTimeInterval(-86400 * 10)),
+                updatedAt: formatter.string(from: now)
+            ),
+            Dish(
+                id: "dish2",
+                businessId: "seller1",
+                name: "Butter Chicken",
+                description: "Tender chicken in creamy tomato sauce",
+                priceCents: 35000,
+                imageUrl: "https://example.com/dish2.jpg",
+                category: "Main Course",
+                isVegetarian: false,
+                isAvailable: true,
+                createdAt: formatter.string(from: now.addingTimeInterval(-86400 * 8)),
+                updatedAt: formatter.string(from: now)
+            ),
+            Dish(
+                id: "dish3",
+                businessId: "seller1",
+                name: "Naan",
+                description: "Fresh baked Indian bread",
+                priceCents: 5000,
+                imageUrl: "https://example.com/dish3.jpg",
+                category: "Breads",
+                isVegetarian: true,
+                isAvailable: true,
+                createdAt: formatter.string(from: now.addingTimeInterval(-86400 * 5)),
+                updatedAt: formatter.string(from: now)
+            ),
+            Dish(
+                id: "dish4",
+                businessId: "seller2",
+                name: "Margherita Pizza",
+                description: "Classic tomato and mozzarella pizza",
+                priceCents: 30000,
+                imageUrl: "https://example.com/dish4.jpg",
+                category: "Pizzas",
+                isVegetarian: true,
+                isAvailable: true,
+                createdAt: formatter.string(from: now.addingTimeInterval(-86400 * 7)),
+                updatedAt: formatter.string(from: now)
+            ),
+            Dish(
+                id: "dish5",
+                businessId: "seller2",
+                name: "Pepperoni Pizza",
+                description: "Loaded with pepperoni and cheese",
+                priceCents: 35000,
+                imageUrl: "https://example.com/dish5.jpg",
+                category: "Pizzas",
+                isVegetarian: false,
+                isAvailable: true,
+                createdAt: formatter.string(from: now.addingTimeInterval(-86400 * 6)),
+                updatedAt: formatter.string(from: now)
+            )
+        ]
+
+        // Handle GET /dishes?business_id=X - Get dishes by business
+        if endpoint.contains("business_id=") {
+            // Extract business ID from query params
+            let filteredDishes = mockDishes.filter { dish in
+                endpoint.contains(dish.businessId)
+            }
+
+            let response = DishListResponse(
+                success: true,
+                data: DishListData(dishes: filteredDishes)
+            )
+            return response as! T
+        }
+
+        // Handle GET /dishes/:id - Get single dish
+        if endpoint.starts(with: AppConstants.API.Endpoints.dishes + "/") && method == .get {
+            // Return first dish for simplicity
+            if let dish = mockDishes.first {
+                let response = DishResponse(
+                    success: true,
+                    data: DishData(dish: dish)
+                )
+                return response as! T
+            }
+        }
+
+        throw APIError.serverError("Dish endpoint not fully mocked: \(endpoint)")
     }
 
     // MARK: - Upload Methods
