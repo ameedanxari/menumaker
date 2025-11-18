@@ -409,6 +409,15 @@ class APIClient {
         case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.dishes):
             return try await mockDishResponse(endpoint: endpoint, method: method, body: body)
 
+        case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.notifications):
+            return try await mockNotificationResponse(endpoint: endpoint, method: method, body: body)
+
+        case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.analytics) || endpoint.contains("/analytics"):
+            return try await mockAnalyticsResponse(endpoint: endpoint, method: method, body: body)
+
+        case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.reviews) || endpoint.contains("/reviews"):
+            return try await mockReviewResponse(endpoint: endpoint, method: method, body: body)
+
         default:
             // For any other endpoint, return a generic success response
             throw APIError.serverError("Endpoint not mocked: \(endpoint)")
@@ -579,7 +588,8 @@ class APIClient {
                 dishName: "Paneer Tikka",
                 quantity: 2,
                 priceCents: 15000,
-                totalCents: 30000
+                totalCents: 30000,
+                specialInstructions: "Extra spicy"
             ),
             OrderItem(
                 id: "item2",
@@ -587,7 +597,8 @@ class APIClient {
                 dishName: "Naan",
                 quantity: 3,
                 priceCents: 5000,
-                totalCents: 15000
+                totalCents: 15000,
+                specialInstructions: nil
             )
         ]
 
@@ -608,7 +619,8 @@ class APIClient {
                     deliveryAddress: "123 Test Street, Test City, 110001",
                     estimatedDeliveryTime: formatter.string(from: now.addingTimeInterval(900)),
                     deliveryPersonName: "Rajesh Kumar",
-                    deliveryPersonPhone: "+919876543210"
+                    deliveryPersonPhone: "+919876543210",
+                    deliveryFeeCents: 5000
                 ),
                 Order(
                     id: "ORDER002",
@@ -624,7 +636,8 @@ class APIClient {
                     deliveryAddress: "123 Test Street, Test City, 110001",
                     estimatedDeliveryTime: formatter.string(from: now.addingTimeInterval(1800)),
                     deliveryPersonName: nil,
-                    deliveryPersonPhone: nil
+                    deliveryPersonPhone: nil,
+                    deliveryFeeCents: 5000
                 ),
                 Order(
                     id: "ORDER003",
@@ -640,7 +653,8 @@ class APIClient {
                     deliveryAddress: "123 Test Street, Test City, 110001",
                     estimatedDeliveryTime: nil,
                     deliveryPersonName: "Amit Singh",
-                    deliveryPersonPhone: "+919876543211"
+                    deliveryPersonPhone: "+919876543211",
+                    deliveryFeeCents: 5000
                 )
             ]
 
@@ -669,7 +683,8 @@ class APIClient {
                 deliveryAddress: "123 Test Street, Test City, 110001",
                 estimatedDeliveryTime: formatter.string(from: now.addingTimeInterval(900)),
                 deliveryPersonName: "Rajesh Kumar",
-                deliveryPersonPhone: "+919876543210"
+                deliveryPersonPhone: "+919876543210",
+                deliveryFeeCents: 5000
             )
 
             let response = OrderResponse(success: true, data: OrderData(order: order))
@@ -695,7 +710,8 @@ class APIClient {
                 deliveryAddress: "123 Test Street, Test City, 110001",
                 estimatedDeliveryTime: formatter.string(from: now.addingTimeInterval(900)),
                 deliveryPersonName: "Rajesh Kumar",
-                deliveryPersonPhone: "+919876543210"
+                deliveryPersonPhone: "+919876543210",
+                deliveryFeeCents: 5000
             )
 
             let response = OrderResponse(success: true, data: OrderData(order: order))
@@ -1005,6 +1021,248 @@ class APIClient {
         }
 
         throw APIError.serverError("Dish endpoint not fully mocked: \(endpoint)")
+    }
+
+    // MARK: - Notification Mock Responses
+
+    private func mockNotificationResponse<T: Decodable>(endpoint: String, method: HTTPMethod, body: Encodable?) async throws -> T {
+        // Simulate network delay
+        try await Task.sleep(nanoseconds: 250_000_000) // 0.25 seconds
+
+        let now = Date()
+
+        let mockNotifications = [
+            Notification(
+                id: "notif1",
+                userId: "mock_user_id",
+                type: .orderUpdate,
+                title: "Order Out for Delivery",
+                message: "Your order #ORDER001 is out for delivery and will arrive soon",
+                isRead: false,
+                createdAt: now.addingTimeInterval(-1800), // 30 mins ago
+                data: ["orderId": "ORDER001", "status": "out_for_delivery"]
+            ),
+            Notification(
+                id: "notif2",
+                userId: "mock_user_id",
+                type: .orderUpdate,
+                title: "Order Preparing",
+                message: "Your order #ORDER002 is being prepared",
+                isRead: false,
+                createdAt: now.addingTimeInterval(-3600), // 1 hour ago
+                data: ["orderId": "ORDER002", "status": "preparing"]
+            ),
+            Notification(
+                id: "notif3",
+                userId: "mock_user_id",
+                type: .orderUpdate,
+                title: "Order Delivered",
+                message: "Your order #ORDER003 has been delivered successfully",
+                isRead: true,
+                createdAt: now.addingTimeInterval(-86400), // 1 day ago
+                data: ["orderId": "ORDER003", "status": "delivered"]
+            ),
+            Notification(
+                id: "notif4",
+                userId: "mock_user_id",
+                type: .promotion,
+                title: "Special Offer",
+                message: "Get 20% off on your next order with code SAVE20",
+                isRead: true,
+                createdAt: now.addingTimeInterval(-172800), // 2 days ago
+                data: ["code": "SAVE20", "discount": "20"]
+            ),
+            Notification(
+                id: "notif5",
+                userId: "mock_user_id",
+                type: .review,
+                title: "Review Request",
+                message: "How was your recent order? Share your feedback",
+                isRead: false,
+                createdAt: now.addingTimeInterval(-259200), // 3 days ago
+                data: ["orderId": "ORDER003"]
+            )
+        ]
+
+        // Handle GET /notifications - Get all notifications
+        if endpoint == AppConstants.API.Endpoints.notifications && method == .get {
+            let unreadCount = mockNotifications.filter { !$0.isRead }.count
+
+            let response = NotificationListResponse(
+                data: NotificationListData(
+                    notifications: mockNotifications,
+                    unreadCount: unreadCount
+                )
+            )
+            return response as! T
+        }
+
+        // Handle POST /notifications/:id/read - Mark notification as read
+        if endpoint.contains("/read") && !endpoint.contains("read-all") && method == .post {
+            let notificationId = endpoint
+                .replacingOccurrences(of: AppConstants.API.Endpoints.notifications + "/", with: "")
+                .replacingOccurrences(of: "/read", with: "")
+
+            if let notification = mockNotifications.first(where: { $0.id == notificationId }) {
+                let updatedNotification = Notification(
+                    id: notification.id,
+                    userId: notification.userId,
+                    type: notification.type,
+                    title: notification.title,
+                    message: notification.message,
+                    isRead: true,
+                    createdAt: notification.createdAt,
+                    data: notification.data
+                )
+
+                let response = NotificationResponse(
+                    data: NotificationData(notification: updatedNotification)
+                )
+                return response as! T
+            }
+        }
+
+        // Handle POST /notifications/read-all - Mark all notifications as read
+        if endpoint.contains("/read-all") && method == .post {
+            let response = EmptyResponse(success: true)
+            return response as! T
+        }
+
+        // Handle DELETE /notifications/:id - Delete notification
+        if endpoint.starts(with: AppConstants.API.Endpoints.notifications + "/") && method == .delete {
+            let response = EmptyResponse(success: true)
+            return response as! T
+        }
+
+        // Handle DELETE /notifications/clear-all - Clear all notifications
+        if endpoint.contains("/clear-all") && method == .delete {
+            let response = EmptyResponse(success: true)
+            return response as! T
+        }
+
+        throw APIError.serverError("Notification endpoint not fully mocked: \(endpoint)")
+    }
+
+    // MARK: - Analytics Mock Responses
+
+    private func mockAnalyticsResponse<T: Decodable>(endpoint: String, method: HTTPMethod, body: Encodable?) async throws -> T {
+        // Simulate network delay
+        try await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
+
+        let now = Date()
+        let calendar = Calendar.current
+
+        // Create sales data points based on the selected period
+        let salesData: [SalesDataPoint] = [
+            SalesDataPoint(id: "sd1", date: calendar.date(byAdding: .day, value: -6, to: now)!.ISO8601Format(), sales: 12500.0, orders: 45),
+            SalesDataPoint(id: "sd2", date: calendar.date(byAdding: .day, value: -5, to: now)!.ISO8601Format(), sales: 15200.0, orders: 52),
+            SalesDataPoint(id: "sd3", date: calendar.date(byAdding: .day, value: -4, to: now)!.ISO8601Format(), sales: 11800.0, orders: 38),
+            SalesDataPoint(id: "sd4", date: calendar.date(byAdding: .day, value: -3, to: now)!.ISO8601Format(), sales: 18900.0, orders: 61),
+            SalesDataPoint(id: "sd5", date: calendar.date(byAdding: .day, value: -2, to: now)!.ISO8601Format(), sales: 16500.0, orders: 55),
+            SalesDataPoint(id: "sd6", date: calendar.date(byAdding: .day, value: -1, to: now)!.ISO8601Format(), sales: 20100.0, orders: 68),
+            SalesDataPoint(id: "sd7", date: now.ISO8601Format(), sales: 22300.0, orders: 73)
+        ]
+
+        let popularItems = [
+            PopularItem(id: "item1", name: "Butter Chicken", salesCount: 156, revenue: 31200.0, imageUrl: "https://picsum.photos/200/300?random=1"),
+            PopularItem(id: "item2", name: "Paneer Tikka", salesCount: 142, revenue: 28400.0, imageUrl: "https://picsum.photos/200/300?random=2"),
+            PopularItem(id: "item3", name: "Biryani", salesCount: 128, revenue: 38400.0, imageUrl: "https://picsum.photos/200/300?random=3"),
+            PopularItem(id: "item4", name: "Dal Makhani", salesCount: 98, revenue: 14700.0, imageUrl: "https://picsum.photos/200/300?random=4"),
+            PopularItem(id: "item5", name: "Naan", salesCount: 210, revenue: 10500.0, imageUrl: "https://picsum.photos/200/300?random=5")
+        ]
+
+        let peakHours = [
+            PeakHour(hour: 12, orderCount: 45),
+            PeakHour(hour: 13, orderCount: 52),
+            PeakHour(hour: 19, orderCount: 68),
+            PeakHour(hour: 20, orderCount: 73),
+            PeakHour(hour: 21, orderCount: 41)
+        ]
+
+        let analyticsData = AnalyticsData(
+            totalSales: 117300.0,
+            totalOrders: 392,
+            totalRevenue: 105570.0, // After platform fees
+            averageOrderValue: 299.2,
+            newCustomers: 87,
+            repeatCustomers: 156,
+            popularItems: popularItems,
+            salesData: salesData,
+            peakHours: peakHours
+        )
+
+        let customerInsights = CustomerInsights(
+            newCustomers: 87,
+            repeatCustomers: 156,
+            totalCustomers: 243,
+            averageOrdersPerCustomer: 1.61
+        )
+
+        let payoutInfo = PayoutInfo(
+            pendingAmount: 42500.0,
+            completedAmount: 63070.0,
+            nextPayoutDate: calendar.date(byAdding: .day, value: 3, to: now)?.ISO8601Format()
+        )
+
+        // Handle GET /analytics or /businesses/:id/analytics
+        if endpoint.contains("/analytics") && method == .get {
+            let response = AnalyticsResponse(
+                success: true,
+                data: AnalyticsResponseData(
+                    analytics: analyticsData,
+                    customerInsights: customerInsights,
+                    payouts: payoutInfo
+                )
+            )
+            return response as! T
+        }
+
+        // Handle POST /analytics/export
+        if endpoint.contains("/export") && method == .post {
+            let response = MessageResponse(success: true, message: "Export request queued. You'll receive an email with the file shortly.")
+            return response as! T
+        }
+
+        throw APIError.serverError("Analytics endpoint not fully mocked: \(endpoint)")
+    }
+
+    // MARK: - Review Mock Responses
+
+    private func mockReviewResponse<T: Decodable>(endpoint: String, method: HTTPMethod, body: Encodable?) async throws -> T {
+        // Simulate network delay
+        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+
+        // Handle POST /reviews/{id}/reply
+        if endpoint.contains("/reply") && method == .post {
+            let now = Date()
+            let sellerReply = SellerReply(
+                id: UUID().uuidString,
+                reviewId: UUID().uuidString,
+                sellerName: "Restaurant Owner",
+                reply: "Thank you for your feedback!",
+                createdAt: ISO8601DateFormatter().string(from: now)
+            )
+
+            let response = ReplyResponse(
+                success: true,
+                data: ReplyData(sellerReply: sellerReply)
+            )
+            return response as! T
+        }
+
+        // Handle POST /reviews/{id}/helpful
+        if endpoint.contains("/helpful") && method == .post {
+            let response = MessageResponse(success: true, message: "Review marked as helpful")
+            return response as! T
+        }
+
+        // Handle POST /reviews/{id}/report
+        if endpoint.contains("/report") && method == .post {
+            let response = MessageResponse(success: true, message: "Review reported successfully")
+            return response as! T
+        }
+
+        throw APIError.serverError("Review endpoint not fully mocked: \(endpoint)")
     }
 
     // MARK: - Upload Methods

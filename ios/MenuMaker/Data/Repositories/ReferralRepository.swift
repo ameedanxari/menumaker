@@ -27,6 +27,29 @@ class ReferralRepository: ObservableObject {
         return response.data
     }
 
+    func getReferralHistory() async throws -> [ReferralHistory] {
+        let response: ReferralHistoryResponse = try await apiClient.request(
+            endpoint: AppConstants.API.Endpoints.referrals + "/history",
+            method: .get
+        )
+
+        return response.data.referrals
+    }
+
+    func applyReferralCode(_ code: String) async throws -> ApplyReferralResponse {
+        struct ApplyCodeRequest: Encodable {
+            let code: String
+        }
+
+        let response: ApplyReferralResponse = try await apiClient.request(
+            endpoint: AppConstants.API.Endpoints.referrals + "/apply",
+            method: .post,
+            body: ApplyCodeRequest(code: code)
+        )
+
+        return response
+    }
+
     func validateReferralCode(_ code: String) async throws -> Bool {
         do {
             struct ValidateResponse: Decodable {

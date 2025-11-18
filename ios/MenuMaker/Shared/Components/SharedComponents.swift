@@ -343,6 +343,27 @@ struct InfoRow: View {
     }
 }
 
+// MARK: - Filter Chip
+
+struct FilterChip: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(isSelected ? .semibold : .regular)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(isSelected ? Color.theme.primary : Color.theme.surface)
+                .foregroundColor(isSelected ? .white : .primary)
+                .cornerRadius(20)
+        }
+    }
+}
+
 #Preview {
     VStack(spacing: 20) {
         CustomTextField(placeholder: "Email", text: .constant(""))
