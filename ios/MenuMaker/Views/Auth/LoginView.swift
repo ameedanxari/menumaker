@@ -118,6 +118,13 @@ struct LoginView: View {
         .sheet(isPresented: $showForgotPassword) {
             ForgotPasswordView()
         }
+        .onChange(of: authViewModel.isAuthenticated) { isAuthenticated in
+            // Dismiss sheets when user becomes authenticated
+            if isAuthenticated {
+                showSignup = false
+                showForgotPassword = false
+            }
+        }
         .task {
             if showBiometric {
                 await authViewModel.loginWithBiometrics()

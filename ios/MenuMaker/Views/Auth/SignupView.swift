@@ -151,10 +151,6 @@ struct SignupView: View {
                 name: name,
                 phone: phone.isEmpty ? nil : phone
             )
-
-            if authViewModel.isAuthenticated {
-                dismiss()
-            }
         }
     }
 }
