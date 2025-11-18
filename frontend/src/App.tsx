@@ -27,6 +27,11 @@ const IntegrationsPage = lazy(() => import('./pages/IntegrationsPage'));
 const CouponsPage = lazy(() => import('./pages/CouponsPage'));
 const ReferralsPage = lazy(() => import('./pages/ReferralsPage'));
 
+// User Pages
+const UserProfilePage = lazy(() => import('./pages/UserProfilePage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const MyOrdersPage = lazy(() => import('./pages/MyOrdersPage'));
+
 // Loading fallback component
 function PageLoader() {
   return (
@@ -87,6 +92,10 @@ function AppContent() {
             <Route path="/integrations" element={<IntegrationsPage />} />
             <Route path="/coupons" element={<CouponsPage />} />
             <Route path="/referrals" element={<ReferralsPage />} />
+            {/* User Routes */}
+            <Route path="/profile" element={<UserProfilePage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/my-orders" element={<MyOrdersPage />} />
           </Route>
 
           {/* Redirect root to dashboard or login */}
