@@ -99,7 +99,7 @@ class ReviewRepository: ObservableObject {
         )
     }
 
-    func replyToReview(_ reviewId: String, businessId: String, reply: String) async throws -> String {
+    func replyToReview(_ reviewId: String, businessId: String, reply: String) async throws -> SellerReply {
         struct ReplyRequest: Encodable {
             let businessId: String
             let reply: String
@@ -111,7 +111,7 @@ class ReviewRepository: ObservableObject {
         }
 
         struct ReplyData: Decodable {
-            let sellerReply: String
+            let sellerReply: SellerReply
         }
 
         let response: ReplyResponse = try await apiClient.request(

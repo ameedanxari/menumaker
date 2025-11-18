@@ -415,6 +415,9 @@ class APIClient {
         case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.analytics) || endpoint.contains("/analytics"):
             return try await mockAnalyticsResponse(endpoint: endpoint, method: method, body: body)
 
+        case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.reviews) || endpoint.contains("/reviews"):
+            return try await mockReviewResponse(endpoint: endpoint, method: method, body: body)
+
         default:
             // For any other endpoint, return a generic success response
             throw APIError.serverError("Endpoint not mocked: \(endpoint)")
@@ -1215,6 +1218,54 @@ class APIClient {
         }
 
         throw APIError.serverError("Analytics endpoint not fully mocked: \(endpoint)")
+    }
+
+    // MARK: - Review Mock Responses
+
+    private func mockReviewResponse<T: Decodable>(endpoint: String, method: HTTPMethod, body: Encodable?) async throws -> T {
+        // Simulate network delay
+        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+
+        // Handle POST /reviews/{id}/reply
+        if endpoint.contains("/reply") && method == .post {
+            let now = Date()
+            let sellerReply = SellerReply(
+                id: UUID().uuidString,
+                reviewId: UUID().uuidString,
+                sellerName: "Restaurant Owner",
+                reply: "Thank you for your feedback!",
+                createdAt: ISO8601DateFormatter().string(from: now)
+            )
+
+            struct ReplyResponse: Codable {
+                let success: Bool
+                let data: ReplyData
+            }
+
+            struct ReplyData: Codable {
+                let sellerReply: SellerReply
+            }
+
+            let response = ReplyResponse(
+                success: true,
+                data: ReplyData(sellerReply: sellerReply)
+            )
+            return response as! T
+        }
+
+        // Handle POST /reviews/{id}/helpful
+        if endpoint.contains("/helpful") && method == .post {
+            let response = MessageResponse(success: true, message: "Review marked as helpful")
+            return response as! T
+        }
+
+        // Handle POST /reviews/{id}/report
+        if endpoint.contains("/report") && method == .post {
+            let response = MessageResponse(success: true, message: "Review reported successfully")
+            return response as! T
+        }
+
+        throw APIError.serverError("Review endpoint not fully mocked: \(endpoint)")
     }
 
     // MARK: - Upload Methods
