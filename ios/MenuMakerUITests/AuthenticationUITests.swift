@@ -100,6 +100,7 @@ final class AuthenticationUITests: XCTestCase {
             .enterEmail("newuser@example.com")
             .enterPhone("9876543210")
             .enterPassword("SecurePassword123!")
+            .enterConfirmPassword("SecurePassword123!")
             .tapSignup()
 
         // Verify navigation to home or success message
