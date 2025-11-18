@@ -83,7 +83,6 @@ struct SignupView: View {
                             text: $password
                         )
                         .textContentType(.newPassword)
-                        .autocorrection(.no)
                         .accessibilityIdentifier("password-field")
 
                         CustomSecureField(
@@ -91,7 +90,6 @@ struct SignupView: View {
                             text: $confirmPassword
                         )
                         .textContentType(.newPassword)
-                        .autocorrection(.no)
                         .accessibilityIdentifier("confirm-password-field")
 
                         if let errorMessage = validationError ?? authViewModel.errorMessage {
