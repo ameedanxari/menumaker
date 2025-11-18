@@ -90,6 +90,7 @@ struct OrderItem: Codable, Identifiable {
     let quantity: Int
     let priceCents: Int
     let totalCents: Int
+    let specialInstructions: String?
 
     var price: Double {
         Double(priceCents) / 100.0
