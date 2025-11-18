@@ -99,7 +99,7 @@ struct NotificationsView: View {
             LazyVStack(spacing: 0) {
                 ForEach(viewModel.filteredNotifications) { notification in
                     if notification.type == .orderUpdate, let orderId = notification.data?["orderId"] {
-                        NavigationLink(destination: DeliveryTrackingView(orderId: orderId)) {
+                        NavigationLink(destination: OrderTrackingView(orderId: orderId)) {
                             NotificationRow(
                                 notification: notification,
                                 onTap: { Task { await viewModel.markAsRead(notification.id) } }

@@ -1,4 +1,29 @@
 import Foundation
+import SwiftUI
+
+// MARK: - Referral Status
+
+enum ReferralStatus: String, Codable {
+    case pending = "pending"
+    case completed = "completed"
+    case expired = "expired"
+
+    var displayName: String {
+        switch self {
+        case .pending: return "Pending"
+        case .completed: return "Completed"
+        case .expired: return "Expired"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .pending: return .orange
+        case .completed: return .green
+        case .expired: return .gray
+        }
+    }
+}
 
 // MARK: - Referral Models
 
@@ -8,6 +33,7 @@ struct ReferralStats: Codable {
     let pendingReferrals: Int
     let monthlyReferrals: Int
     let totalEarningsCents: Int
+    let availableCreditsCents: Int
     let referralCode: String
     let leaderboardPosition: Int?
 
@@ -17,6 +43,14 @@ struct ReferralStats: Codable {
 
     var formattedEarnings: String {
         String(format: "₹%.2f", totalEarnings)
+    }
+
+    var availableCredits: Double {
+        Double(availableCreditsCents) / 100.0
+    }
+
+    var formattedAvailableCredits: String {
+        String(format: "₹%.2f", availableCredits)
     }
 
     var successRate: Double {
@@ -76,7 +110,7 @@ struct ReferralHistory: Codable, Identifiable {
     let id: String
     let referredUserName: String
     let referredAt: Date
-    let status: String
+    let status: ReferralStatus
     let rewardCents: Int
 
     var reward: Double {
@@ -85,6 +119,16 @@ struct ReferralHistory: Codable, Identifiable {
 
     var formattedReward: String {
         String(format: "₹%.2f", reward)
+    }
+
+    var formattedDate: String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        return formatter.localizedString(for: referredAt, relativeTo: Date())
+    }
+
+    var rewardAmountCents: Int {
+        rewardCents
     }
 
     enum CodingKeys: String, CodingKey {
