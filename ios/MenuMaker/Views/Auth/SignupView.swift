@@ -74,7 +74,7 @@ struct SignupView: View {
                         CustomTextField(
                             placeholder: "Phone (Optional)",
                             text: $phone,
-                            keyboardType: .phonePad
+                            keyboardType: .numberPad
                         )
                         .accessibilityIdentifier("phone-field")
 
