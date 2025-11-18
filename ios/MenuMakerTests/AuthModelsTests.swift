@@ -46,6 +46,8 @@ struct AuthModelsTests {
             email: "admin@example.com",
             name: "Admin",
             phone: nil,
+            address: nil,
+            photoUrl: nil,
             role: "admin",
             createdAt: "2025-01-01T00:00:00Z",
             updatedAt: nil
@@ -62,6 +64,8 @@ struct AuthModelsTests {
             email: "customer@example.com",
             name: "Customer",
             phone: nil,
+            address: nil,
+            photoUrl: nil,
             role: "customer",
             createdAt: "2025-01-01T00:00:00Z",
             updatedAt: nil
@@ -78,6 +82,8 @@ struct AuthModelsTests {
             email: "seller@example.com",
             name: "Seller",
             phone: nil,
+            address: nil,
+            photoUrl: nil,
             role: "seller",
             createdAt: "2025-01-01T00:00:00Z",
             updatedAt: nil
