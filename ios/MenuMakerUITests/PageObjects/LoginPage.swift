@@ -42,11 +42,12 @@ struct LoginPage {
     }
 
     var errorMessage: XCUIElement {
-        app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'error' OR label CONTAINS[c] 'invalid'")).firstMatch
+        loginScreen.staticTexts["error-message"]
     }
 
     var validationMessage: XCUIElement {
-        app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'required' OR label CONTAINS[c] 'empty'")).firstMatch
+        // Validation messages use the same error-message identifier
+        loginScreen.staticTexts["error-message"]
     }
 
     // MARK: - Actions
@@ -67,7 +68,7 @@ struct LoginPage {
 
     @discardableResult
     func tapLogin() -> LoginPage {
-        dismissKeyboardIfNeeded()
+        // No need to dismiss keyboard - tapping button will dismiss it automatically
         loginButton.tap()
         return self
     }

@@ -55,9 +55,11 @@ class APIClient {
     private let baseURL: String
     private let session: URLSession
     private let keychainManager = KeychainManager.shared
+    private let isUITesting: Bool
 
     private init() {
         self.baseURL = AppConstants.API.baseURL
+        self.isUITesting = CommandLine.arguments.contains("UI-Testing")
 
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = AppConstants.API.timeout
@@ -76,6 +78,11 @@ class APIClient {
         headers: [String: String]? = nil,
         requiresAuth: Bool = true
     ) async throws -> T {
+        // Return mock data for UI testing
+        if isUITesting {
+            return try await mockResponse(endpoint: endpoint, method: method, body: body)
+        }
+
         guard let url = URL(string: baseURL + endpoint) else {
             throw APIError.invalidURL
         }
@@ -195,6 +202,79 @@ class APIClient {
             // If refresh fails, clear tokens
             await keychainManager.clearTokens()
             throw APIError.unauthorized
+        }
+    }
+
+    // MARK: - Mock Responses for UI Testing
+
+    private func mockResponse<T: Decodable>(endpoint: String, method: HTTPMethod, body: Encodable?) async throws -> T {
+        // Simulate network delay
+        try await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
+
+        // Mock authentication responses
+        switch endpoint {
+        case AppConstants.API.Endpoints.login:
+            let authData = AuthData(
+                accessToken: "mock_access_token",
+                refreshToken: "mock_refresh_token",
+                user: User(
+                    id: "mock_user_id",
+                    email: "test@example.com",
+                    name: "Test User",
+                    phone: "1234567890",
+                    role: "seller",
+                    createdAt: ISO8601DateFormatter().string(from: Date()),
+                    updatedAt: nil
+                )
+            )
+            let response = AuthResponse(success: true, data: authData)
+            return response as! T
+
+        case AppConstants.API.Endpoints.signup:
+            let authData = AuthData(
+                accessToken: "mock_access_token",
+                refreshToken: "mock_refresh_token",
+                user: User(
+                    id: "mock_user_id",
+                    email: "newuser@example.com",
+                    name: "New User",
+                    phone: "9876543210",
+                    role: "seller",
+                    createdAt: ISO8601DateFormatter().string(from: Date()),
+                    updatedAt: nil
+                )
+            )
+            let response = AuthResponse(success: true, data: authData)
+            return response as! T
+
+        case AppConstants.API.Endpoints.forgotPassword:
+            let response = EmptyResponse(success: true)
+            return response as! T
+
+        case AppConstants.API.Endpoints.logout:
+            let response = EmptyResponse(success: true)
+            return response as! T
+
+        case AppConstants.API.Endpoints.me:
+            let authData = AuthData(
+                accessToken: "mock_access_token",
+                refreshToken: "mock_refresh_token",
+                user: User(
+                    id: "mock_user_id",
+                    email: "test@example.com",
+                    name: "Test User",
+                    phone: "1234567890",
+                    role: "seller",
+                    createdAt: ISO8601DateFormatter().string(from: Date()),
+                    updatedAt: nil
+                )
+            )
+            let response = AuthResponse(success: true, data: authData)
+            return response as! T
+
+        default:
+            // For any other endpoint, return a generic success response
+            throw APIError.serverError("Endpoint not mocked: \(endpoint)")
         }
     }
 

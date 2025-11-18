@@ -137,6 +137,7 @@ struct MainTabView: View {
             }
             .tag(3)
         }
+        .accessibilityIdentifier("main-tab-view")
         .environmentObject(sellerViewModel)
         .environmentObject(marketplaceViewModel)
     }

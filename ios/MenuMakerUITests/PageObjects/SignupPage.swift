@@ -45,11 +45,12 @@ struct SignupPage {
     }
 
     var errorMessage: XCUIElement {
-        app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'error' OR label CONTAINS[c] 'invalid' OR label CONTAINS[c] 'exists'")).firstMatch
+        signupScreen.staticTexts["error-message"]
     }
 
     var validationMessage: XCUIElement {
-        app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'required' OR label CONTAINS[c] 'weak password' OR label CONTAINS[c] 'strength'")).firstMatch
+        // Validation messages use the same error-message identifier
+        signupScreen.staticTexts["error-message"]
     }
 
     // MARK: - Actions
@@ -91,7 +92,7 @@ struct SignupPage {
 
     @discardableResult
     func tapSignup() -> SignupPage {
-        dismissKeyboardIfNeeded()
+        // No need to dismiss keyboard - tapping button will dismiss it automatically
         signupButton.tap()
         return self
     }

@@ -47,7 +47,7 @@ struct ForgotPasswordPage {
 
     @discardableResult
     func tapSubmit() -> ForgotPasswordPage {
-        dismissKeyboardIfNeeded()
+        // No need to dismiss keyboard - tapping button will dismiss it automatically
         submitButton.tap()
         return self
     }
