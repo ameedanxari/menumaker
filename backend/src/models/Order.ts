@@ -54,6 +54,15 @@ export class Order {
   @Column({ type: 'text', nullable: true })
   delivery_address?: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  delivery_person_name?: string; // For iOS delivery tracking
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  delivery_person_phone?: string; // For iOS delivery tracking
+
+  @Column({ type: 'timestamp', nullable: true })
+  estimated_delivery_time?: Date; // For iOS delivery tracking
+
   @Column({ type: 'integer' })
   total_cents!: number;
 
@@ -67,13 +76,13 @@ export class Order {
   payment_status!: 'unpaid' | 'paid' | 'failed';
 
   @Column({ type: 'varchar', default: 'pending' })
-  order_status!: 'pending' | 'confirmed' | 'ready' | 'fulfilled' | 'cancelled';
+  order_status!: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'out_for_delivery' | 'delivered' | 'fulfilled' | 'cancelled';
 
   // Alias for order_status to support legacy code
-  get status(): 'pending' | 'confirmed' | 'ready' | 'fulfilled' | 'cancelled' {
+  get status(): 'pending' | 'confirmed' | 'preparing' | 'ready' | 'out_for_delivery' | 'delivered' | 'fulfilled' | 'cancelled' {
     return this.order_status;
   }
-  set status(value: 'pending' | 'confirmed' | 'ready' | 'fulfilled' | 'cancelled') {
+  set status(value: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'out_for_delivery' | 'delivered' | 'fulfilled' | 'cancelled') {
     this.order_status = value;
   }
 

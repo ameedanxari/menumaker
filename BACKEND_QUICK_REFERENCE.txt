@@ -1,0 +1,338 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    MENUMAKER BACKEND - QUICK REFERENCE                       ║
+║                          Database Models & Fields                             ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+CORE ENTITIES
+═════════════════════════════════════════════════════════════════════════════
+
+1. USER
+   Fields: id, email, password_hash, full_name, profile_photo_url, referral_code
+           account_credit_cents, pro_tier_expires_at, referred_by_code
+           suspended_until, suspension_reason, is_banned, ban_reason, banned_at
+   Relations: Business (OneToOne), Notifications (OneToMany)
+
+2. BUSINESS
+   Fields: id, owner_id, name, email, slug, logo_url, primary_color, locale
+           timezone, description, is_published, deleted_at
+   Relations: Owner (ManyToOne User), Dishes, Categories, Menus, Orders, Payouts, Settings
+
+3. BUSINESS_SETTINGS
+   Fields: id, business_id, delivery_type (flat|distance|free), delivery_fee_cents
+           delivery_base_fee_cents, delivery_per_km_cents, min_order_free_delivery_cents
+           distance_rounding (round|ceil|floor), payment_method (cash|bank_transfer|upi|other)
+           payment_instructions, currency, auto_confirm_orders, enable_customer_notes
+           whatsapp_enabled, whatsapp_phone_number, whatsapp_notify_*, gstin
+           legal_business_name, business_address, is_gst_registered, invoice_prefix
+           next_invoice_number, bank_details (jsonb), invoice_terms
+           default_locale, supported_locales, rtl_enabled, date_format, time_format
+           currency_display (symbol|code|name)
+
+4. DISH
+   Fields: id, business_id, name, description, price_cents, image_url, category_id
+           is_available, dietary_tags (vegetarian, vegan, gluten_free), created_at, updated_at
+
+5. DISH_CATEGORY
+   Fields: id, business_id, name, description, order_index, created_at, updated_at
+
+6. MENU
+   Fields: id, business_id, name, description, is_published, created_at, updated_at
+   Relations: Items (MenuItems), Dishes
+
+7. MENU_ITEM
+   Fields: id, menu_id, dish_id, order_index
+   Relations: Menu, Dish
+
+8. ORDER
+   Fields: id, business_id, menu_id, customer_id, customer_name, customer_phone
+           customer_email, delivery_type (pickup|delivery), delivery_address
+           total_cents, delivery_fee_cents, payment_method, payment_status
+           order_status, notes, currency, metadata (jsonb), created_at, updated_at
+           fulfilled_at, anonymized_at
+   Relations: Business, Menu, Items (OrderItems), Notifications
+
+9. ORDER_ITEM
+   Fields: id, order_id, dish_id, quantity, price_cents, subtotal_cents
+
+10. ORDER_NOTIFICATION
+    Fields: id, order_id, user_id, type, message, read_at
+
+11. SAVED_CART
+    Fields: id, customer_id, business_id, menu_id, cart_items (jsonb), created_at, updated_at
+
+12. REFERRAL (Legacy)
+    Fields: id, referrer_id, referee_id, status, reward_value_cents, created_at
+
+═════════════════════════════════════════════════════════════════════════════
+
+PAYMENT & SUBSCRIPTION ENTITIES
+═════════════════════════════════════════════════════════════════════════════
+
+13. PAYMENT
+    Fields: id, order_id, business_id, payment_processor_id, processor_type
+            processor_payment_id, processor_charge_id, processor_fee_cents
+            net_amount_cents, stripe_payment_intent_id (legacy), stripe_charge_id (legacy)
+            amount_cents, currency, status (pending|succeeded|failed|canceled|refunded)
+            payment_method, payment_method_details (jsonb), failure_reason
+            refund_details (jsonb), metadata (jsonb), settlement_details (jsonb)
+
+14. PAYMENT_PROCESSOR
+    Fields: id, business_id, processor_type (stripe|razorpay|phonepe|paytm)
+            is_active, api_key_encrypted, webhook_secret_encrypted
+            config (jsonb - processor specific settings), created_at, updated_at
+
+15. PAYOUT
+    Fields: id, business_id, payment_processor_id, period_start, period_end
+            scheduled_payout_date, frequency (daily|weekly|monthly)
+            gross_amount_cents, processor_fee_cents, subscription_fee_cents
+            platform_fee_cents, volume_discount_cents, net_amount_cents
+            payment_count, status, processor_payout_id, bank_transaction_id
+            failure_reason, retry_count, next_retry_date
+            reconciliation_status, reconciliation_details (jsonb)
+            taxable_amount_cents, tds_cents, currency, metadata (jsonb), notes
+
+16. PAYOUT_SCHEDULE
+    Fields: id, business_id, frequency, next_payout_date, is_active
+
+17. SUBSCRIPTION
+    Fields: id, business_id, tier (free|pro|business|enterprise), status (active|inactive|suspended)
+            order_limit, max_orders_per_month, current_orders_this_month
+            subscription_fee_cents, billing_cycle (monthly|annual), renews_at
+            features_enabled (jsonb - feature toggles)
+
+18. TAX_INVOICE
+    Fields: id, order_id, business_id, invoice_number, gstin
+            invoice_date, due_date, subtotal_cents, tax_cents, total_cents
+            customer_name, customer_phone, delivery_address, items (jsonb)
+            payment_status, status, pdf_url, created_at, updated_at
+
+═════════════════════════════════════════════════════════════════════════════
+
+REVIEW & RATINGS ENTITIES
+═════════════════════════════════════════════════════════════════════════════
+
+19. REVIEW
+    Fields: id, order_id, business_id, customer_id, rating (1-5), review_text (500 chars max)
+            photo_urls (array, max 3), status (pending|approved|rejected|removed)
+            is_complaint, complaint_status (open|in_progress|resolved|escalated)
+            auto_approve_at, approved_at, seller_notified_at
+            has_seller_response, is_public, is_verified_purchase
+            helpful_count, report_count, customer_name, metadata (jsonb)
+    Relations: Order, Business, Customer, Responses (ReviewResponse)
+
+20. REVIEW_RESPONSE
+    Fields: id, review_id, business_id, response_text (500 chars max)
+            responder_name, is_public, created_at, updated_at
+
+═════════════════════════════════════════════════════════════════════════════
+
+COUPON & PROMOTION ENTITIES
+═════════════════════════════════════════════════════════════════════════════
+
+21. COUPON
+    Fields: id, business_id, code (unique), name, description
+            discount_type (fixed|percentage), discount_value, max_discount_cents
+            min_order_value_cents, valid_from, valid_until
+            usage_limit_type (per_customer|per_month|unlimited|total_limit)
+            usage_limit_per_customer, usage_limit_per_month, total_usage_limit
+            total_usage_count, applicable_to (all_dishes|specific_dishes)
+            dish_ids (array), status (active|expired|archived), is_public
+            qr_code_data, total_discount_given_cents, total_revenue_generated_cents
+
+22. COUPON_USAGE
+    Fields: id, coupon_id, order_id, customer_id, business_id, coupon_code
+            discount_type, discount_value, discount_amount_cents
+            order_subtotal_cents, order_total_cents
+
+23. AUTOMATIC_PROMOTION
+    Fields: id, business_id, name, description, type (free_delivery|discount|free_item)
+            min_order_value_cents, discount_value, discount_type
+            free_dish_id, valid_from, valid_until, is_active, is_public
+            total_applications, total_discount_given_cents
+
+═════════════════════════════════════════════════════════════════════════════
+
+MARKETPLACE & DISCOVERY ENTITIES
+═════════════════════════════════════════════════════════════════════════════
+
+24. MARKETPLACE (Settings)
+    Fields: id, business_id, is_discoverable, featured_until, category_tags (array)
+            avg_rating (float), total_reviews, total_orders, monthly_revenue_cents
+            response_time_minutes, cancellation_rate_percent
+
+25. MARKETPLACE_ANALYTICS
+    Fields: id, business_id, date, orders_count, revenue_cents, avg_order_value_cents
+            customer_count, review_count, avg_rating, page_views, click_through_rate
+
+26. CUSTOMER_FAVORITE
+    Fields: id, customer_id, business_id, created_at
+
+═════════════════════════════════════════════════════════════════════════════
+
+ENHANCED REFERRAL ENTITIES (Phase 3)
+═════════════════════════════════════════════════════════════════════════════
+
+27. CUSTOMER_REFERRAL
+    Fields: id, referral_code (unique), business_id, referrer_id, referee_id
+            referee_order_id, status (link_clicked|order_placed|reward_claimed)
+            reward_value_cents, referrer_reward_claimed, referee_reward_claimed
+            reward_claimed_at, source (whatsapp|sms|instagram|direct_link)
+
+28. REFERRAL_LEADERBOARD
+    Fields: id, business_id, month, referrer_id, referrer_name, referrals_count
+            total_rewards_cents, rank, created_at
+
+29. AFFILIATE
+    Fields: id, user_id, business_id, affiliate_code (unique), status
+            commission_percent, total_clicks, total_conversions, total_earnings_cents
+            bank_account_verified, payout_frequency, payout_next_date
+
+30. AFFILIATE_CLICK
+    Fields: id, affiliate_id, business_id, referrer_id, ip_address, user_agent, created_at
+
+31. AFFILIATE_PAYOUT
+    Fields: id, affiliate_id, business_id, period_start, period_end
+            gross_earnings_cents, commission_rate, net_earnings_cents
+            status, processor_payout_id, created_at, completed_at
+
+32. VIRAL_BADGE
+    Fields: id, user_id, badge_type, earned_at, milestone_value
+
+═════════════════════════════════════════════════════════════════════════════
+
+INTEGRATION ENTITIES
+═════════════════════════════════════════════════════════════════════════════
+
+33. POS_INTEGRATION
+    Fields: id, business_id, pos_system_type (square|toast|lightspeed|etc)
+            is_enabled, api_key_encrypted, webhook_secret, last_sync_at
+            sync_status (synced|syncing|error), sync_error_message
+
+34. POS_SYNC_LOG
+    Fields: id, integration_id, sync_type (inventory|menu|orders), status
+            items_synced, errors (jsonb), started_at, completed_at
+
+35. DELIVERY_INTEGRATION
+    Fields: id, business_id, provider (dunzo|porter|swiggy|zomato)
+            is_enabled, api_key_encrypted, webhook_secret, last_sync_at
+            delivery_radius_km, base_fee_cents, per_km_fee_cents
+
+36. DELIVERY_TRACKING
+    Fields: id, order_id, delivery_partner_id, status (assigned|picked_up|in_transit|delivered|failed)
+            partner_name, partner_phone, partner_location (lat,lng), eta_minutes
+            current_location (lat,lng), delivery_rating
+
+37. DELIVERY_RATING
+    Fields: id, order_id, delivery_partner_id, rating (1-5), review_text
+            on_time, food_condition, professional_behavior
+
+═════════════════════════════════════════════════════════════════════════════
+
+ADMIN & MODERATION ENTITIES
+═════════════════════════════════════════════════════════════════════════════
+
+38. ADMIN_USER
+    Fields: id, email, name, password_hash, role (super_admin|moderator|support_agent)
+            is_active, two_factor_enabled, two_factor_secret, whitelisted_ips (array)
+            last_login_at, last_login_ip, created_at, updated_at
+
+39. AUDIT_LOG
+    Fields: id, admin_user_id, action (create|update|delete|ban|suspend)
+            resource_type, resource_id, changes (jsonb), reason, created_at
+
+40. FEATURE_FLAG
+    Fields: id, key (unique), description, is_enabled, rollout_percent
+            target_users (array), metadata (jsonb), created_at, updated_at
+
+41. CONTENT_FLAG
+    Fields: id, resource_type (review|comment|image), resource_id
+            reason (spam|offensive|misleading|other), status (reported|reviewed|action_taken)
+            reporter_id, reviewer_id, action_taken, created_at
+
+42. SUPPORT_TICKET
+    Fields: id, customer_id, subject, description, status (open|in_progress|resolved|closed)
+            priority (low|medium|high), assigned_to (admin_user_id), created_at, updated_at
+
+═════════════════════════════════════════════════════════════════════════════
+
+PRIVACY & COMPLIANCE ENTITIES
+═════════════════════════════════════════════════════════════════════════════
+
+43. COOKIE_CONSENT
+    Fields: id, user_id, consent_type (analytics|marketing|preferences)
+            consented, consent_date, ip_address, user_agent
+
+44. LEGAL_TEMPLATE
+    Fields: id, template_type (terms|privacy_policy|cookie_policy)
+            content, version, effective_date, business_id (optional)
+
+45. DELETION_REQUEST
+    Fields: id, user_id, requested_at, processed_at, status (pending|processing|completed)
+            reason, data_backed_up_at, permanently_deleted_at
+
+═════════════════════════════════════════════════════════════════════════════
+
+API AUTHENTICATION
+═════════════════════════════════════════════════════════════════════════════
+
+Base URL: http://localhost:3001/api/v1 (or https://api.menumaker.app in production)
+
+JWT Token Format:
+  Authorization: Bearer <access_token>
+
+Token Payload:
+  {
+    userId: string,
+    email: string,
+    businessId?: string,  // Optional for sellers
+    iat: number,
+    exp: number
+  }
+
+Token Expiry:
+  - Access Token: 15 minutes
+  - Refresh Token: 7 days
+
+═════════════════════════════════════════════════════════════════════════════
+
+MIDDLEWARE & SECURITY
+═════════════════════════════════════════════════════════════════════════════
+
+Middleware:
+  - authenticate: Verify JWT (required)
+  - optionalAuth: Verify JWT if present (not required)
+  - authenticateAdmin: Admin JWT + 2FA + IP whitelist + active status
+  - authorizeAdminRole: RBAC for admin operations
+  - checkSubscriptionLimits: Enforce order limits per tier
+  - requireFeature: Check feature availability
+  - requireActiveSubscription: Verify subscription active
+
+Security Headers:
+  - Helmet.js for HTTP security
+  - CORS enabled
+  - Rate limiting: 100 requests per 15 minutes
+  - Content Security Policy
+
+═════════════════════════════════════════════════════════════════════════════
+
+API RESPONSE FORMAT
+═════════════════════════════════════════════════════════════════════════════
+
+Success Response (200-201):
+  {
+    success: true,
+    data: { /* response data */ },
+    message?: string
+  }
+
+Error Response (400+):
+  {
+    success: false,
+    error: {
+      code: string,      // Machine-readable error code
+      message: string,   // Human-readable error message
+      details?: object   // Additional error context
+    }
+  }
+
+═════════════════════════════════════════════════════════════════════════════

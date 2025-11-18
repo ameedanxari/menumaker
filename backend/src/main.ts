@@ -33,6 +33,9 @@ import referralRoutes from './routes/referrals.js';
 import gdprRoutes from './routes/gdpr.js';
 import reorderRoutes from './routes/reorder.js';
 import adminRoutes from './routes/admin.js';
+import { notificationRoutes } from './routes/notifications.js'; // iOS: Notifications
+import { cartRoutes } from './routes/cart.js'; // iOS: Shopping cart
+import { settingsRoutes } from './routes/settings.js'; // iOS: User settings
 
 // Load environment variables
 dotenv.config();
@@ -238,6 +241,9 @@ async function registerRoutes() {
   await fastify.register(gdprRoutes, { prefix: '/api/v1/gdpr' });
   await fastify.register(reorderRoutes, { prefix: '/api/v1/reorder' });
   await fastify.register(adminRoutes, { prefix: '/api/v1/admin' }); // Phase 3: Admin Backend Platform
+  await fastify.register(notificationRoutes, { prefix: '/api/v1/notifications' }); // iOS: Notifications
+  await fastify.register(cartRoutes, { prefix: '/api/v1/cart' }); // iOS: Shopping cart
+  await fastify.register(settingsRoutes, { prefix: '/api/v1/settings' }); // iOS: User settings
 
   // 404 handler
   fastify.setNotFoundHandler((request, reply) => {

@@ -122,4 +122,54 @@ export async function orderRoutes(fastify: FastifyInstance): Promise<void> {
       data: { summary },
     });
   });
+
+  // GET /orders/my-orders - Get customer's order history (authenticated)
+  fastify.get('/my-orders', {
+    preHandler: authenticate,
+  }, async (request, reply) => {
+    const { status, limit = 50, offset = 0 } = request.query as {
+      status?: string;
+      limit?: number;
+      offset?: number;
+    };
+
+    const orders = await orderService.getCustomerOrders(
+      request.user!.userId,
+      { status, limit, offset }
+    );
+
+    reply.send({
+      success: true,
+      data: { orders },
+    });
+  });
+
+  // POST /orders/:id/cancel - Cancel an order (authenticated)
+  fastify.post('/:id/cancel', {
+    preHandler: authenticate,
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { reason } = request.body as { reason?: string };
+
+    try {
+      const order = await orderService.cancelOrder(id, request.user!.userId, reason);
+
+      reply.send({
+        success: true,
+        data: { order },
+        message: 'Order cancelled successfully',
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        return reply.status(400).send({
+          success: false,
+          error: {
+            code: 'CANCELLATION_FAILED',
+            message: error.message,
+          },
+        });
+      }
+      throw error;
+    }
+  });
 }

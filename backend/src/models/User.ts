@@ -25,6 +25,15 @@ export class User {
   @Column({ type: 'varchar', length: 255, nullable: true })
   full_name?: string;
 
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  phone?: string; // Phone number for iOS app
+
+  @Column({ type: 'text', nullable: true })
+  address?: string; // User's address for iOS app
+
+  @Column({ type: 'varchar', length: 50, default: 'customer' })
+  role!: string; // customer, seller, admin
+
   @Column({ type: 'varchar', length: 2048, nullable: true })
   profile_photo_url?: string;
 
