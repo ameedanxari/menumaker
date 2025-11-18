@@ -3,6 +3,7 @@ import SwiftUI
 struct SellerDashboardView: View {
     @EnvironmentObject var sellerViewModel: SellerViewModel
     @State private var showBusinessEdit = false
+    @State private var showNotifications = false
 
     var body: some View {
         ScrollView {
@@ -30,10 +31,20 @@ struct SellerDashboardView: View {
         .accessibilityIdentifier("seller-dashboard-screen")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: { Task { await sellerViewModel.refreshData() } }) {
-                    Image(systemName: "arrow.clockwise")
+                HStack(spacing: 16) {
+                    NavigationLink(destination: NotificationsView(), isActive: $showNotifications) {
+                        Button(action: { showNotifications = true }) {
+                            Image(systemName: "bell")
+                        }
+                    }
+                    .accessibilityLabel("Notifications")
+                    .accessibilityIdentifier("notifications-button")
+
+                    Button(action: { Task { await sellerViewModel.refreshData() } }) {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .accessibilityIdentifier("refresh-dashboard-button")
                 }
-                .accessibilityIdentifier("refresh-dashboard-button")
             }
         }
         .refreshable {

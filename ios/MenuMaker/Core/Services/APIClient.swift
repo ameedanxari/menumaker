@@ -409,6 +409,9 @@ class APIClient {
         case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.dishes):
             return try await mockDishResponse(endpoint: endpoint, method: method, body: body)
 
+        case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.notifications):
+            return try await mockNotificationResponse(endpoint: endpoint, method: method, body: body)
+
         default:
             // For any other endpoint, return a generic success response
             throw APIError.serverError("Endpoint not mocked: \(endpoint)")
@@ -1005,6 +1008,127 @@ class APIClient {
         }
 
         throw APIError.serverError("Dish endpoint not fully mocked: \(endpoint)")
+    }
+
+    // MARK: - Notification Mock Responses
+
+    private func mockNotificationResponse<T: Decodable>(endpoint: String, method: HTTPMethod, body: Encodable?) async throws -> T {
+        // Simulate network delay
+        try await Task.sleep(nanoseconds: 250_000_000) // 0.25 seconds
+
+        let now = Date()
+        let formatter = ISO8601DateFormatter()
+
+        let mockNotifications = [
+            Notification(
+                id: "notif1",
+                userId: "mock_user_id",
+                type: .orderUpdate,
+                title: "Order Out for Delivery",
+                message: "Your order #ORDER001 is out for delivery and will arrive soon",
+                isRead: false,
+                createdAt: now.addingTimeInterval(-1800), // 30 mins ago
+                data: ["orderId": "ORDER001", "status": "out_for_delivery"]
+            ),
+            Notification(
+                id: "notif2",
+                userId: "mock_user_id",
+                type: .orderUpdate,
+                title: "Order Preparing",
+                message: "Your order #ORDER002 is being prepared",
+                isRead: false,
+                createdAt: now.addingTimeInterval(-3600), // 1 hour ago
+                data: ["orderId": "ORDER002", "status": "preparing"]
+            ),
+            Notification(
+                id: "notif3",
+                userId: "mock_user_id",
+                type: .orderUpdate,
+                title: "Order Delivered",
+                message: "Your order #ORDER003 has been delivered successfully",
+                isRead: true,
+                createdAt: now.addingTimeInterval(-86400), // 1 day ago
+                data: ["orderId": "ORDER003", "status": "delivered"]
+            ),
+            Notification(
+                id: "notif4",
+                userId: "mock_user_id",
+                type: .promotion,
+                title: "Special Offer",
+                message: "Get 20% off on your next order with code SAVE20",
+                isRead: true,
+                createdAt: now.addingTimeInterval(-172800), // 2 days ago
+                data: ["code": "SAVE20", "discount": "20"]
+            ),
+            Notification(
+                id: "notif5",
+                userId: "mock_user_id",
+                type: .review,
+                title: "Review Request",
+                message: "How was your recent order? Share your feedback",
+                isRead: false,
+                createdAt: now.addingTimeInterval(-259200), // 3 days ago
+                data: ["orderId": "ORDER003"]
+            )
+        ]
+
+        // Handle GET /notifications - Get all notifications
+        if endpoint == AppConstants.API.Endpoints.notifications && method == .get {
+            let unreadCount = mockNotifications.filter { !$0.isRead }.count
+
+            let response = NotificationListResponse(
+                data: NotificationListData(
+                    notifications: mockNotifications,
+                    unreadCount: unreadCount
+                )
+            )
+            return response as! T
+        }
+
+        // Handle POST /notifications/:id/read - Mark notification as read
+        if endpoint.contains("/read") && !endpoint.contains("read-all") && method == .post {
+            let notificationId = endpoint
+                .replacingOccurrences(of: AppConstants.API.Endpoints.notifications + "/", with: "")
+                .replacingOccurrences(of: "/read", with: "")
+
+            if let notification = mockNotifications.first(where: { $0.id == notificationId }) {
+                let updatedNotification = Notification(
+                    id: notification.id,
+                    userId: notification.userId,
+                    type: notification.type,
+                    title: notification.title,
+                    message: notification.message,
+                    isRead: true,
+                    createdAt: notification.createdAt,
+                    data: notification.data
+                )
+
+                let response = NotificationResponse(
+                    data: NotificationData(notification: updatedNotification)
+                )
+                return response as! T
+            }
+        }
+
+        // Handle POST /notifications/read-all - Mark all notifications as read
+        if endpoint.contains("/read-all") && method == .post {
+            let response = EmptyResponse(success: true)
+            return response as! T
+        }
+
+        // Handle DELETE /notifications/:id - Delete notification
+        if endpoint.starts(with: AppConstants.API.Endpoints.notifications + "/") && method == .delete {
+            let response = EmptyResponse(success: true)
+            return response as! T
+        }
+
+        // Handle DELETE /notifications/clear-all - Clear all notifications
+        if endpoint.contains("/clear-all") && method == .delete {
+            let response = EmptyResponse(success: true)
+            return response as! T
+        }
+
+        throw APIError.serverError("Notification endpoint not fully mocked: \(endpoint)")
     }
 
     // MARK: - Upload Methods
