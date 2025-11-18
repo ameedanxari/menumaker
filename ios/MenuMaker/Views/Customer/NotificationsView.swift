@@ -98,38 +98,18 @@ struct NotificationsView: View {
         ScrollView {
             LazyVStack(spacing: 0) {
                 ForEach(viewModel.filteredNotifications) { notification in
-                    if notification.type == .orderUpdate, let orderId = notification.data?["orderId"] {
-                        NavigationLink(destination: OrderTrackingView(orderId: orderId)) {
-                            NotificationRow(
-                                notification: notification,
-                                onTap: { Task { await viewModel.markAsRead(notification.id) } }
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("NotificationItem")
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                Task {
-                                    await viewModel.deleteNotification(notification.id)
-                                }
-                            } label: {
-                                Label("Delete", systemImage: "trash")
+                    NotificationRow(
+                        notification: notification,
+                        onTap: { Task { await viewModel.markAsRead(notification.id) } }
+                    )
+                    .accessibilityIdentifier("NotificationItem")
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button(role: .destructive) {
+                            Task {
+                                await viewModel.deleteNotification(notification.id)
                             }
-                        }
-                    } else {
-                        NotificationRow(
-                            notification: notification,
-                            onTap: { Task { await viewModel.markAsRead(notification.id) } }
-                        )
-                        .accessibilityIdentifier("NotificationItem")
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                Task {
-                                    await viewModel.deleteNotification(notification.id)
-                                }
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
+                        } label: {
+                            Label("Delete", systemImage: "trash")
                         }
                     }
 
