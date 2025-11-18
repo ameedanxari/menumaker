@@ -48,6 +48,8 @@ struct LoginView: View {
                         placeholder: "Password",
                         text: $password
                     )
+                    .textContentType(.password)
+                    .autocorrection(.no)
                     .accessibilityIdentifier("password-field")
 
                     if let errorMessage = authViewModel.errorMessage {
