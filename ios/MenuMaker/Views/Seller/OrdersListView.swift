@@ -335,7 +335,7 @@ struct SellerOrderDetailView: View {
                         }
                         .font(.subheadline)
 
-                        if order.deliveryFeeCents > 0 {
+                        if let deliveryFee = order.deliveryFeeCents, deliveryFee > 0 {
                             HStack {
                                 Text("Delivery Fee")
                                 Spacer()
