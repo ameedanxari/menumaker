@@ -17,6 +17,17 @@ class AuthViewModel: ObservableObject {
         Task {
             await checkAuthentication()
         }
+
+        // Listen for profile updates
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("UserProfileUpdated"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            if let user = notification.userInfo?["user"] as? User {
+                self?.currentUser = user
+            }
+        }
     }
 
     // MARK: - Authentication

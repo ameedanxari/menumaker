@@ -16,6 +16,9 @@ enum AppConstants {
             static let me = "/auth/me"
             static let refreshToken = "/auth/refresh"
             static let forgotPassword = "/auth/forgot-password"
+            static let updateProfile = "/auth/profile"
+            static let changePassword = "/auth/change-password"
+            static let updatePhoto = "/auth/photo"
 
             // Business
             static let businesses = "/businesses"

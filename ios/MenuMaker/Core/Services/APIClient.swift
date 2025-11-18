@@ -242,6 +242,8 @@ class APIClient {
                     email: "test@example.com",
                     name: "Test User",
                     phone: "1234567890",
+                    address: "123 Main St, City, State 12345",
+                    photoUrl: nil,
                     role: "seller",
                     createdAt: ISO8601DateFormatter().string(from: Date()),
                     updatedAt: nil
@@ -283,6 +285,8 @@ class APIClient {
                     email: "newuser@example.com",
                     name: "New User",
                     phone: "9876543210",
+                    address: nil,
+                    photoUrl: nil,
                     role: "seller",
                     createdAt: ISO8601DateFormatter().string(from: Date()),
                     updatedAt: nil
@@ -323,12 +327,71 @@ class APIClient {
                     email: "test@example.com",
                     name: "Test User",
                     phone: "1234567890",
+                    address: "123 Main St, City, State 12345",
+                    photoUrl: nil,
                     role: "seller",
                     createdAt: ISO8601DateFormatter().string(from: Date()),
                     updatedAt: nil
                 )
             )
             let response = AuthResponse(success: true, data: authData)
+            return response as! T
+
+        case AppConstants.API.Endpoints.updateProfile:
+            // Parse update profile request
+            if let updateRequest = body as? UpdateProfileRequest {
+                // Validate phone format if provided
+                if let phone = updateRequest.phone, !phone.isEmpty {
+                    // Simple validation: phone should be numeric and 10 digits
+                    let numericPhone = phone.filter { $0.isNumber }
+                    guard numericPhone.count >= 10 else {
+                        throw APIError.serverError("Invalid phone number")
+                    }
+                }
+
+                // Validate name if provided
+                if let name = updateRequest.name, !name.isEmpty {
+                    guard name.count >= 2 else {
+                        throw APIError.serverError("Name must be at least 2 characters")
+                    }
+                }
+            }
+
+            // Return updated user
+            let updatedUser = User(
+                id: "mock_user_id",
+                email: "test@example.com",
+                name: (body as? UpdateProfileRequest)?.name ?? "Test User",
+                phone: (body as? UpdateProfileRequest)?.phone ?? "1234567890",
+                address: (body as? UpdateProfileRequest)?.address,
+                photoUrl: nil,
+                role: "seller",
+                createdAt: ISO8601DateFormatter().string(from: Date().addingTimeInterval(-86400 * 30)),
+                updatedAt: ISO8601DateFormatter().string(from: Date())
+            )
+            let response = UserResponse(success: true, data: UserData(user: updatedUser))
+            return response as! T
+
+        case AppConstants.API.Endpoints.changePassword:
+            // Parse change password request
+            if let passwordRequest = body as? ChangePasswordRequest {
+                // Validate current password
+                if passwordRequest.currentPassword != "password123" {
+                    throw APIError.serverError("Current password is incorrect")
+                }
+
+                // Validate new password
+                guard passwordRequest.newPassword.count >= 8 else {
+                    throw APIError.serverError("New password must be at least 8 characters")
+                }
+
+                // Check if new password is same as current
+                if passwordRequest.newPassword == passwordRequest.currentPassword {
+                    throw APIError.serverError("New password must be different from current password")
+                }
+            }
+
+            let response = MessageResponse(success: true, message: "Password changed successfully")
             return response as! T
 
         case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.coupons):
