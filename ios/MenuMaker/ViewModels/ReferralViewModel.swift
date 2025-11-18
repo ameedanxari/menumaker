@@ -6,8 +6,11 @@ import Combine
 class ReferralViewModel: ObservableObject {
     @Published var stats: ReferralStats?
     @Published var leaderboard: [ReferralLeaderboard] = []
+    @Published var referralHistory: [ReferralHistory] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var referralCodeMessage: String?
+    @Published var referralCodeSuccess = false
 
     private let repository = ReferralRepository.shared
     private let analyticsService = AnalyticsService.shared
@@ -28,6 +31,9 @@ class ReferralViewModel: ObservableObject {
             let data = try await repository.getReferralStats()
             stats = data.stats
             leaderboard = data.leaderboard
+
+            // Load referral history
+            referralHistory = try await repository.getReferralHistory()
 
             analyticsService.trackScreen("Referrals")
 
@@ -103,6 +109,55 @@ class ReferralViewModel: ObservableObject {
     func isInTopTen() -> Bool {
         guard let rank = getCurrentUserRank() else { return false }
         return rank <= 10
+    }
+
+    // MARK: - Apply Referral Code
+
+    func applyReferralCode(_ code: String) async {
+        guard !code.isEmpty else {
+            referralCodeMessage = "Please enter a referral code"
+            referralCodeSuccess = false
+            return
+        }
+
+        // Check if user is trying to apply their own code
+        if code.uppercased() == stats?.referralCode.uppercased() {
+            referralCodeMessage = "You cannot use your own referral code"
+            referralCodeSuccess = false
+            return
+        }
+
+        isLoading = true
+        referralCodeMessage = nil
+
+        do {
+            let result = try await repository.applyReferralCode(code)
+
+            if result.success {
+                referralCodeMessage = result.message ?? "Referral code applied successfully! ₹50 credit added."
+                referralCodeSuccess = true
+
+                // Refresh data to show updated credits
+                await loadReferralData()
+
+                analyticsService.track(.referralCodeApplied, parameters: ["code": code])
+            } else {
+                referralCodeMessage = result.message ?? "Invalid or expired referral code"
+                referralCodeSuccess = false
+            }
+
+        } catch {
+            referralCodeMessage = error.localizedDescription
+            referralCodeSuccess = false
+        }
+
+        isLoading = false
+
+        // Clear message after delay
+        Task {
+            try? await Task.sleep(nanoseconds: 5_000_000_000)  // 5 seconds
+            referralCodeMessage = nil
+        }
     }
 
     // MARK: - Validation
