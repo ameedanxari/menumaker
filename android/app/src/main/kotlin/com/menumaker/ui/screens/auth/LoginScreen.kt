@@ -25,6 +25,7 @@ import com.menumaker.viewmodel.AuthViewModel
 fun LoginScreen(
     viewModel: AuthViewModel = hiltViewModel(),
     onNavigateToSignup: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit = {},
     onNavigateToDashboard: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
@@ -131,7 +132,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            TextButton(onClick = { /* TODO: Navigate to forgot password */ }) {
+            TextButton(onClick = onNavigateToForgotPassword) {
                 Text("Forgot Password?")
             }
 

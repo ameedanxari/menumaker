@@ -8,6 +8,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.menumaker.ui.screens.auth.ForgotPasswordScreen
 import com.menumaker.ui.screens.auth.LoginScreen
 import com.menumaker.ui.screens.auth.SignupScreen
 import com.menumaker.ui.screens.seller.DashboardScreen
@@ -37,6 +38,9 @@ fun NavGraph(
                 onNavigateToSignup = {
                     navController.navigate(Destination.Signup.route)
                 },
+                onNavigateToForgotPassword = {
+                    navController.navigate(Destination.ForgotPassword.route)
+                },
                 onNavigateToDashboard = {
                     navController.navigate(Destination.SellerDashboard.route) {
                         popUpTo(Destination.Login.route) { inclusive = true }
@@ -54,6 +58,14 @@ fun NavGraph(
                     navController.navigate(Destination.SellerDashboard.route) {
                         popUpTo(Destination.Signup.route) { inclusive = true }
                     }
+                }
+            )
+        }
+
+        composable(Destination.ForgotPassword.route) {
+            ForgotPasswordScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }

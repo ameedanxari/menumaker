@@ -26,6 +26,9 @@ class AuthViewModel @Inject constructor(
     private val _isAuthenticated = MutableStateFlow(false)
     val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
 
+    private val _passwordResetState = MutableStateFlow<Resource<Unit>?>(null)
+    val passwordResetState: StateFlow<Resource<Unit>?> = _passwordResetState.asStateFlow()
+
     init {
         checkAuthentication()
     }
@@ -60,6 +63,18 @@ class AuthViewModel @Inject constructor(
                 _signupState.value = null
             }
         }
+    }
+
+    fun sendPasswordReset(email: String) {
+        viewModelScope.launch {
+            authRepository.sendPasswordReset(email).collect { resource ->
+                _passwordResetState.value = resource
+            }
+        }
+    }
+
+    fun clearPasswordResetState() {
+        _passwordResetState.value = null
     }
 
     private fun checkAuthentication() {

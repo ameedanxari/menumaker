@@ -19,6 +19,9 @@ interface ApiService {
     @POST("auth/logout")
     suspend fun logout(): Response<Unit>
 
+    @POST("auth/forgot-password")
+    suspend fun sendPasswordReset(@Body request: Map<String, String>): Response<Unit>
+
     // Businesses
     @GET("businesses")
     suspend fun getBusinesses(): Response<BusinessListResponse>

@@ -4,6 +4,7 @@ sealed class Destination(val route: String) {
     // Auth
     object Login : Destination("login")
     object Signup : Destination("signup")
+    object ForgotPassword : Destination("forgot-password")
 
     // Seller - Core
     object SellerDashboard : Destination("seller/dashboard")
