@@ -27,6 +27,11 @@ class AuthViewModel: ObservableObject {
             return
         }
 
+        guard isValidEmail(email) else {
+            errorMessage = "Please enter a valid email address"
+            return
+        }
+
         isLoading = true
         errorMessage = nil
 

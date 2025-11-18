@@ -214,6 +214,26 @@ class APIClient {
         // Mock authentication responses
         switch endpoint {
         case AppConstants.API.Endpoints.login:
+            // Parse login request to validate credentials
+            if let loginRequest = body as? LoginRequest {
+                // Validate email format
+                let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+                let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+                guard emailPredicate.evaluate(with: loginRequest.email) else {
+                    throw APIError.serverError("Invalid email format")
+                }
+
+                // Check for specific test scenarios
+                if loginRequest.email == "nonexistent@example.com" {
+                    throw APIError.serverError("Invalid credentials")
+                }
+
+                // Validate password
+                guard !loginRequest.password.isEmpty else {
+                    throw APIError.serverError("Password is required")
+                }
+            }
+
             let authData = AuthData(
                 accessToken: "mock_access_token",
                 refreshToken: "mock_refresh_token",
@@ -231,6 +251,30 @@ class APIClient {
             return response as! T
 
         case AppConstants.API.Endpoints.signup:
+            // Parse signup request to validate data
+            if let signupRequest = body as? SignupRequest {
+                // Validate email format
+                let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+                let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+                guard emailPredicate.evaluate(with: signupRequest.email) else {
+                    throw APIError.serverError("Invalid email format")
+                }
+
+                // Validate required fields
+                guard !signupRequest.name.isEmpty else {
+                    throw APIError.serverError("Name is required")
+                }
+
+                guard !signupRequest.email.isEmpty else {
+                    throw APIError.serverError("Email is required")
+                }
+
+                // Validate password strength
+                guard signupRequest.password.count >= 8 else {
+                    throw APIError.serverError("Password must be at least 8 characters")
+                }
+            }
+
             let authData = AuthData(
                 accessToken: "mock_access_token",
                 refreshToken: "mock_refresh_token",
@@ -248,6 +292,21 @@ class APIClient {
             return response as! T
 
         case AppConstants.API.Endpoints.forgotPassword:
+            // Parse forgot password request to validate email
+            if let forgotPasswordRequest = body as? ForgotPasswordRequest {
+                // Validate email format
+                let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+                let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+                guard emailPredicate.evaluate(with: forgotPasswordRequest.email) else {
+                    throw APIError.serverError("Invalid email format")
+                }
+
+                // Check for specific test scenarios
+                if forgotPasswordRequest.email == "nonexistent@example.com" {
+                    throw APIError.serverError("Email not found")
+                }
+            }
+
             let response = EmptyResponse(success: true)
             return response as! T
 
