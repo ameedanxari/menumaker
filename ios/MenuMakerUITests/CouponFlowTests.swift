@@ -527,22 +527,36 @@ final class CouponFlowTests: XCTestCase {
     }
 
     private func navigateToSellerCoupons() {
-        // Navigate to coupons tab or section for sellers
+        // Try direct coupons tab first
         let couponsTab = app.tabBars.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'coupon'")).firstMatch
 
         if couponsTab.waitForExistence(timeout: 2) {
             couponsTab.tap()
-        } else {
-            // Try navigating via menu
-            let menuButton = app.navigationBars.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'menu'")).firstMatch
-            if menuButton.waitForExistence(timeout: 2) {
-                menuButton.tap()
-                sleep(1)
+            return
+        }
 
-                let couponsOption = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'coupon'")).firstMatch
-                if couponsOption.waitForExistence(timeout: 2) {
-                    couponsOption.tap()
-                }
+        // Try navigating via More tab -> Coupons link
+        let moreTab = app.tabBars.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'more'")).firstMatch
+        if moreTab.waitForExistence(timeout: 2) {
+            moreTab.tap()
+            sleep(1)
+
+            let couponsLink = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'coupon'")).firstMatch
+            if couponsLink.waitForExistence(timeout: 2) {
+                couponsLink.tap()
+                return
+            }
+        }
+
+        // Fallback: Try navigating via navigation bar menu button
+        let menuButton = app.navigationBars.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'menu'")).firstMatch
+        if menuButton.waitForExistence(timeout: 2) {
+            menuButton.tap()
+            sleep(1)
+
+            let couponsOption = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'coupon'")).firstMatch
+            if couponsOption.waitForExistence(timeout: 2) {
+                couponsOption.tap()
             }
         }
     }

@@ -147,6 +147,8 @@ struct AddCouponView: View {
     @State private var discountType: DiscountType = .percentage
     @State private var discountValue = ""
     @State private var minOrderValue = ""
+    @State private var maxDiscount = ""
+    @State private var usageLimit = ""
     @State private var validUntil: Date? = nil
 
     var body: some View {
@@ -157,12 +159,32 @@ struct AddCouponView: View {
                         .textCase(.uppercase)
                         .accessibilityIdentifier("coupon-code-field")
 
-                    Picker("Discount Type", selection: $discountType) {
-                        ForEach(DiscountType.allCases, id: \.self) { type in
-                            Text(type.displayName).tag(type)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Discount Type")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+
+                        HStack(spacing: 12) {
+                            Button(action: { discountType = .percentage }) {
+                                HStack {
+                                    Image(systemName: discountType == .percentage ? "checkmark.circle.fill" : "circle")
+                                    Text("Percentage (%)")
+                                }
+                                .foregroundColor(discountType == .percentage ? .theme.primary : .theme.text)
+                            }
+                            .accessibilityIdentifier("percentage-button")
+
+                            Button(action: { discountType = .fixed }) {
+                                HStack {
+                                    Image(systemName: discountType == .fixed ? "checkmark.circle.fill" : "circle")
+                                    Text("Fixed Amount (₹)")
+                                }
+                                .foregroundColor(discountType == .fixed ? .theme.primary : .theme.text)
+                            }
+                            .accessibilityIdentifier("fixed-amount-button")
                         }
                     }
-                    .accessibilityIdentifier("discount-type-picker")
+                    .padding(.vertical, 4)
 
                     TextField("Discount Value", text: $discountValue)
                         .keyboardType(.numberPad)
@@ -171,6 +193,16 @@ struct AddCouponView: View {
                     TextField("Minimum Order Value", text: $minOrderValue)
                         .keyboardType(.decimalPad)
                         .accessibilityIdentifier("min-order-field")
+                }
+
+                Section("Optional Settings") {
+                    TextField("Max Discount Amount (Optional)", text: $maxDiscount)
+                        .keyboardType(.decimalPad)
+                        .accessibilityIdentifier("max-discount-field")
+
+                    TextField("Usage Limit (Optional)", text: $usageLimit)
+                        .keyboardType(.numberPad)
+                        .accessibilityIdentifier("usage-limit-field")
                 }
 
                 Section("Validity") {
@@ -210,15 +242,19 @@ struct AddCouponView: View {
         guard let discount = Int(discountValue),
               let minOrder = Double(minOrderValue) else { return }
 
+        let maxDiscountValue = maxDiscount.isEmpty ? nil : Double(maxDiscount)
+        let usageLimitValue = usageLimit.isEmpty ? nil : Int(usageLimit)
+        let usageLimitType: UsageLimitType = usageLimitValue != nil ? .total : .unlimited
+
         await viewModel.createCoupon(CouponViewModel.CreateCouponParams(
             code: code,
             discountType: discountType,
             discountValue: discount,
-            maxDiscount: nil,
+            maxDiscount: maxDiscountValue,
             minOrderValue: minOrder,
             validUntil: validUntil,
-            usageLimitType: .unlimited,
-            totalUsageLimit: nil
+            usageLimitType: usageLimitType,
+            totalUsageLimit: usageLimitValue
         ))
 
         dismiss()
