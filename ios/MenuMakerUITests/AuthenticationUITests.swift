@@ -197,7 +197,8 @@ final class AuthenticationUITests: XCTestCase {
         logoutButton.tap()
 
         // Confirm logout in the confirmation dialog
-        let confirmButton = app.buttons["confirm-logout-button"]
+        // Use firstMatch because SwiftUI creates nested buttons in dialogs
+        let confirmButton = app.buttons["confirm-logout-button"].firstMatch
         if confirmButton.waitForExistence(timeout: 2) {
             confirmButton.tap()
         }
