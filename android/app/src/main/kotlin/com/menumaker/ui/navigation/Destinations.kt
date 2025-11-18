@@ -47,4 +47,15 @@ sealed class Destination(val route: String) {
     object Profile : Destination("profile")
     object Settings : Destination("settings")
     object Referrals : Destination("referrals")
+    object Favorites : Destination("favorites")
+    object Notifications : Destination("notifications")
+    object CustomerReviews : Destination("review/{businessId}") {
+        fun createRoute(businessId: String, orderId: String? = null): String {
+            return if (orderId != null) {
+                "review/$businessId?orderId=$orderId"
+            } else {
+                "review/$businessId"
+            }
+        }
+    }
 }
