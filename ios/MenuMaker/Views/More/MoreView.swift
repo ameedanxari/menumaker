@@ -3,7 +3,6 @@ import SwiftUI
 struct MoreView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     @State private var showLogoutConfirmation = false
-    private let isUITesting = CommandLine.arguments.contains("UI-Testing")
 
     var body: some View {
         List {
@@ -52,16 +51,7 @@ struct MoreView: View {
             }
 
             Section {
-                Button(action: {
-                    if isUITesting {
-                        // Skip confirmation dialog in UI tests
-                        Task {
-                            await authViewModel.logout()
-                        }
-                    } else {
-                        showLogoutConfirmation = true
-                    }
-                }) {
+                Button(action: { showLogoutConfirmation = true }) {
                     Label("Logout", systemImage: "arrow.right.square")
                         .foregroundColor(.theme.error)
                 }

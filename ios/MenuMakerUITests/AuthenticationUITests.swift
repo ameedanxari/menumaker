@@ -196,6 +196,12 @@ final class AuthenticationUITests: XCTestCase {
         }
         logoutButton.tap()
 
+        // Confirm logout in the confirmation dialog
+        let confirmButton = app.buttons["confirm-logout-button"]
+        if confirmButton.waitForExistence(timeout: 2) {
+            confirmButton.tap()
+        }
+
         // Verify back on login screen
         XCTAssertTrue(loginPage.emailField.waitForExistence(timeout: 3), "Should return to login screen after logout")
     }
