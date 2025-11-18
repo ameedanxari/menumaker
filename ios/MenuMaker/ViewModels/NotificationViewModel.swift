@@ -1,12 +1,24 @@
 import Foundation
 import Combine
 
+enum NotificationFilter: String, CaseIterable {
+    case all = "All"
+    case unread = "Unread"
+    case orders = "Orders"
+}
+
 @MainActor
 class NotificationViewModel: ObservableObject {
     @Published var notifications: [Notification] = []
+    @Published var filteredNotifications: [Notification] = []
     @Published var unreadCount: Int = 0
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var selectedFilter: NotificationFilter = .all {
+        didSet {
+            applyFilter()
+        }
+    }
 
     // Settings
     @Published var orderNotificationsEnabled = true
@@ -35,6 +47,7 @@ class NotificationViewModel: ObservableObject {
 
             notifications = response.data.notifications
             unreadCount = response.data.unreadCount
+            applyFilter()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -46,6 +59,17 @@ class NotificationViewModel: ObservableObject {
         await loadNotifications()
     }
 
+    private func applyFilter() {
+        switch selectedFilter {
+        case .all:
+            filteredNotifications = notifications
+        case .unread:
+            filteredNotifications = notifications.filter { !$0.isRead }
+        case .orders:
+            filteredNotifications = notifications.filter { $0.type == .orderUpdate }
+        }
+    }
+
     func markAsRead(_ notificationId: String) async {
         do {
             let _: NotificationResponse = try await apiClient.request(
@@ -55,7 +79,7 @@ class NotificationViewModel: ObservableObject {
 
             // Update local state
             if let index = notifications.firstIndex(where: { $0.id == notificationId }) {
-                var updatedNotification = notifications[index]
+                let updatedNotification = notifications[index]
                 notifications[index] = Notification(
                     id: updatedNotification.id,
                     userId: updatedNotification.userId,
@@ -67,6 +91,7 @@ class NotificationViewModel: ObservableObject {
                     data: updatedNotification.data
                 )
                 unreadCount = max(0, unreadCount - 1)
+                applyFilter()
             }
         } catch {
             errorMessage = error.localizedDescription
@@ -93,6 +118,43 @@ class NotificationViewModel: ObservableObject {
                     data: notification.data
                 )
             }
+            unreadCount = 0
+            applyFilter()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func deleteNotification(_ notificationId: String) async {
+        do {
+            let _: EmptyResponse = try await apiClient.request(
+                endpoint: "\(AppConstants.API.Endpoints.notifications)/\(notificationId)",
+                method: .delete
+            )
+
+            // Remove from local state
+            if let notification = notifications.first(where: { $0.id == notificationId }) {
+                if !notification.isRead {
+                    unreadCount = max(0, unreadCount - 1)
+                }
+                notifications.removeAll { $0.id == notificationId }
+                applyFilter()
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func clearAllNotifications() async {
+        do {
+            let _: EmptyResponse = try await apiClient.request(
+                endpoint: "\(AppConstants.API.Endpoints.notifications)/clear-all",
+                method: .delete
+            )
+
+            // Clear local state
+            notifications = []
+            filteredNotifications = []
             unreadCount = 0
         } catch {
             errorMessage = error.localizedDescription

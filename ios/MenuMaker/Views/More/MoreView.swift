@@ -22,6 +22,14 @@ struct MoreView: View {
             }
 
             // Menu Sections
+            Section("App") {
+                NavigationLink(destination: NotificationsView()) {
+                    Label("Notifications", systemImage: "bell")
+                }
+                .accessibilityLabel("Notifications")
+                .accessibilityIdentifier("notifications-link")
+            }
+
             Section("Business") {
                 NavigationLink(destination: CouponsView()) {
                     Label("Coupons", systemImage: "ticket")

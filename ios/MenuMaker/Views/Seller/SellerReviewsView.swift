@@ -335,8 +335,7 @@ struct SellerReviewItemView: View {
                         Image(systemName: review.hasSellerReply ? "pencil" : "arrowshape.turn.up.left")
                         Text(review.hasSellerReply ? "Edit Reply" : "Reply")
                     }
-                    .font(.caption)
-                    .fontWeight(.medium)
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.white)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)

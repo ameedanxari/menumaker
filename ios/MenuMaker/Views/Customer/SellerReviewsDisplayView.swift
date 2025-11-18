@@ -360,52 +360,6 @@ struct ReviewItemView: View {
     }
 }
 
-// MARK: - Filter Chip
-
-struct FilterChip: View {
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.subheadline)
-                .fontWeight(isSelected ? .semibold : .regular)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(isSelected ? Color.theme.primary : Color.theme.surface)
-                .foregroundColor(isSelected ? .white : .primary)
-                .cornerRadius(20)
-        }
-    }
-}
-
-// MARK: - Empty State
-
-struct EmptyState: View {
-    let icon: String
-    let title: String
-    let message: String
-
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.system(size: 48))
-                .foregroundColor(.secondary)
-
-            Text(title)
-                .font(.headline)
-
-            Text(message)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding(40)
-    }
-}
-
 #Preview {
     NavigationView {
         SellerReviewsDisplayView(businessId: "test-business-id")

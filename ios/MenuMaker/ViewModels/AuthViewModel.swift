@@ -25,7 +25,9 @@ class AuthViewModel: ObservableObject {
             queue: .main
         ) { [weak self] notification in
             if let user = notification.userInfo?["user"] as? User {
-                self?.currentUser = user
+                Task { @MainActor [weak self] in
+                    self?.currentUser = user
+                }
             }
         }
     }
