@@ -588,7 +588,8 @@ class APIClient {
                 dishName: "Paneer Tikka",
                 quantity: 2,
                 priceCents: 15000,
-                totalCents: 30000
+                totalCents: 30000,
+                specialInstructions: "Extra spicy"
             ),
             OrderItem(
                 id: "item2",
@@ -596,7 +597,8 @@ class APIClient {
                 dishName: "Naan",
                 quantity: 3,
                 priceCents: 5000,
-                totalCents: 15000
+                totalCents: 15000,
+                specialInstructions: nil
             )
         ]
 
