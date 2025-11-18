@@ -287,7 +287,8 @@ struct TrackingStepView: View {
                     dishName: "Paneer Tikka",
                     quantity: 2,
                     priceCents: 15000,
-                    totalCents: 30000
+                    totalCents: 30000,
+                    specialInstructions: nil
                 ),
                 OrderItem(
                     id: "item2",
@@ -295,7 +296,8 @@ struct TrackingStepView: View {
                     dishName: "Naan",
                     quantity: 3,
                     priceCents: 5000,
-                    totalCents: 15000
+                    totalCents: 15000,
+                    specialInstructions: nil
                 )
             ],
             createdAt: ISO8601DateFormatter().string(from: Date()),
