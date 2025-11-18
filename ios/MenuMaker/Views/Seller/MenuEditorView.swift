@@ -344,7 +344,8 @@ struct EditDishView: View {
     private func updateDish() async {
         guard let priceValue = Double(price) else { return }
 
-        await viewModel.updateDish(dish.id, params: DishViewModel.CreateDishParams(
+        await viewModel.updateDish(DishViewModel.UpdateDishParams(
+            dishId: dish.id,
             name: name,
             description: description.isEmpty ? nil : description,
             price: priceValue,

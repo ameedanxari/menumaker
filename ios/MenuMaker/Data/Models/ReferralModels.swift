@@ -34,6 +34,7 @@ struct ReferralStats: Codable {
     let monthlyReferrals: Int
     let totalEarningsCents: Int
     let availableCreditsCents: Int
+    let pendingRewardsCents: Int
     let referralCode: String
     let leaderboardPosition: Int?
 
@@ -51,6 +52,14 @@ struct ReferralStats: Codable {
 
     var formattedAvailableCredits: String {
         String(format: "₹%.2f", availableCredits)
+    }
+
+    var pendingRewards: Double {
+        Double(pendingRewardsCents) / 100.0
+    }
+
+    var formattedPendingRewards: String {
+        String(format: "₹%.2f", pendingRewards)
     }
 
     var successRate: Double {
