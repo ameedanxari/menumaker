@@ -423,7 +423,7 @@ export class ReportService {
             name: item.dish?.name || 'Unknown Item',
             salesCount: item.quantity,
             revenue: item.quantity * item.price_at_purchase_cents,
-            imageUrl: item.dish?.image_url,
+            imageUrl: item.dish?.image_urls?.[0],
           });
         }
       }

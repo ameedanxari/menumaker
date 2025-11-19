@@ -110,7 +110,7 @@ export class AuthService {
 
   async refreshTokens(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
     try {
-      const payload = verifyToken(refreshToken, 'refresh') as JWTPayload;
+      const payload = verifyToken(refreshToken) as JWTPayload;
 
       // Verify user still exists
       const user = await this.userRepository.findOne({
