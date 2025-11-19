@@ -26,6 +26,9 @@ class FavoriteViewModel @Inject constructor(
     private val analyticsService: AnalyticsService
 ) : ViewModel() {
 
+    private val _favoritesState = MutableStateFlow<Resource<com.menumaker.data.remote.models.FavoriteListData>>(Resource.Loading)
+    val favoritesState: StateFlow<Resource<com.menumaker.data.remote.models.FavoriteListData>> = _favoritesState.asStateFlow()
+
     private val _favorites = MutableStateFlow<List<FavoriteDto>>(emptyList())
     val favorites: StateFlow<List<FavoriteDto>> = _favorites.asStateFlow()
 
@@ -33,10 +36,7 @@ class FavoriteViewModel @Inject constructor(
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
     private val _filteredFavorites = MutableStateFlow<List<FavoriteDto>>(emptyList())
-    @OptIn(FlowPreview::class)
-    val filteredFavorites: StateFlow<List<FavoriteDto>> = _searchQuery
-        .debounce(300)
-        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    val filteredFavorites: StateFlow<List<FavoriteDto>> = _filteredFavorites.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -66,6 +66,7 @@ class FavoriteViewModel @Inject constructor(
     fun loadFavorites() {
         viewModelScope.launch {
             repository.getFavorites().collect { result ->
+                _favoritesState.value = result
                 when (result) {
                     is Resource.Loading -> {
                         _isLoading.value = true

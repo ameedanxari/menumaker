@@ -120,8 +120,10 @@ fun FavoritesScreen(
                     }
                 }
 
-                is Resource.Success -> {
-                    val favorites = state.data.favorites
+                is Resource.Success<*> -> {
+                    @Suppress("UNCHECKED_CAST")
+                    val data = (state as Resource.Success<com.menumaker.data.remote.models.FavoriteListData>).data
+                    val favorites = data.favorites
 
                     // Search Bar (only show if there are favorites)
                     if (favorites.isNotEmpty()) {

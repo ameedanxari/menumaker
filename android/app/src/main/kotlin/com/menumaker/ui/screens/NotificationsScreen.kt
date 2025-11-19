@@ -90,7 +90,9 @@ fun NotificationsScreen(
             }
 
             is Resource.Success<*> -> {
-                val notificationList = state.data.notifications
+                @Suppress("UNCHECKED_CAST")
+                val data = (state as Resource.Success<com.menumaker.data.remote.models.NotificationListData>).data
+                val notificationList = data.notifications
 
                 if (notificationList.isEmpty()) {
                     // Empty state
@@ -128,10 +130,10 @@ fun NotificationsScreen(
                             .fillMaxSize()
                             .padding(padding)
                     ) {
-                        items(
+                        items<NotificationDto>(
                             items = notificationList,
-                            key = { notification: NotificationDto -> notification.id }
-                        ) { notification: NotificationDto ->
+                            key = { notification -> notification.id }
+                        ) { notification ->
                             NotificationRow(
                                 notification = notification,
                                 onTap = { viewModel.markAsRead(notification.id) }

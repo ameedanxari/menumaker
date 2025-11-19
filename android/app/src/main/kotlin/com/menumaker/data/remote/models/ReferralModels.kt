@@ -11,6 +11,9 @@ enum class ReferralStatus(val value: String) {
     @SerializedName("completed")
     COMPLETED("completed"),
 
+    @SerializedName("credited")
+    CREDITED("credited"),
+
     @SerializedName("expired")
     EXPIRED("expired");
 
@@ -18,6 +21,7 @@ enum class ReferralStatus(val value: String) {
         get() = when (this) {
             PENDING -> "Pending"
             COMPLETED -> "Completed"
+            CREDITED -> "Credited"
             EXPIRED -> "Expired"
         }
 }
@@ -85,6 +89,9 @@ data class ReferralHistoryDto(
 
     val rewardAmountCents: Int
         get() = rewardCents
+
+    val createdAt: String
+        get() = referredAt
 }
 
 data class ReferralHistoryResponse(
