@@ -220,4 +220,14 @@ interface ApiService {
 
     @PATCH("profile")
     suspend fun updateUserProfile(@Body updates: Map<String, Any>): Response<AuthResponse>
+
+    // Analytics
+    @GET("businesses/{businessId}/analytics")
+    suspend fun getAnalytics(
+        @Path("businessId") businessId: String,
+        @Query("period") period: String
+    ): Response<AnalyticsResponse>
+
+    @POST("analytics/export")
+    suspend fun exportAnalytics(@Body request: ExportRequest): Response<Unit>
 }
