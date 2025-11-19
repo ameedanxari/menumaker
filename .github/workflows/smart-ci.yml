@@ -90,6 +90,14 @@ jobs:
         working-directory: ./backend
         run: npm ci
 
+      - name: Clear Jest cache
+        working-directory: ./backend
+        run: |
+          npx jest --clearCache || true
+          rm -rf .jest-cache || true
+          rm -rf dist || true
+          rm -rf node_modules/.cache || true
+
       - name: Run tests with coverage
         working-directory: ./backend
         env:
