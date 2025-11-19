@@ -943,11 +943,11 @@ describe('ReviewService', () => {
       const mockReviewHelpfulRepo = {
         findOne: jest.fn().mockResolvedValue(null as any),
         create: jest.fn().mockReturnValue({ review_id: 'review-123', user_id: 'user-123' }),
-        save: jest.fn().mockResolvedValue({ id: 'helpful-1', review_id: 'review-123', user_id: 'user-123' }),
+        save: jest.fn().mockResolvedValue({ id: 'helpful-1', review_id: 'review-123', user_id: 'user-123' } as any),
       } as any;
 
       AppDataSource.getRepository = jest.fn().mockReturnValue(mockReviewHelpfulRepo) as any;
-      mockReviewRepository.increment = jest.fn().mockResolvedValue({ affected: 1 });
+      mockReviewRepository.increment = jest.fn().mockResolvedValue({ affected: 1 } as any) as any;
 
       await reviewService.markAsHelpful('review-123', 'user-123');
 
@@ -964,8 +964,8 @@ describe('ReviewService', () => {
 
     it('should throw error if already marked helpful', async () => {
       const mockReviewHelpfulRepo = {
-        findOne: jest.fn().mockResolvedValue({ id: 'existing-helpful' }),
-      };
+        findOne: jest.fn().mockResolvedValue({ id: 'existing-helpful' } as any),
+      } as any;
 
       AppDataSource.getRepository = jest.fn().mockReturnValue(mockReviewHelpfulRepo) as any;
 
@@ -979,12 +979,12 @@ describe('ReviewService', () => {
     it('should remove helpful mark', async () => {
       const mockHelpful = { id: 'helpful-1', review_id: 'review-123', user_id: 'user-123' };
       const mockReviewHelpfulRepo = {
-        findOne: jest.fn().mockResolvedValue(mockHelpful),
-        remove: jest.fn().mockResolvedValue(mockHelpful),
-      };
+        findOne: jest.fn().mockResolvedValue(mockHelpful as any),
+        remove: jest.fn().mockResolvedValue(mockHelpful as any),
+      } as any;
 
       AppDataSource.getRepository = jest.fn().mockReturnValue(mockReviewHelpfulRepo) as any;
-      mockReviewRepository.decrement = jest.fn().mockResolvedValue({ affected: 1 });
+      mockReviewRepository.decrement = jest.fn().mockResolvedValue({ affected: 1 } as any) as any;
 
       await reviewService.removeHelpful('review-123', 'user-123');
 
