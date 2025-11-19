@@ -435,10 +435,12 @@ describe('OrderService', () => {
       mockDishRepository.findOne.mockResolvedValue(mockDish);
 
       const orderData = {
-        business_id: 'business-123',
-        customer_id: 'customer-123',
+        menu_id: 'menu-123',
+        customer_name: 'John Doe',
+        customer_phone: '+1234567890',
+        delivery_type: 'delivery' as const,
+        delivery_address: '123 Main St',
         items: [{ dish_id: 'dish-1', quantity: 1 }], // Only 10 Rs
-        order_type: 'delivery' as const,
       };
 
       await expect(orderService.createOrder(orderData)).rejects.toThrow(
@@ -495,8 +497,8 @@ describe('OrderService', () => {
         orderBy: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue(mockOrders),
-      };
+        getMany: jest.fn().mockResolvedValue(mockOrders as any),
+      } as any;
 
       mockOrderRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
@@ -517,8 +519,8 @@ describe('OrderService', () => {
         orderBy: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue([]),
-      };
+        getMany: jest.fn().mockResolvedValue([] as any),
+      } as any;
 
       mockOrderRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
@@ -535,8 +537,8 @@ describe('OrderService', () => {
         orderBy: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue([]),
-      };
+        getMany: jest.fn().mockResolvedValue([] as any),
+      } as any;
 
       mockOrderRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
@@ -554,8 +556,8 @@ describe('OrderService', () => {
         orderBy: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue([]),
-      };
+        getMany: jest.fn().mockResolvedValue([] as any),
+      } as any;
 
       mockOrderRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 

@@ -941,10 +941,10 @@ describe('ReviewService', () => {
   describe('markAsHelpful', () => {
     it('should mark review as helpful', async () => {
       const mockReviewHelpfulRepo = {
-        findOne: jest.fn().mockResolvedValue(null),
+        findOne: jest.fn().mockResolvedValue(null as any),
         create: jest.fn().mockReturnValue({ review_id: 'review-123', user_id: 'user-123' }),
         save: jest.fn().mockResolvedValue({ id: 'helpful-1', review_id: 'review-123', user_id: 'user-123' }),
-      };
+      } as any;
 
       AppDataSource.getRepository = jest.fn().mockReturnValue(mockReviewHelpfulRepo) as any;
       mockReviewRepository.increment = jest.fn().mockResolvedValue({ affected: 1 });

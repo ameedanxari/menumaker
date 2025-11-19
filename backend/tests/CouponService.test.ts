@@ -40,11 +40,12 @@ describe('CouponService', () => {
     };
 
     AppDataSource.getRepository = jest.fn().mockImplementation((entity: any) => {
-      if (entity === Coupon) return mockCouponRepository;
-      if (entity === CouponUsage) return mockUsageRepository;
-      if (entity.name === 'AutomaticPromotion') return mockPromotionRepository;
-      if (entity.name === 'Order') return mockOrderRepository;
-      return {};
+      const entityName = entity?.name || entity;
+      if (entity === Coupon || entityName === 'Coupon') return mockCouponRepository;
+      if (entity === CouponUsage || entityName === 'CouponUsage') return mockUsageRepository;
+      if (entityName === 'AutomaticPromotion') return mockPromotionRepository;
+      if (entityName === 'Order') return mockOrderRepository;
+      return mockCouponRepository; // Default to coupon repository for unknown entities
     }) as any;
 
     couponService = new CouponService();
