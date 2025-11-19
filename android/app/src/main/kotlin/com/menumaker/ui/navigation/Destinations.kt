@@ -4,6 +4,7 @@ sealed class Destination(val route: String) {
     // Auth
     object Login : Destination("login")
     object Signup : Destination("signup")
+    object ForgotPassword : Destination("forgot-password")
 
     // Seller - Core
     object SellerDashboard : Destination("seller/dashboard")
@@ -29,11 +30,32 @@ sealed class Destination(val route: String) {
     object SellerDetail : Destination("seller/{sellerId}") {
         fun createRoute(sellerId: String) = "seller/$sellerId"
     }
+    object SellerMenu : Destination("seller/{sellerId}/menu") {
+        fun createRoute(sellerId: String) = "seller/$sellerId/menu"
+    }
     object Cart : Destination("cart")
     object Checkout : Destination("checkout")
+    object Payment : Destination("payment/{total}") {
+        fun createRoute(total: Double) = "payment/$total"
+    }
+    object MyOrders : Destination("my-orders")
+    object OrderTracking : Destination("order/{orderId}/track") {
+        fun createRoute(orderId: String) = "order/$orderId/track"
+    }
 
     // Shared
     object Profile : Destination("profile")
     object Settings : Destination("settings")
     object Referrals : Destination("referrals")
+    object Favorites : Destination("favorites")
+    object Notifications : Destination("notifications")
+    object CustomerReviews : Destination("review/{businessId}") {
+        fun createRoute(businessId: String, orderId: String? = null): String {
+            return if (orderId != null) {
+                "review/$businessId?orderId=$orderId"
+            } else {
+                "review/$businessId"
+            }
+        }
+    }
 }

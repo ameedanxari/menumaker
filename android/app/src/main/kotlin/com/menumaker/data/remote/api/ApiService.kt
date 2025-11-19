@@ -19,6 +19,9 @@ interface ApiService {
     @POST("auth/logout")
     suspend fun logout(): Response<Unit>
 
+    @POST("auth/forgot-password")
+    suspend fun sendPasswordReset(@Body request: Map<String, String>): Response<Unit>
+
     // Businesses
     @GET("businesses")
     suspend fun getBusinesses(): Response<BusinessListResponse>
@@ -154,6 +157,12 @@ interface ApiService {
     @GET("referrals/stats")
     suspend fun getReferralStats(): Response<ReferralStatsResponse>
 
+    @GET("referrals/history")
+    suspend fun getReferralHistory(): Response<ReferralHistoryResponse>
+
+    @POST("referrals/apply")
+    suspend fun applyReferralCode(@Body request: Map<String, String>): Response<ApplyReferralResponse>
+
     // Integrations
     @GET("integrations")
     suspend fun getIntegrations(
@@ -168,4 +177,63 @@ interface ApiService {
 
     @DELETE("integrations/{id}")
     suspend fun disconnectIntegration(@Path("id") id: String): Response<Unit>
+
+    // Favorites
+    @GET("favorites")
+    suspend fun getFavorites(): Response<FavoriteListResponse>
+
+    @POST("favorites")
+    suspend fun addFavorite(@Body request: AddFavoriteRequest): Response<FavoriteResponse>
+
+    @DELETE("favorites/{id}")
+    suspend fun removeFavorite(@Path("id") id: String): Response<Unit>
+
+    @DELETE("favorites/business/{businessId}")
+    suspend fun removeFavoriteByBusinessId(@Path("businessId") businessId: String): Response<Unit>
+
+    // Notifications
+    @GET("notifications")
+    suspend fun getNotifications(): Response<NotificationListResponse>
+
+    @PATCH("notifications/{id}/read")
+    suspend fun markNotificationAsRead(@Path("id") id: String): Response<NotificationResponse>
+
+    @POST("notifications/read-all")
+    suspend fun markAllNotificationsAsRead(): Response<Unit>
+
+    // Menus
+    @GET("menus")
+    suspend fun getMenus(@Query("business_id") businessId: String): Response<MenuListResponse>
+
+    @GET("menus/{id}")
+    suspend fun getMenuById(@Path("id") id: String): Response<MenuResponse>
+
+    @POST("menus")
+    suspend fun createMenu(@Body request: CreateMenuRequest): Response<MenuResponse>
+
+    @PATCH("menus/{id}")
+    suspend fun updateMenu(
+        @Path("id") id: String,
+        @Body request: UpdateMenuRequest
+    ): Response<MenuResponse>
+
+    @DELETE("menus/{id}")
+    suspend fun deleteMenu(@Path("id") id: String): Response<Unit>
+
+    // User Profile
+    @GET("profile")
+    suspend fun getUserProfile(): Response<AuthResponse>
+
+    @PATCH("profile")
+    suspend fun updateUserProfile(@Body updates: Map<String, Any>): Response<AuthResponse>
+
+    // Analytics
+    @GET("businesses/{businessId}/analytics")
+    suspend fun getAnalytics(
+        @Path("businessId") businessId: String,
+        @Query("period") period: String
+    ): Response<AnalyticsResponse>
+
+    @POST("analytics/export")
+    suspend fun exportAnalytics(@Body request: ExportRequest): Response<Unit>
 }

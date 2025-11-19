@@ -15,6 +15,7 @@ interface AuthRepository {
     fun signup(email: String, password: String, name: String): Flow<Resource<AuthData>>
     fun logout(): Flow<Resource<Unit>>
     fun isAuthenticated(): Flow<Boolean>
+    fun sendPasswordReset(email: String): Flow<Resource<Unit>>
 }
 
 class AuthRepositoryImpl @Inject constructor(
@@ -74,6 +75,20 @@ class AuthRepositoryImpl @Inject constructor(
     override fun isAuthenticated(): Flow<Boolean> = flow {
         tokenDataStore.getAccessToken().collect { token ->
             emit(!token.isNullOrEmpty())
+        }
+    }
+
+    override fun sendPasswordReset(email: String): Flow<Resource<Unit>> = flow {
+        emit(Resource.Loading)
+        try {
+            val response = apiService.sendPasswordReset(mapOf("email" to email))
+            if (response.isSuccessful) {
+                emit(Resource.Success(Unit))
+            } else {
+                emit(Resource.Error(response.message() ?: "Failed to send password reset email"))
+            }
+        } catch (e: Exception) {
+            emit(Resource.Error(e.message ?: "An error occurred", e))
         }
     }
 }

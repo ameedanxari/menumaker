@@ -102,4 +102,16 @@ object RepositoryModule {
     fun provideIntegrationRepository(
         apiService: ApiService
     ): IntegrationRepository = IntegrationRepositoryImpl(apiService)
+
+    @Provides
+    @Singleton
+    fun provideFavoriteRepository(
+        apiService: ApiService
+    ): FavoriteRepository = FavoriteRepositoryImpl(apiService)
+
+    @Provides
+    @Singleton
+    fun provideNotificationRepository(
+        apiService: ApiService
+    ): NotificationRepository = NotificationRepositoryImpl(apiService)
 }

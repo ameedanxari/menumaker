@@ -40,9 +40,12 @@ class AuthViewModelTest {
         id = "user123",
         email = "test@example.com",
         name = "Test User",
-        role = "customer",
         phone = "+919876543210",
-        createdAt = "2025-01-01T00:00:00Z"
+        address = null,
+        photoUrl = null,
+        role = "customer",
+        createdAt = "2025-01-01T00:00:00Z",
+        updatedAt = null
     )
 
     private val mockAuthData = AuthData(

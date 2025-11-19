@@ -4,7 +4,7 @@ import com.menumaker.data.common.Resource
 import com.menumaker.data.local.db.dao.BusinessDao
 import com.menumaker.data.local.entities.BusinessEntity
 import com.menumaker.data.remote.api.ApiService
-import com.menumaker.data.remote.models.BusinessDto
+import com.menumaker.data.remote.models.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -14,6 +14,9 @@ interface BusinessRepository {
     fun getBusinesses(): Flow<Resource<List<BusinessDto>>>
     fun getBusinessById(id: String): Flow<Resource<BusinessDto>>
     fun getCachedBusinesses(): Flow<List<BusinessEntity>>
+    fun updateBusiness(businessId: String, updates: Map<String, Any>): Flow<Resource<BusinessDto>>
+    fun getAnalytics(businessId: String, period: String): Flow<Resource<AnalyticsResponseData>>
+    fun exportAnalytics(request: ExportRequest): Flow<Resource<Unit>>
 }
 
 class BusinessRepositoryImpl @Inject constructor(
@@ -64,6 +67,51 @@ class BusinessRepositoryImpl @Inject constructor(
 
     override fun getCachedBusinesses(): Flow<List<BusinessEntity>> {
         return businessDao.getAllBusinesses()
+    }
+
+    override fun updateBusiness(businessId: String, updates: Map<String, Any>): Flow<Resource<BusinessDto>> = flow {
+        emit(Resource.Loading)
+        try {
+            val response = apiService.updateBusiness(businessId, updates)
+            if (response.isSuccessful && response.body() != null) {
+                val business = response.body()!!.data.business
+                businessDao.insertBusiness(business.toEntity())
+                emit(Resource.Success(business))
+            } else {
+                emit(Resource.Error(response.message() ?: "Failed to update business"))
+            }
+        } catch (e: Exception) {
+            emit(Resource.Error(e.message ?: "An error occurred", e))
+        }
+    }
+
+    override fun getAnalytics(businessId: String, period: String): Flow<Resource<AnalyticsResponseData>> = flow {
+        emit(Resource.Loading)
+        try {
+            val response = apiService.getAnalytics(businessId, period)
+            if (response.isSuccessful && response.body() != null) {
+                val analyticsData = response.body()!!.data
+                emit(Resource.Success(analyticsData))
+            } else {
+                emit(Resource.Error(response.message() ?: "Failed to load analytics"))
+            }
+        } catch (e: Exception) {
+            emit(Resource.Error(e.message ?: "An error occurred", e))
+        }
+    }
+
+    override fun exportAnalytics(request: ExportRequest): Flow<Resource<Unit>> = flow {
+        emit(Resource.Loading)
+        try {
+            val response = apiService.exportAnalytics(request)
+            if (response.isSuccessful) {
+                emit(Resource.Success(Unit))
+            } else {
+                emit(Resource.Error(response.message() ?: "Failed to export analytics"))
+            }
+        } catch (e: Exception) {
+            emit(Resource.Error(e.message ?: "An error occurred", e))
+        }
     }
 
     private fun BusinessDto.toEntity() = BusinessEntity(

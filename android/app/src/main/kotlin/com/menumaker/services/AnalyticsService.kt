@@ -60,4 +60,15 @@ class AnalyticsService @Inject constructor(
             FirebaseAnalytics.Param.ITEM_NAME to itemName
         ))
     }
+
+    // Convenience methods for ViewModels
+    fun track(eventName: String, params: Map<String, Any> = emptyMap()) {
+        logEvent(eventName, params)
+    }
+
+    fun trackScreen(screenName: String) {
+        logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, mapOf(
+            FirebaseAnalytics.Param.SCREEN_NAME to screenName
+        ))
+    }
 }
