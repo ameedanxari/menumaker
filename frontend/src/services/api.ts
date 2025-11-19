@@ -550,6 +550,39 @@ class ApiClient {
     const response = await this.client.post(`/reviews/${reviewId}/report`, { reason });
     return response.data;
   }
+
+  // Analytics endpoints
+  async getComprehensiveAnalytics(params: {
+    businessId: string;
+    period?: 'today' | 'week' | 'month' | 'custom';
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    queryParams.append('businessId', params.businessId);
+    if (params.period) queryParams.append('period', params.period);
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
+
+    const response = await this.client.get(`/reports/analytics?${queryParams.toString()}`);
+    return response.data;
+  }
+
+  async exportOrders(params: {
+    businessId: string;
+    startDate?: string;
+    endDate?: string;
+    status?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    queryParams.append('businessId', params.businessId);
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
+    if (params.status) queryParams.append('status', params.status);
+
+    const response = await this.client.get(`/reports/orders/export?${queryParams.toString()}`);
+    return response.data;
+  }
 }
 
 export const api = new ApiClient();
