@@ -6,9 +6,10 @@ import { AppDataSource } from '../../src/config/database.js';
 // Mock dependencies
 jest.mock('../../src/config/database.js');
 jest.mock('../../src/middleware/auth.js', () => ({
-  authenticate: jest.fn().mockImplementation(async (request: any, reply: any) => {
+  authenticate: async (request: any, _reply: any) => {
+    // Mock authenticated user - no auth check, just set the user
     request.user = { userId: 'test-user-id' };
-  }),
+  },
 }));
 
 describe('Cart Routes', () => {

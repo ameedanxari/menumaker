@@ -497,7 +497,7 @@ describe('OrderService', () => {
         orderBy: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue(mockOrders as any),
+        getMany: jest.fn().mockResolvedValue(mockOrders as any) as any,
       } as any;
 
       mockOrderRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
@@ -519,7 +519,7 @@ describe('OrderService', () => {
         orderBy: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue([] as any),
+        getMany: jest.fn().mockResolvedValue([] as any) as any,
       } as any;
 
       mockOrderRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
@@ -537,7 +537,7 @@ describe('OrderService', () => {
         orderBy: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue([] as any),
+        getMany: jest.fn().mockResolvedValue([] as any) as any,
       } as any;
 
       mockOrderRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
@@ -556,7 +556,7 @@ describe('OrderService', () => {
         orderBy: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue([] as any),
+        getMany: jest.fn().mockResolvedValue([] as any) as any,
       } as any;
 
       mockOrderRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
