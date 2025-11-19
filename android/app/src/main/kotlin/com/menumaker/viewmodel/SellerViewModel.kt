@@ -317,7 +317,7 @@ class SellerViewModel @Inject constructor(
      */
     fun markOrderAsReady(orderId: String) {
         viewModelScope.launch {
-            orderRepository.updateOrderStatus(orderId, mapOf("status" to "ready")).collect { result ->
+            orderRepository.updateOrderStatus(orderId, "ready").collect { result ->
                 when (result) {
                     is Resource.Success -> {
                         analyticsService.track("order_status_changed", mapOf(
@@ -340,7 +340,7 @@ class SellerViewModel @Inject constructor(
      */
     fun markOrderAsFulfilled(orderId: String) {
         viewModelScope.launch {
-            orderRepository.updateOrderStatus(orderId, mapOf("status" to "fulfilled")).collect { result ->
+            orderRepository.updateOrderStatus(orderId, "fulfilled").collect { result ->
                 when (result) {
                     is Resource.Success -> {
                         analyticsService.track("order_completed", mapOf("order_id" to orderId))

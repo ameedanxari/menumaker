@@ -161,8 +161,7 @@ fun SellerMenuScreen(
                                             businessId = businessId,
                                             dishName = dish.name,
                                             priceCents = dish.priceCents,
-                                            quantity = 1,
-                                            imageUrl = dish.imageUrl
+                                            quantity = 1
                                         )
                                         cartViewModel.addToCart(cartItem)
                                     }
@@ -210,7 +209,7 @@ fun SellerMenuScreen(
 @Composable
 fun MenuItemCard(
     dish: DishDto,
-    onAddToCart: () -> Void
+    onAddToCart: () -> Unit
 ) {
     var showAddedFeedback by remember { mutableStateOf(false) }
 

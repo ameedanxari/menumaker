@@ -124,13 +124,13 @@ fun ReviewsScreen(
             // Submit Button
             Button(
                 onClick = {
-                    viewModel.createReview(
+                    viewModel.submitReview(
                         businessId = businessId,
                         orderId = orderId,
                         customerName = customerName,
                         rating = rating,
-                        comment = comment.ifEmpty { null },
-                        imageUris = selectedImageUris.ifEmpty { null }
+                        comment = comment.ifEmpty { "" },
+                        imageUris = selectedImageUris
                     )
                 },
                 modifier = Modifier
