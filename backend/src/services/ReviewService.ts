@@ -1,6 +1,7 @@
 import { Repository, Between, MoreThan, LessThan } from 'typeorm';
 import { AppDataSource } from '../config/database.js';
 import { Review, ReviewResponse, ReviewStatus } from '../models/Review.js';
+import { ReviewHelpful } from '../models/ReviewHelpful.js';
 import { Order } from '../models/Order.js';
 import { Business } from '../models/Business.js';
 import { User } from '../models/User.js';
@@ -517,5 +518,83 @@ export class ReviewService {
     }
 
     return { can_review: true };
+  }
+
+  async markAsHelpful(reviewId: string, userId: string): Promise<void> {
+    const reviewHelpfulRepo = AppDataSource.getRepository(ReviewHelpful);
+
+    // Check if already marked
+    const existing = await reviewHelpfulRepo.findOne({
+      where: {
+        review_id: reviewId,
+        user_id: userId,
+      },
+    });
+
+    if (existing) {
+      throw new Error('You have already marked this review as helpful');
+    }
+
+    // Add helpful mark
+    const helpful = reviewHelpfulRepo.create({
+      review_id: reviewId,
+      user_id: userId,
+    });
+
+    await reviewHelpfulRepo.save(helpful);
+
+    // Increment helpful count
+    await this.reviewRepository.increment({ id: reviewId }, 'helpful_count', 1);
+  }
+
+  async removeHelpful(reviewId: string, userId: string): Promise<void> {
+    const reviewHelpfulRepo = AppDataSource.getRepository(ReviewHelpful);
+
+    const helpful = await reviewHelpfulRepo.findOne({
+      where: {
+        review_id: reviewId,
+        user_id: userId,
+      },
+    });
+
+    if (helpful) {
+      await reviewHelpfulRepo.remove(helpful);
+
+      // Decrement helpful count
+      await this.reviewRepository.decrement({ id: reviewId }, 'helpful_count', 1);
+    }
+  }
+
+  async reportReview(reviewId: string, userId: string, reason?: string): Promise<void> {
+    const review = await this.reviewRepository.findOne({
+      where: { id: reviewId },
+    });
+
+    if (!review) {
+      throw new Error('Review not found');
+    }
+
+    // Increment report count
+    review.report_count += 1;
+
+    // Store report reason in metadata
+    if (!review.metadata) {
+      review.metadata = {};
+    }
+    if (!review.metadata.reports) {
+      review.metadata.reports = [];
+    }
+    review.metadata.reports.push({
+      user_id: userId,
+      reason,
+      reported_at: new Date().toISOString(),
+    });
+
+    await this.reviewRepository.save(review);
+
+    // TODO: If report count exceeds threshold (e.g., 5), auto-hide or flag for admin review
+    if (review.report_count >= 5) {
+      console.log(`Review ${reviewId} has been reported ${review.report_count} times`);
+    }
   }
 }

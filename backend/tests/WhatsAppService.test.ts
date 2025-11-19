@@ -47,7 +47,7 @@ describe('WhatsAppService', () => {
       process.env.TWILIO_ACCOUNT_SID = 'test-sid';
       process.env.TWILIO_AUTH_TOKEN = 'test-token';
 
-      mockCreate.mockResolvedValue({ sid: 'msg-123' });
+      mockCreate.mockResolvedValue({ sid: 'msg-123' } as any);
 
       const result = await WhatsAppService.sendMessage('+919876543210', 'Test message');
 
@@ -60,7 +60,7 @@ describe('WhatsAppService', () => {
       process.env.TWILIO_ACCOUNT_SID = 'test-sid';
       process.env.TWILIO_AUTH_TOKEN = 'test-token';
 
-      mockCreate.mockResolvedValue({ sid: 'msg-123' });
+      mockCreate.mockResolvedValue({ sid: 'msg-123' } as any);
 
       const result = await WhatsAppService.sendMessage('whatsapp:+919876543210', 'Test message');
 
@@ -87,7 +87,7 @@ describe('WhatsAppService', () => {
       process.env.TWILIO_ACCOUNT_SID = 'test-sid';
       process.env.TWILIO_AUTH_TOKEN = 'test-token';
 
-      mockCreate.mockResolvedValue({ sid: 'msg-123' });
+      mockCreate.mockResolvedValue({ sid: 'msg-123' } as any);
 
       const result = await WhatsAppService.sendMessageWithRetry('+919876543210', 'Test message');
 
@@ -101,8 +101,8 @@ describe('WhatsAppService', () => {
       process.env.TWILIO_AUTH_TOKEN = 'test-token';
 
       mockCreate
-        .mockRejectedValueOnce(new Error('Network error'))
-        .mockResolvedValueOnce({ sid: 'msg-123' });
+        .mockRejectedValueOnce(new Error('Network error') as any)
+        .mockResolvedValueOnce({ sid: 'msg-123' } as any);
 
       const result = await WhatsAppService.sendMessageWithRetry(
         '+919876543210',
@@ -120,7 +120,7 @@ describe('WhatsAppService', () => {
       process.env.TWILIO_ACCOUNT_SID = 'test-sid';
       process.env.TWILIO_AUTH_TOKEN = 'test-token';
 
-      mockCreate.mockRejectedValue(new Error('Persistent error'));
+      mockCreate.mockRejectedValue(new Error('Persistent error') as any);
 
       const result = await WhatsAppService.sendMessageWithRetry(
         '+919876543210',
@@ -164,10 +164,10 @@ describe('WhatsAppService', () => {
 
       const { AppDataSource } = await import('../src/config/database');
       (AppDataSource.getRepository as jest.Mock).mockReturnValue({
-        findOne: jest.fn().mockResolvedValue(mockBusiness) as any,
+        findOne: jest.fn().mockResolvedValue(mockBusiness as any) as any,
       });
 
-      mockCreate.mockResolvedValue({ sid: 'msg-123' });
+      mockCreate.mockResolvedValue({ sid: 'msg-123' } as any);
 
       await WhatsAppService.notifySellerNewOrder(mockOrder as any);
 
@@ -192,7 +192,7 @@ describe('WhatsAppService', () => {
 
       const { AppDataSource } = await import('../src/config/database');
       (AppDataSource.getRepository as jest.Mock).mockReturnValue({
-        findOne: jest.fn().mockResolvedValue(mockBusiness) as any,
+        findOne: jest.fn().mockResolvedValue(mockBusiness as any) as any,
       });
 
       await WhatsAppService.notifySellerNewOrder(mockOrder as any);
@@ -208,7 +208,7 @@ describe('WhatsAppService', () => {
 
       const { AppDataSource } = await import('../src/config/database');
       (AppDataSource.getRepository as jest.Mock).mockReturnValue({
-        findOne: jest.fn().mockResolvedValue(null),
+        findOne: jest.fn().mockResolvedValue(null as any),
       });
 
       await WhatsAppService.notifySellerNewOrder(mockOrder as any);
@@ -234,7 +234,7 @@ describe('WhatsAppService', () => {
 
       const { AppDataSource } = await import('../src/config/database');
       (AppDataSource.getRepository as jest.Mock).mockReturnValue({
-        findOne: jest.fn().mockResolvedValue(mockBusiness) as any,
+        findOne: jest.fn().mockResolvedValue(mockBusiness as any) as any,
       });
 
       await WhatsAppService.notifySellerNewOrder(mockOrder as any);
@@ -266,10 +266,10 @@ describe('WhatsAppService', () => {
 
       const { AppDataSource } = await import('../src/config/database');
       (AppDataSource.getRepository as jest.Mock).mockReturnValue({
-        findOne: jest.fn().mockResolvedValue(mockBusiness) as any,
+        findOne: jest.fn().mockResolvedValue(mockBusiness as any) as any,
       });
 
-      mockCreate.mockResolvedValue({ sid: 'msg-123' });
+      mockCreate.mockResolvedValue({ sid: 'msg-123' } as any);
 
       await WhatsAppService.notifyCustomerOrderStatus(mockOrder as any, 'confirmed');
 
@@ -294,7 +294,7 @@ describe('WhatsAppService', () => {
 
       const { AppDataSource } = await import('../src/config/database');
       (AppDataSource.getRepository as jest.Mock).mockReturnValue({
-        findOne: jest.fn().mockResolvedValue(mockBusiness) as any,
+        findOne: jest.fn().mockResolvedValue(mockBusiness as any) as any,
       });
 
       await WhatsAppService.notifyCustomerOrderStatus(mockOrder as any, 'confirmed');
@@ -334,7 +334,7 @@ describe('WhatsAppService', () => {
 
       const { AppDataSource } = await import('../src/config/database');
       (AppDataSource.getRepository as jest.Mock).mockReturnValue({
-        findOne: jest.fn().mockResolvedValue(mockBusiness) as any,
+        findOne: jest.fn().mockResolvedValue(mockBusiness as any) as any,
       });
 
       mockCreate.mockImplementation((params: any) => {
@@ -371,7 +371,7 @@ describe('WhatsAppService', () => {
 
       const { AppDataSource } = await import('../src/config/database');
       (AppDataSource.getRepository as jest.Mock).mockReturnValue({
-        findOne: jest.fn().mockResolvedValue(mockBusiness) as any,
+        findOne: jest.fn().mockResolvedValue(mockBusiness as any) as any,
       });
 
       mockCreate.mockImplementation((params: any) => {
@@ -394,7 +394,7 @@ describe('WhatsAppService', () => {
 
       const { AppDataSource } = await import('../src/config/database');
       (AppDataSource.getRepository as jest.Mock).mockReturnValue({
-        findOne: jest.fn().mockRejectedValue(new Error('Database error')) as any,
+        findOne: jest.fn().mockRejectedValue(new Error('Database error') as any) as any,
       });
 
       // Should not throw
@@ -417,7 +417,7 @@ describe('WhatsAppService', () => {
 
       const { AppDataSource } = await import('../src/config/database');
       (AppDataSource.getRepository as jest.Mock).mockReturnValue({
-        findOne: jest.fn().mockResolvedValue(mockBusiness) as any,
+        findOne: jest.fn().mockResolvedValue(mockBusiness as any) as any,
       });
 
       await WhatsAppService.notifySellerNewOrder(mockOrder as any);

@@ -77,4 +77,43 @@ export async function reportRoutes(fastify: FastifyInstance): Promise<void> {
       data: { stats },
     });
   });
+
+  // GET /reports/analytics - Get comprehensive analytics (authenticated, owner only)
+  fastify.get('/analytics', {
+    preHandler: authenticate,
+  }, async (request, reply) => {
+    const { businessId, period, startDate, endDate } = request.query as {
+      businessId: string;
+      period?: 'today' | 'week' | 'month' | 'custom';
+      startDate?: string;
+      endDate?: string;
+    };
+
+    if (!businessId) {
+      reply.status(400).send({
+        success: false,
+        error: {
+          code: 'MISSING_BUSINESS_ID',
+          message: 'businessId query parameter is required',
+        },
+      });
+      return;
+    }
+
+    const start = startDate ? new Date(startDate) : undefined;
+    const end = endDate ? new Date(endDate) : undefined;
+
+    const data = await reportService.getComprehensiveAnalytics(
+      businessId,
+      request.user!.userId,
+      period || 'week',
+      start,
+      end
+    );
+
+    reply.send({
+      success: true,
+      data,
+    });
+  });
 }

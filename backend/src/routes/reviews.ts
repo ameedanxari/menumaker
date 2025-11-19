@@ -586,4 +586,100 @@ export async function reviewRoutes(fastify: FastifyInstance): Promise<void> {
       });
     }
   );
+
+  /**
+   * POST /reviews/:id/helpful
+   * Mark review as helpful
+   */
+  fastify.post<{
+    Params: { id: string };
+  }>(
+    '/:id/helpful',
+    {
+      preHandler: authenticate,
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+
+      try {
+        await reviewService.markAsHelpful(id, request.user!.userId);
+
+        reply.send({
+          success: true,
+          message: 'Review marked as helpful',
+        });
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('already marked')) {
+          return reply.status(409).send({
+            success: false,
+            error: {
+              code: 'ALREADY_MARKED_HELPFUL',
+              message: error.message,
+            },
+          });
+        }
+        throw error;
+      }
+    }
+  );
+
+  /**
+   * DELETE /reviews/:id/helpful
+   * Remove helpful mark from review
+   */
+  fastify.delete<{
+    Params: { id: string };
+  }>(
+    '/:id/helpful',
+    {
+      preHandler: authenticate,
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+
+      await reviewService.removeHelpful(id, request.user!.userId);
+
+      reply.send({
+        success: true,
+        message: 'Helpful mark removed',
+      });
+    }
+  );
+
+  /**
+   * POST /reviews/:id/report
+   * Report review as inappropriate
+   */
+  fastify.post<{
+    Params: { id: string };
+  }>(
+    '/:id/report',
+    {
+      preHandler: authenticate,
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+      const { reason } = request.body as { reason?: string };
+
+      try {
+        await reviewService.reportReview(id, request.user!.userId, reason);
+
+        reply.send({
+          success: true,
+          message: 'Review reported successfully',
+        });
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('already reported')) {
+          return reply.status(409).send({
+            success: false,
+            error: {
+              code: 'ALREADY_REPORTED',
+              message: error.message,
+            },
+          });
+        }
+        throw error;
+      }
+    }
+  );
 }

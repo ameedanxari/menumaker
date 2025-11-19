@@ -46,7 +46,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          # Temporarily disable npm cache to ensure fresh install
+          # cache: 'npm'
 
       - name: Install root dependencies
         run: npm ci
@@ -54,6 +55,14 @@ jobs:
       - name: Install backend dependencies
         working-directory: ./backend
         run: npm ci
+
+      - name: Clear Jest cache
+        working-directory: ./backend
+        run: |
+          npx jest --clearCache || true
+          rm -rf .jest-cache || true
+          rm -rf dist || true
+          rm -rf node_modules/.cache || true
 
       - name: Lint backend code
         working-directory: ./backend

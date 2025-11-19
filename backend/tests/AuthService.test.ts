@@ -160,4 +160,223 @@ describe('AuthService', () => {
       await expect(authService.getCurrentUser('nonexistent-id')).rejects.toThrow('User not found');
     });
   });
+
+  describe('refreshTokens', () => {
+    it('should generate new tokens for valid refresh token', async () => {
+      const mockUser = {
+        id: 'user-id',
+        email: 'test@example.com',
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+
+      // Mock verifyToken to return a valid payload
+      const refreshToken = 'valid-refresh-token';
+
+      const result = await authService.refreshTokens(refreshToken);
+
+      expect(result).toHaveProperty('accessToken');
+      expect(result).toHaveProperty('refreshToken');
+    });
+
+    it('should throw error for invalid refresh token', async () => {
+      const invalidToken = 'invalid-token';
+
+      await expect(authService.refreshTokens(invalidToken)).rejects.toThrow('Invalid refresh token');
+    });
+
+    it('should throw error if user no longer exists', async () => {
+      mockUserRepository.findOne.mockResolvedValue(null);
+
+      const refreshToken = 'valid-refresh-token';
+
+      await expect(authService.refreshTokens(refreshToken)).rejects.toThrow('Invalid refresh token');
+    });
+  });
+
+  describe('updateProfile', () => {
+    it('should update user name', async () => {
+      const mockUser = {
+        id: 'user-id',
+        email: 'test@example.com',
+        full_name: 'Old Name',
+        phone: null,
+        address: null,
+      };
+
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockUserRepository.save.mockResolvedValue({ ...mockUser, full_name: 'New Name' });
+
+      const result = await authService.updateProfile('user-id', { name: 'New Name' });
+
+      expect(mockUserRepository.save).toHaveBeenCalled();
+      expect(result.full_name).toBe('New Name');
+    });
+
+    it('should update user phone', async () => {
+      const mockUser = {
+        id: 'user-id',
+        email: 'test@example.com',
+        phone: null,
+      };
+
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockUserRepository.save.mockResolvedValue({ ...mockUser, phone: '+1234567890' });
+
+      const result = await authService.updateProfile('user-id', { phone: '+1234567890' });
+
+      expect(mockUserRepository.save).toHaveBeenCalled();
+      expect(result.phone).toBe('+1234567890');
+    });
+
+    it('should update user address', async () => {
+      const mockUser = {
+        id: 'user-id',
+        email: 'test@example.com',
+        address: null,
+      };
+
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockUserRepository.save.mockResolvedValue({ ...mockUser, address: '123 Main St' });
+
+      const result = await authService.updateProfile('user-id', { address: '123 Main St' });
+
+      expect(mockUserRepository.save).toHaveBeenCalled();
+      expect(result.address).toBe('123 Main St');
+    });
+
+    it('should update multiple fields at once', async () => {
+      const mockUser = {
+        id: 'user-id',
+        email: 'test@example.com',
+        full_name: 'Old Name',
+        phone: null,
+        address: null,
+      };
+
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockUserRepository.save.mockResolvedValue({
+        ...mockUser,
+        full_name: 'New Name',
+        phone: '+1234567890',
+        address: '123 Main St',
+      });
+
+      const result = await authService.updateProfile('user-id', {
+        name: 'New Name',
+        phone: '+1234567890',
+        address: '123 Main St',
+      });
+
+      expect(mockUserRepository.save).toHaveBeenCalled();
+      expect(result.full_name).toBe('New Name');
+      expect(result.phone).toBe('+1234567890');
+      expect(result.address).toBe('123 Main St');
+    });
+  });
+
+  describe('changePassword', () => {
+    it('should change password for valid current password', async () => {
+      const mockUser = {
+        id: 'user-id',
+        email: 'test@example.com',
+        password_hash: 'old-hashed-password',
+      };
+
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      (bcrypt.compare as any).mockResolvedValue(true);
+      (bcrypt.hash as any).mockResolvedValue('new-hashed-password');
+      mockUserRepository.save.mockResolvedValue({ ...mockUser, password_hash: 'new-hashed-password' });
+
+      await authService.changePassword('user-id', 'oldPassword123', 'newPassword456');
+
+      expect(bcrypt.compare).toHaveBeenCalledWith('oldPassword123', 'old-hashed-password');
+      expect(bcrypt.hash).toHaveBeenCalledWith('newPassword456', 10);
+      expect(mockUserRepository.save).toHaveBeenCalled();
+    });
+
+    it('should throw error for incorrect current password', async () => {
+      const mockUser = {
+        id: 'user-id',
+        email: 'test@example.com',
+        password_hash: 'hashed-password',
+      };
+
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      (bcrypt.compare as any).mockResolvedValue(false);
+
+      await expect(
+        authService.changePassword('user-id', 'wrongPassword', 'newPassword456')
+      ).rejects.toThrow('Current password is incorrect');
+    });
+
+    it('should throw error for non-existent user', async () => {
+      mockUserRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        authService.changePassword('nonexistent-id', 'oldPassword', 'newPassword')
+      ).rejects.toThrow('User not found');
+    });
+  });
+
+  describe('updateProfilePhoto', () => {
+    it('should update profile photo URL', async () => {
+      const mockUser = {
+        id: 'user-id',
+        email: 'test@example.com',
+        profile_photo_url: null,
+      };
+
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockUserRepository.save.mockResolvedValue({
+        ...mockUser,
+        profile_photo_url: 'https://example.com/photo.jpg',
+      });
+
+      const result = await authService.updateProfilePhoto('user-id', 'https://example.com/photo.jpg');
+
+      expect(mockUserRepository.save).toHaveBeenCalled();
+      expect(result.profile_photo_url).toBe('https://example.com/photo.jpg');
+    });
+
+    it('should replace existing profile photo', async () => {
+      const mockUser = {
+        id: 'user-id',
+        email: 'test@example.com',
+        profile_photo_url: 'https://example.com/old-photo.jpg',
+      };
+
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockUserRepository.save.mockResolvedValue({
+        ...mockUser,
+        profile_photo_url: 'https://example.com/new-photo.jpg',
+      });
+
+      const result = await authService.updateProfilePhoto('user-id', 'https://example.com/new-photo.jpg');
+
+      expect(result.profile_photo_url).toBe('https://example.com/new-photo.jpg');
+    });
+  });
+
+  describe('forgotPassword', () => {
+    it('should not reveal if user exists', async () => {
+      mockUserRepository.findOne.mockResolvedValue(null);
+
+      await expect(authService.forgotPassword('nonexistent@example.com')).resolves.not.toThrow();
+    });
+
+    it('should process password reset for existing user', async () => {
+      const mockUser = {
+        id: 'user-id',
+        email: 'test@example.com',
+      };
+
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+
+      await expect(authService.forgotPassword('test@example.com')).resolves.not.toThrow();
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith({ where: { email: 'test@example.com' } });
+    });
+  });
 });

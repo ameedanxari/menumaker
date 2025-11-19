@@ -161,6 +161,11 @@ export class Review {
     delivery_time_minutes?: number;
     seller_rejection_reason?: string;
     admin_notes?: string;
+    reports?: Array<{
+      user_id: string;
+      reason?: string;
+      reported_at: string;
+    }>;
   };
 
   @CreateDateColumn()

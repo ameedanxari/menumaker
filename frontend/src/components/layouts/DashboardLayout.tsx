@@ -9,8 +9,11 @@ import {
   CreditCard,
   LogOut,
   Menu,
+  User,
+  Settings,
 } from 'lucide-react';
 import { useState } from 'react';
+import NotificationBell from '../notifications/NotificationBell';
 
 export default function DashboardLayout() {
   const { user, logout } = useAuthStore();
@@ -29,6 +32,8 @@ export default function DashboardLayout() {
     { to: '/orders', icon: ShoppingBag, label: 'Orders' },
     { to: '/reports', icon: BarChart3, label: 'Reports' },
     { to: '/subscription', icon: CreditCard, label: 'Subscription' },
+    { to: '/profile', icon: User, label: 'Profile' },
+    { to: '/settings', icon: Settings, label: 'Settings' },
   ];
 
   return (
@@ -37,7 +42,10 @@ export default function DashboardLayout() {
       <aside className="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200 hidden md:block">
         <div className="flex flex-col h-full">
           <div className="p-6 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-primary-900">MenuMaker</h1>
+            <div className="flex items-center justify-between mb-2">
+              <h1 className="text-2xl font-bold text-primary-900">MenuMaker</h1>
+              <NotificationBell />
+            </div>
             <p className="text-sm text-gray-600 mt-1">{user?.email}</p>
           </div>
 
@@ -75,12 +83,15 @@ export default function DashboardLayout() {
       {/* Mobile header */}
       <header className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-10">
         <h1 className="text-xl font-bold text-primary-900">MenuMaker</h1>
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 hover:bg-gray-100 rounded-lg"
-        >
-          <Menu className="w-6 h-6" />
-        </button>
+        <div className="flex items-center gap-2">
+          <NotificationBell />
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+        </div>
       </header>
 
       {/* Mobile menu */}

@@ -84,6 +84,39 @@ class ApiClient {
     return response.data;
   }
 
+  async refreshToken(refreshToken: string) {
+    const response = await this.client.post('/auth/refresh', { refresh_token: refreshToken });
+    return response.data;
+  }
+
+  async updateProfile(data: { name?: string; phone?: string; address?: string }) {
+    const response = await this.client.patch('/auth/profile', data);
+    return response.data;
+  }
+
+  async changePassword(currentPassword: string, newPassword: string) {
+    const response = await this.client.post('/auth/change-password', {
+      current_password: currentPassword,
+      new_password: newPassword,
+    });
+    return response.data;
+  }
+
+  async updateProfilePhoto(photoUrl: string) {
+    const response = await this.client.post('/auth/photo', { photo_url: photoUrl });
+    return response.data;
+  }
+
+  async forgotPassword(email: string) {
+    const response = await this.client.post('/auth/forgot-password', { email });
+    return response.data;
+  }
+
+  async logout() {
+    const response = await this.client.post('/auth/logout');
+    return response.data;
+  }
+
   // Business endpoints
   async createBusiness(data: {
     name: string;
@@ -397,6 +430,157 @@ class ApiClient {
 
   async getSubscriptionUsage() {
     const response = await this.client.get('/subscriptions/usage');
+    return response.data;
+  }
+
+  // Notification endpoints
+  async getNotifications(params?: { limit?: number; offset?: number; unread_only?: boolean }) {
+    const queryParams = new URLSearchParams();
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.offset) queryParams.append('offset', params.offset.toString());
+    if (params?.unread_only) queryParams.append('unread_only', 'true');
+
+    const response = await this.client.get(`/notifications?${queryParams.toString()}`);
+    return response.data;
+  }
+
+  async getNotificationById(id: string) {
+    const response = await this.client.get(`/notifications/${id}`);
+    return response.data;
+  }
+
+  async markNotificationAsRead(id: string, isRead: boolean = true) {
+    const response = await this.client.patch(`/notifications/${id}`, { is_read: isRead });
+    return response.data;
+  }
+
+  async markAllNotificationsAsRead() {
+    const response = await this.client.post('/notifications/mark-all-read');
+    return response.data;
+  }
+
+  async getUnreadNotificationCount() {
+    const response = await this.client.get('/notifications/unread-count');
+    return response.data;
+  }
+
+  // Cart (Saved Carts) endpoints
+  async getSavedCarts() {
+    const response = await this.client.get('/cart');
+    return response.data;
+  }
+
+  async createSavedCart(data: {
+    cart_name: string;
+    cart_items: any[];
+    total_cents: number;
+    customer_phone?: string;
+    customer_name?: string;
+  }) {
+    const response = await this.client.post('/cart', data);
+    return response.data;
+  }
+
+  async getSavedCartById(id: string) {
+    const response = await this.client.get(`/cart/${id}`);
+    return response.data;
+  }
+
+  async updateSavedCart(id: string, data: {
+    cart_name?: string;
+    cart_items?: any[];
+    total_cents?: number;
+  }) {
+    const response = await this.client.put(`/cart/${id}`, data);
+    return response.data;
+  }
+
+  async deleteSavedCart(id: string) {
+    const response = await this.client.delete(`/cart/${id}`);
+    return response.data;
+  }
+
+  // User Settings endpoints
+  async getUserSettings() {
+    const response = await this.client.get('/settings');
+    return response.data;
+  }
+
+  async updateUserSettings(settings: {
+    language?: string;
+    notifications_enabled?: boolean;
+    order_notifications?: boolean;
+    promotion_notifications?: boolean;
+    review_notifications?: boolean;
+    biometric_enabled?: boolean;
+    theme?: string;
+  }) {
+    const response = await this.client.patch('/settings', settings);
+    return response.data;
+  }
+
+  // Customer Order endpoints
+  async getCustomerOrders(params?: { status?: string; limit?: number; offset?: number }) {
+    const queryParams = new URLSearchParams();
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.offset) queryParams.append('offset', params.offset.toString());
+
+    const response = await this.client.get(`/orders/my-orders?${queryParams.toString()}`);
+    return response.data;
+  }
+
+  async cancelOrder(orderId: string, reason?: string) {
+    const response = await this.client.post(`/orders/${orderId}/cancel`, { reason });
+    return response.data;
+  }
+
+  // Review interaction endpoints
+  async markReviewAsHelpful(reviewId: string) {
+    const response = await this.client.post(`/reviews/${reviewId}/helpful`);
+    return response.data;
+  }
+
+  async removeReviewHelpful(reviewId: string) {
+    const response = await this.client.delete(`/reviews/${reviewId}/helpful`);
+    return response.data;
+  }
+
+  async reportReview(reviewId: string, reason?: string) {
+    const response = await this.client.post(`/reviews/${reviewId}/report`, { reason });
+    return response.data;
+  }
+
+  // Analytics endpoints
+  async getComprehensiveAnalytics(params: {
+    businessId: string;
+    period?: 'today' | 'week' | 'month' | 'custom';
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    queryParams.append('businessId', params.businessId);
+    if (params.period) queryParams.append('period', params.period);
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
+
+    const response = await this.client.get(`/reports/analytics?${queryParams.toString()}`);
+    return response.data;
+  }
+
+  async exportOrders(params: {
+    businessId: string;
+    startDate?: string;
+    endDate?: string;
+    status?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    queryParams.append('businessId', params.businessId);
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
+    if (params.status) queryParams.append('status', params.status);
+
+    const response = await this.client.get(`/reports/orders/export?${queryParams.toString()}`);
     return response.data;
   }
 }

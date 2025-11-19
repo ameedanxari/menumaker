@@ -435,10 +435,12 @@ describe('OrderService', () => {
       mockDishRepository.findOne.mockResolvedValue(mockDish);
 
       const orderData = {
-        business_id: 'business-123',
-        customer_id: 'customer-123',
+        menu_id: 'menu-123',
+        customer_name: 'John Doe',
+        customer_phone: '+1234567890',
+        delivery_type: 'delivery' as const,
+        delivery_address: '123 Main St',
         items: [{ dish_id: 'dish-1', quantity: 1 }], // Only 10 Rs
-        order_type: 'delivery' as const,
       };
 
       await expect(orderService.createOrder(orderData)).rejects.toThrow(
@@ -462,6 +464,245 @@ describe('OrderService', () => {
       await expect(
         orderService.updateOrder('nonexistent', 'user-123', { order_status: 'confirmed' })
       ).rejects.toThrow('Order not found');
+    });
+  });
+
+  describe('getCustomerOrders', () => {
+    it('should return customer orders with items and business', async () => {
+      const mockOrders = [
+        {
+          id: 'order-1',
+          customer_id: 'user-123',
+          total_cents: 2500,
+          order_status: 'delivered',
+          items: [{ dish_id: 'dish-1', quantity: 2 }],
+          business: { id: 'business-1', name: 'Test Restaurant' },
+          created_at: new Date(),
+        },
+        {
+          id: 'order-2',
+          customer_id: 'user-123',
+          total_cents: 1500,
+          order_status: 'pending',
+          items: [{ dish_id: 'dish-2', quantity: 1 }],
+          business: { id: 'business-2', name: 'Another Restaurant' },
+          created_at: new Date(),
+        },
+      ];
+
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockOrders as any) as any,
+      } as any;
+
+      mockOrderRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+      const result = await orderService.getCustomerOrders('user-123', {});
+
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith('order.customer_id = :userId', { userId: 'user-123' });
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('order.items', 'items');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('order.business', 'business');
+      expect(result).toEqual(mockOrders);
+      expect(result).toHaveLength(2);
+    });
+
+    it('should filter orders by status', async () => {
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([] as any) as any,
+      } as any;
+
+      mockOrderRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+      await orderService.getCustomerOrders('user-123', { status: 'pending' });
+
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('order.order_status = :status', { status: 'pending' });
+    });
+
+    it('should apply pagination limits', async () => {
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([] as any) as any,
+      } as any;
+
+      mockOrderRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+      await orderService.getCustomerOrders('user-123', { limit: 20, offset: 10 });
+
+      expect(mockQueryBuilder.take).toHaveBeenCalledWith(20);
+      expect(mockQueryBuilder.skip).toHaveBeenCalledWith(10);
+    });
+
+    it('should order by created_at DESC', async () => {
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([] as any) as any,
+      } as any;
+
+      mockOrderRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+      await orderService.getCustomerOrders('user-123', {});
+
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('order.created_at', 'DESC');
+    });
+  });
+
+  describe('cancelOrder', () => {
+    it('should cancel order when status is pending', async () => {
+      const mockOrder = {
+        id: 'order-123',
+        customer_id: 'user-123',
+        order_status: 'pending',
+        total_cents: 2500,
+        notes: null,
+      };
+
+      mockOrderRepository.findOne.mockResolvedValue(mockOrder);
+      mockOrderRepository.save.mockResolvedValue({ ...mockOrder, order_status: 'cancelled' });
+
+      const result = await orderService.cancelOrder('order-123', 'user-123', 'Changed my mind');
+
+      expect(mockOrderRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'order-123' },
+        relations: ['business'],
+      });
+      expect(mockOrderRepository.save).toHaveBeenCalled();
+      expect(result.order_status).toBe('cancelled');
+    });
+
+    it('should cancel order when status is confirmed', async () => {
+      const mockOrder = {
+        id: 'order-123',
+        customer_id: 'user-123',
+        order_status: 'confirmed',
+        total_cents: 2500,
+        notes: null,
+      };
+
+      mockOrderRepository.findOne.mockResolvedValue(mockOrder);
+      mockOrderRepository.save.mockResolvedValue({ ...mockOrder, order_status: 'cancelled' });
+
+      const result = await orderService.cancelOrder('order-123', 'user-123');
+
+      expect(result.order_status).toBe('cancelled');
+    });
+
+    it('should append cancellation reason to notes', async () => {
+      const mockOrder = {
+        id: 'order-123',
+        customer_id: 'user-123',
+        order_status: 'pending',
+        notes: 'Please deliver to side door',
+      };
+
+      mockOrderRepository.findOne.mockResolvedValue(mockOrder);
+      mockOrderRepository.save.mockResolvedValue({
+        ...mockOrder,
+        order_status: 'cancelled',
+        notes: 'Please deliver to side door\nCancellation reason: Changed my mind',
+      });
+
+      const result = await orderService.cancelOrder('order-123', 'user-123', 'Changed my mind');
+
+      expect(result.notes).toContain('Cancellation reason: Changed my mind');
+    });
+
+    it('should throw error if order not found', async () => {
+      mockOrderRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        orderService.cancelOrder('nonexistent', 'user-123')
+      ).rejects.toThrow('Order not found');
+    });
+
+    it('should throw error if user does not own the order', async () => {
+      const mockOrder = {
+        id: 'order-123',
+        customer_id: 'other-user',
+        order_status: 'pending',
+      };
+
+      mockOrderRepository.findOne.mockResolvedValue(mockOrder);
+
+      await expect(
+        orderService.cancelOrder('order-123', 'user-123')
+      ).rejects.toThrow('You do not have permission to cancel this order');
+    });
+
+    it('should throw error if order is preparing', async () => {
+      const mockOrder = {
+        id: 'order-123',
+        customer_id: 'user-123',
+        order_status: 'preparing',
+      };
+
+      mockOrderRepository.findOne.mockResolvedValue(mockOrder);
+
+      await expect(
+        orderService.cancelOrder('order-123', 'user-123')
+      ).rejects.toThrow('Order cannot be cancelled at this stage');
+    });
+
+    it('should throw error if order is out for delivery', async () => {
+      const mockOrder = {
+        id: 'order-123',
+        customer_id: 'user-123',
+        order_status: 'out_for_delivery',
+      };
+
+      mockOrderRepository.findOne.mockResolvedValue(mockOrder);
+
+      await expect(
+        orderService.cancelOrder('order-123', 'user-123')
+      ).rejects.toThrow('Order cannot be cancelled at this stage');
+    });
+
+    it('should throw error if order is already delivered', async () => {
+      const mockOrder = {
+        id: 'order-123',
+        customer_id: 'user-123',
+        order_status: 'delivered',
+      };
+
+      mockOrderRepository.findOne.mockResolvedValue(mockOrder);
+
+      await expect(
+        orderService.cancelOrder('order-123', 'user-123')
+      ).rejects.toThrow('Order cannot be cancelled at this stage');
+    });
+
+    it('should throw error if order is already cancelled', async () => {
+      const mockOrder = {
+        id: 'order-123',
+        customer_id: 'user-123',
+        order_status: 'cancelled',
+      };
+
+      mockOrderRepository.findOne.mockResolvedValue(mockOrder);
+
+      await expect(
+        orderService.cancelOrder('order-123', 'user-123')
+      ).rejects.toThrow('Order cannot be cancelled at this stage');
     });
   });
 });

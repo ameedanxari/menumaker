@@ -416,4 +416,79 @@ export class OrderService {
       ordersByStatus,
     };
   }
+
+  async getCustomerOrders(
+    userId: string,
+    filters: {
+      status?: string;
+      limit?: number;
+      offset?: number;
+    }
+  ): Promise<Order[]> {
+    const queryBuilder = this.orderRepository
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.items', 'items')
+      .leftJoinAndSelect('order.business', 'business')
+      .where('order.customer_id = :userId', { userId });
+
+    if (filters.status) {
+      queryBuilder.andWhere('order.order_status = :status', { status: filters.status });
+    }
+
+    queryBuilder
+      .orderBy('order.created_at', 'DESC')
+      .take(filters.limit || 50)
+      .skip(filters.offset || 0);
+
+    return queryBuilder.getMany();
+  }
+
+  async cancelOrder(orderId: string, userId: string, reason?: string): Promise<Order> {
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+      relations: ['business'],
+    });
+
+    if (!order) {
+      const error = new Error('Order not found') as Error & {
+        statusCode: number;
+        code: string;
+      };
+      error.statusCode = 404;
+      error.code = 'ORDER_NOT_FOUND';
+      throw error;
+    }
+
+    // Verify the user owns this order
+    if (order.customer_id !== userId) {
+      const error = new Error('You do not have permission to cancel this order') as Error & {
+        statusCode: number;
+        code: string;
+      };
+      error.statusCode = 403;
+      error.code = 'FORBIDDEN';
+      throw error;
+    }
+
+    // Only allow cancellation if order is pending or confirmed
+    if (!['pending', 'confirmed'].includes(order.order_status)) {
+      const error = new Error('Order cannot be cancelled at this stage') as Error & {
+        statusCode: number;
+        code: string;
+      };
+      error.statusCode = 400;
+      error.code = 'CANNOT_CANCEL';
+      throw error;
+    }
+
+    // Update order status to cancelled
+    order.order_status = 'cancelled';
+    if (reason) {
+      order.notes = (order.notes ? order.notes + '\n' : '') + `Cancellation reason: ${reason}`;
+    }
+
+    await this.orderRepository.save(order);
+
+    return order;
+  }
 }

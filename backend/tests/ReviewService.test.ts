@@ -937,4 +937,190 @@ describe('ReviewService', () => {
       ).rejects.toThrow('You can only review this seller once per week');
     });
   });
+
+  describe('markAsHelpful', () => {
+    it('should mark review as helpful', async () => {
+      const mockReviewHelpfulRepo = {
+        findOne: jest.fn().mockResolvedValue(null as any) as any,
+        create: jest.fn().mockReturnValue({ review_id: 'review-123', user_id: 'user-123' }),
+        save: jest.fn().mockResolvedValue({ id: 'helpful-1', review_id: 'review-123', user_id: 'user-123' } as any) as any,
+      } as any;
+
+      AppDataSource.getRepository = jest.fn().mockReturnValue(mockReviewHelpfulRepo) as any;
+      mockReviewRepository.increment = jest.fn().mockResolvedValue({ affected: 1 } as any) as any;
+
+      await reviewService.markAsHelpful('review-123', 'user-123');
+
+      expect(mockReviewHelpfulRepo.findOne).toHaveBeenCalledWith({
+        where: { review_id: 'review-123', user_id: 'user-123' },
+      });
+      expect(mockReviewHelpfulRepo.save).toHaveBeenCalled();
+      expect(mockReviewRepository.increment).toHaveBeenCalledWith(
+        { id: 'review-123' },
+        'helpful_count',
+        1
+      );
+    });
+
+    it('should throw error if already marked helpful', async () => {
+      const mockReviewHelpfulRepo = {
+        findOne: jest.fn().mockResolvedValue({ id: 'existing-helpful' } as any),
+      } as any;
+
+      AppDataSource.getRepository = jest.fn().mockReturnValue(mockReviewHelpfulRepo) as any;
+
+      await expect(
+        reviewService.markAsHelpful('review-123', 'user-123')
+      ).rejects.toThrow('You have already marked this review as helpful');
+    });
+  });
+
+  describe('removeHelpful', () => {
+    it('should remove helpful mark', async () => {
+      const mockHelpful = { id: 'helpful-1', review_id: 'review-123', user_id: 'user-123' };
+      const mockReviewHelpfulRepo = {
+        findOne: jest.fn().mockResolvedValue(mockHelpful as any),
+        remove: jest.fn().mockResolvedValue(mockHelpful as any),
+      } as any;
+
+      AppDataSource.getRepository = jest.fn().mockReturnValue(mockReviewHelpfulRepo) as any;
+      mockReviewRepository.decrement = jest.fn().mockResolvedValue({ affected: 1 } as any) as any;
+
+      await reviewService.removeHelpful('review-123', 'user-123');
+
+      expect(mockReviewHelpfulRepo.findOne).toHaveBeenCalledWith({
+        where: { review_id: 'review-123', user_id: 'user-123' },
+      });
+      expect(mockReviewHelpfulRepo.remove).toHaveBeenCalledWith(mockHelpful);
+      expect(mockReviewRepository.decrement).toHaveBeenCalledWith(
+        { id: 'review-123' },
+        'helpful_count',
+        1
+      );
+    });
+
+    it('should not throw error if helpful mark does not exist', async () => {
+      const mockReviewHelpfulRepo = {
+        findOne: jest.fn().mockResolvedValue(null),
+      };
+
+      AppDataSource.getRepository = jest.fn().mockReturnValue(mockReviewHelpfulRepo) as any;
+
+      await expect(reviewService.removeHelpful('review-123', 'user-123')).resolves.not.toThrow();
+    });
+  });
+
+  describe('reportReview', () => {
+    it('should increment report count and store reason', async () => {
+      const mockReview = {
+        id: 'review-123',
+        report_count: 0,
+        metadata: {},
+      };
+
+      mockReviewRepository.findOne.mockResolvedValue(mockReview);
+      mockReviewRepository.save.mockResolvedValue({
+        ...mockReview,
+        report_count: 1,
+        metadata: {
+          reports: [{
+            user_id: 'user-123',
+            reason: 'Spam content',
+            reported_at: expect.any(String),
+          }],
+        },
+      });
+
+      await reviewService.reportReview('review-123', 'user-123', 'Spam content');
+
+      expect(mockReviewRepository.save).toHaveBeenCalled();
+      const savedReview = mockReviewRepository.save.mock.calls[0][0];
+      expect(savedReview.report_count).toBe(1);
+      expect(savedReview.metadata.reports).toHaveLength(1);
+      expect(savedReview.metadata.reports[0].reason).toBe('Spam content');
+    });
+
+    it('should throw error if review not found', async () => {
+      mockReviewRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        reviewService.reportReview('nonexistent', 'user-123', 'Spam')
+      ).rejects.toThrow('Review not found');
+    });
+
+    it('should handle multiple reports on same review', async () => {
+      const mockReview = {
+        id: 'review-123',
+        report_count: 2,
+        metadata: {
+          reports: [
+            { user_id: 'user-1', reason: 'Spam', reported_at: '2024-01-01' },
+            { user_id: 'user-2', reason: 'Offensive', reported_at: '2024-01-02' },
+          ],
+        },
+      };
+
+      mockReviewRepository.findOne.mockResolvedValue(mockReview);
+      mockReviewRepository.save.mockResolvedValue({
+        ...mockReview,
+        report_count: 3,
+        metadata: {
+          reports: [
+            ...mockReview.metadata.reports,
+            { user_id: 'user-3', reason: 'Fake review', reported_at: expect.any(String) },
+          ],
+        },
+      });
+
+      await reviewService.reportReview('review-123', 'user-3', 'Fake review');
+
+      const savedReview = mockReviewRepository.save.mock.calls[0][0];
+      expect(savedReview.report_count).toBe(3);
+      expect(savedReview.metadata.reports).toHaveLength(3);
+    });
+
+    it('should initialize metadata if not present', async () => {
+      const mockReview = {
+        id: 'review-123',
+        report_count: 0,
+        metadata: null,
+      };
+
+      mockReviewRepository.findOne.mockResolvedValue(mockReview);
+      mockReviewRepository.save.mockResolvedValue({
+        ...mockReview,
+        report_count: 1,
+        metadata: {
+          reports: [{ user_id: 'user-123', reason: 'Spam', reported_at: expect.any(String) }],
+        },
+      });
+
+      await reviewService.reportReview('review-123', 'user-123', 'Spam');
+
+      const savedReview = mockReviewRepository.save.mock.calls[0][0];
+      expect(savedReview.metadata).toBeDefined();
+      expect(savedReview.metadata.reports).toHaveLength(1);
+    });
+
+    it('should work without reason provided', async () => {
+      const mockReview = {
+        id: 'review-123',
+        report_count: 0,
+        metadata: {},
+      };
+
+      mockReviewRepository.findOne.mockResolvedValue(mockReview);
+      mockReviewRepository.save.mockResolvedValue({
+        ...mockReview,
+        report_count: 1,
+        metadata: {
+          reports: [{ user_id: 'user-123', reason: undefined, reported_at: expect.any(String) }],
+        },
+      });
+
+      await reviewService.reportReview('review-123', 'user-123');
+
+      expect(mockReviewRepository.save).toHaveBeenCalled();
+    });
+  });
 });
