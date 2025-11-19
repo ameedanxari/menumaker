@@ -89,7 +89,7 @@ fun NotificationsScreen(
                 }
             }
 
-            is Resource.Success -> {
+            is Resource.Success<*> -> {
                 val notificationList = state.data.notifications
 
                 if (notificationList.isEmpty()) {
@@ -130,8 +130,8 @@ fun NotificationsScreen(
                     ) {
                         items(
                             items = notificationList,
-                            key = { it.id }
-                        ) { notification ->
+                            key = { notification: NotificationDto -> notification.id }
+                        ) { notification: NotificationDto ->
                             NotificationRow(
                                 notification = notification,
                                 onTap = { viewModel.markAsRead(notification.id) }

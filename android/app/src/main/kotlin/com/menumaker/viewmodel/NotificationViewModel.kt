@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.menumaker.data.common.Resource
 import com.menumaker.data.remote.models.NotificationDto
+import com.menumaker.data.remote.models.NotificationListData
 import com.menumaker.data.repository.NotificationRepository
 import com.menumaker.services.AnalyticsService
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,6 +22,10 @@ class NotificationViewModel @Inject constructor(
     private val repository: NotificationRepository,
     private val analyticsService: AnalyticsService
 ) : ViewModel() {
+
+    // Resource state for screen
+    private val _notificationsState = MutableStateFlow<Resource<NotificationListData>>(Resource.Loading)
+    val notificationsState: StateFlow<Resource<NotificationListData>> = _notificationsState.asStateFlow()
 
     private val _notifications = MutableStateFlow<List<NotificationDto>>(emptyList())
     val notifications: StateFlow<List<NotificationDto>> = _notifications.asStateFlow()
@@ -64,16 +69,19 @@ class NotificationViewModel @Inject constructor(
                     is Resource.Loading -> {
                         _isLoading.value = true
                         _errorMessage.value = null
+                        _notificationsState.value = Resource.Loading
                     }
                     is Resource.Success -> {
                         _isLoading.value = false
                         _notifications.value = result.data.notifications
                         _unreadCount.value = result.data.unreadCount
+                        _notificationsState.value = Resource.Success(result.data)
                         analyticsService.trackScreen("Notifications")
                     }
                     is Resource.Error -> {
                         _isLoading.value = false
                         _errorMessage.value = result.message
+                        _notificationsState.value = Resource.Error(result.message ?: "Failed to load notifications")
                     }
                 }
             }
@@ -107,6 +115,18 @@ class NotificationViewModel @Inject constructor(
                             }
                         }
                         _unreadCount.value = maxOf(0, _unreadCount.value - 1)
+                        
+                        // Update notificationsState
+                        val currentState = _notificationsState.value
+                        if (currentState is Resource.Success) {
+                            _notificationsState.value = Resource.Success(
+                                currentState.data.copy(
+                                    notifications = _notifications.value,
+                                    unreadCount = _unreadCount.value
+                                )
+                            )
+                        }
+                        
                         analyticsService.track("notification_read", mapOf("notification_id" to notificationId))
                     }
                     is Resource.Error -> {
@@ -132,6 +152,18 @@ class NotificationViewModel @Inject constructor(
                         // Update all notifications to read
                         _notifications.value = _notifications.value.map { it.copy(isRead = true) }
                         _unreadCount.value = 0
+                        
+                        // Update notificationsState
+                        val currentState = _notificationsState.value
+                        if (currentState is Resource.Success) {
+                            _notificationsState.value = Resource.Success(
+                                currentState.data.copy(
+                                    notifications = _notifications.value,
+                                    unreadCount = 0
+                                )
+                            )
+                        }
+                        
                         analyticsService.track("notifications_mark_all_read", emptyMap())
                     }
                     is Resource.Error -> {
@@ -144,32 +176,50 @@ class NotificationViewModel @Inject constructor(
     }
 
     /**
-     * Toggle notification settings
+     * Notification settings setter methods (used by UI)
      */
-    fun toggleOrderNotifications(enabled: Boolean) {
+    fun setOrderNotificationsEnabled(enabled: Boolean) {
         _orderNotificationsEnabled.value = enabled
         // TODO: Save to preferences or API
     }
 
-    fun togglePromotionNotifications(enabled: Boolean) {
+    fun setPromotionNotificationsEnabled(enabled: Boolean) {
         _promotionNotificationsEnabled.value = enabled
         // TODO: Save to preferences or API
     }
 
-    fun toggleReviewNotifications(enabled: Boolean) {
+    fun setReviewNotificationsEnabled(enabled: Boolean) {
         _reviewNotificationsEnabled.value = enabled
         // TODO: Save to preferences or API
     }
 
-    fun togglePushNotifications(enabled: Boolean) {
+    fun setPushNotificationsEnabled(enabled: Boolean) {
         _pushNotificationsEnabled.value = enabled
         // TODO: Save to preferences or API
     }
 
-    fun toggleEmailNotifications(enabled: Boolean) {
+    fun setEmailNotificationsEnabled(enabled: Boolean) {
         _emailNotificationsEnabled.value = enabled
         // TODO: Save to preferences or API
     }
+
+    /**
+     * Toggle notification settings (deprecated - use set* methods)
+     */
+    @Deprecated("Use set* methods instead", ReplaceWith("setOrderNotificationsEnabled(enabled)"))
+    fun toggleOrderNotifications(enabled: Boolean) = setOrderNotificationsEnabled(enabled)
+
+    @Deprecated("Use set* methods instead", ReplaceWith("setPromotionNotificationsEnabled(enabled)"))
+    fun togglePromotionNotifications(enabled: Boolean) = setPromotionNotificationsEnabled(enabled)
+
+    @Deprecated("Use set* methods instead", ReplaceWith("setReviewNotificationsEnabled(enabled)"))
+    fun toggleReviewNotifications(enabled: Boolean) = setReviewNotificationsEnabled(enabled)
+
+    @Deprecated("Use set* methods instead", ReplaceWith("setPushNotificationsEnabled(enabled)"))
+    fun togglePushNotifications(enabled: Boolean) = setPushNotificationsEnabled(enabled)
+
+    @Deprecated("Use set* methods instead", ReplaceWith("setEmailNotificationsEnabled(enabled)"))
+    fun toggleEmailNotifications(enabled: Boolean) = setEmailNotificationsEnabled(enabled)
 
     /**
      * Clear error message

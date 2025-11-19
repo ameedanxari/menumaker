@@ -142,7 +142,7 @@ fun ProfileScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // Profile Header
-            currentUser?.let { user ->
+            currentUser?.let { user: com.menumaker.data.remote.models.UserDto ->
                 ProfileHeader(
                     user = user,
                     onEditPhoto = {
@@ -152,7 +152,7 @@ fun ProfileScreen(
             }
 
             // Profile Info Section
-            currentUser?.let { user ->
+            currentUser?.let { user: com.menumaker.data.remote.models.UserDto ->
                 ProfileInfoSection(user = user)
             }
 

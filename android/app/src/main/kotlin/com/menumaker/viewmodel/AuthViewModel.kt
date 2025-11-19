@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.menumaker.data.common.Resource
 import com.menumaker.data.remote.models.AuthData
+import com.menumaker.data.remote.models.UserDto
 import com.menumaker.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +27,9 @@ class AuthViewModel @Inject constructor(
     private val _isAuthenticated = MutableStateFlow(false)
     val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
 
+    private val _currentUser = MutableStateFlow<UserDto?>(null)
+    val currentUser: StateFlow<UserDto?> = _currentUser.asStateFlow()
+
     private val _passwordResetState = MutableStateFlow<Resource<Unit>?>(null)
     val passwordResetState: StateFlow<Resource<Unit>?> = _passwordResetState.asStateFlow()
 
@@ -39,6 +43,7 @@ class AuthViewModel @Inject constructor(
                 _loginState.value = resource
                 if (resource is Resource.Success) {
                     _isAuthenticated.value = true
+                    _currentUser.value = resource.data?.user
                 }
             }
         }
@@ -50,6 +55,7 @@ class AuthViewModel @Inject constructor(
                 _signupState.value = resource
                 if (resource is Resource.Success) {
                     _isAuthenticated.value = true
+                    _currentUser.value = resource.data?.user
                 }
             }
         }
@@ -59,6 +65,7 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             authRepository.logout().collect {
                 _isAuthenticated.value = false
+                _currentUser.value = null
                 _loginState.value = null
                 _signupState.value = null
             }
@@ -81,6 +88,7 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             authRepository.isAuthenticated().collect { isAuth ->
                 _isAuthenticated.value = isAuth
+                // TODO: Load current user from local storage if authenticated
             }
         }
     }
