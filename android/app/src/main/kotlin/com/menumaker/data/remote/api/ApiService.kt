@@ -157,6 +157,12 @@ interface ApiService {
     @GET("referrals/stats")
     suspend fun getReferralStats(): Response<ReferralStatsResponse>
 
+    @GET("referrals/history")
+    suspend fun getReferralHistory(): Response<ReferralHistoryResponse>
+
+    @POST("referrals/apply")
+    suspend fun applyReferralCode(@Body request: Map<String, String>): Response<ApplyReferralResponse>
+
     // Integrations
     @GET("integrations")
     suspend fun getIntegrations(

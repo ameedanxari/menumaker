@@ -44,7 +44,6 @@ fun ReferralsScreen(
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val statsState by viewModel.statsState.collectAsState()
     val stats by viewModel.stats.collectAsState()
     val referralHistory by viewModel.referralHistory.collectAsState()
     val leaderboard by viewModel.leaderboard.collectAsState()
@@ -493,7 +492,7 @@ fun ReferralHistorySection(referralHistory: List<ReferralHistoryDto>) {
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    referralHistory.forEach { referral ->
+                    referralHistory.forEach { referral: ReferralHistoryDto ->
                         ReferralHistoryRow(referral = referral)
                         if (referral != referralHistory.last()) {
                             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
