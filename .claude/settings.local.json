@@ -8,7 +8,8 @@
       "Bash(npm test:*)",
       "Bash(node fix-relation-imports.js:*)",
       "Bash(timeout 10 npm run dev:*)",
-      "Bash(JWT_SECRET=test-secret-key-for-testing-at-least-32-characters timeout 10 npm run dev:*)"
+      "Bash(JWT_SECRET=test-secret-key-for-testing-at-least-32-characters timeout 10 npm run dev:*)",
+      "Bash(WHATSAPP_ENABLED=true TWILIO_ACCOUNT_SID=test-sid TWILIO_AUTH_TOKEN=test-token npm test:*)"
     ],
     "deny": [],
     "ask": []
