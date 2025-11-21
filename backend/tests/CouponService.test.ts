@@ -29,6 +29,7 @@ describe('CouponService', () => {
       findOne: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
+      find: jest.fn(),
     };
 
     mockPromotionRepository = {
@@ -538,7 +539,8 @@ describe('CouponService', () => {
       const mockCoupon = {
         id: 'coupon-123',
         total_usage_count: 50,
-        total_revenue_impact_cents: 10000,
+        total_discount_given_cents: 1000000, // 10000 in dollars
+        total_revenue_generated_cents: 5000000, // 50000 in dollars
       };
 
       const mockUsages = [
@@ -552,7 +554,9 @@ describe('CouponService', () => {
       const result = await couponService.getCouponAnalytics('coupon-123');
 
       expect(result.total_usages).toBe(50);
-      expect(result.total_discount_given).toBe(10000);
+      expect(result.total_discount_given).toBe(10000); // Converted from cents to dollars
+      expect(result.total_revenue_generated).toBe(50000); // Converted from cents to dollars
+      expect(result.avg_order_value).toBe(1000); // 50000 / 50
     });
 
     it('should throw error if coupon not found', async () => {

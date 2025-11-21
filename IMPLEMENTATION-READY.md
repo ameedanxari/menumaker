@@ -102,7 +102,7 @@ menumaker/
 - Orders (create, list, update status)
 - Media (image upload, social preview)
 - Reports (CSV export, summary)
-- OCR (endpoint exists, returns 501 Not Implemented; full OCR in Phase 2)
+- OCR (stub for Phase 2)
 
 All with: request/response schemas, error handling, examples
 
@@ -207,9 +207,8 @@ Follow quickstart.md:
 | **Phase 1** (US1–2) | 1 week | Onboarding, menu editor, publish |
 | **Phase 2** (US3–4) | 1 week | Public menu, order capture, notifications |
 | **Phase 3** (US5–7) | 1 week | Reporting, delivery rules, manual payment |
-| **Testing & Polish** | 2 weeks | Unit/E2E tests, performance, staging deploy |
-| **Beta Testing** | 2 weeks | Early user feedback, bug fixes |
-| **Total MVP** | **10 weeks** | Live on Heroku/Render (6 weeks coding + 4 weeks testing/polish) |
+| **Testing & Polish** | 1 week | Unit/E2E tests, performance, staging deploy |
+| **Total MVP** | **4–5 weeks** | Live on Heroku/Render |
 
 **With 2–3 developers**: 2–3 weeks  
 **With Claude Code assistance**: 1–2 weeks
@@ -318,7 +317,7 @@ If you need to:
 - ✅ Data model complete (10 entities, validation)
 - ✅ Acceptance scenarios defined
 - ✅ Environment ready (Node, Claude Code, Python)
-- ✅ Implementation path clear (10 weeks total: 6 weeks coding + 4 weeks testing/beta with 1 dev)
+- ✅ Implementation path clear (3–5 weeks with 1 dev)
 
 **Next action**: Open Claude Code and start building! 🚀
 

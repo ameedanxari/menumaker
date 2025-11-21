@@ -1,6 +1,7 @@
 import { jest, describe, beforeEach, it, expect } from '@jest/globals';
 import { AuthService } from '../src/services/AuthService';
 import { AppDataSource } from '../src/config/database';
+import { generateTokens } from '../src/utils/jwt';
 import bcrypt from 'bcrypt';
 
 // Mock dependencies
@@ -172,13 +173,18 @@ describe('AuthService', () => {
 
       mockUserRepository.findOne.mockResolvedValue(mockUser);
 
-      // Mock verifyToken to return a valid payload
-      const refreshToken = 'valid-refresh-token';
+      // Generate a real refresh token
+      const tokens = generateTokens({
+        userId: 'user-id',
+        email: 'test@example.com',
+      });
 
-      const result = await authService.refreshTokens(refreshToken);
+      const result = await authService.refreshTokens(tokens.refreshToken);
 
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
+      expect(result.accessToken).toBeTruthy();
+      expect(result.refreshToken).toBeTruthy();
     });
 
     it('should throw error for invalid refresh token', async () => {

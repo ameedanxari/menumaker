@@ -1,3 +1,4 @@
+import type { Relation } from 'typeorm';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -8,7 +9,6 @@ import {
   OneToMany,
   OneToOne,
   JoinColumn,
-  Relation,
 } from 'typeorm';
 import { User } from './User.js';
 import { Dish } from './Dish.js';

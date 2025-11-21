@@ -1,475 +1,415 @@
 # MenuMaker Mobile Architecture & Technology Decision
 
-**Date**: 2025-11-16 | **Phase**: 3.5+ | **Status**: Native iOS + Android Decision
+**Date**: 2025-11-10 | **Phase**: 3.5+ | **Status**: Decision Document
 
 ---
 
 ## Executive Summary
 
-MenuMaker requires **native mobile apps** for iOS and Android to:
+MenuMaker requires native mobile apps for iOS and Android to:
 - Provide superior performance, offline support, and platform integration
 - Deliver home sellers and customers a native experience on phones
 - Support platform-specific features (App Clips, Widgets, Material You, Siri Shortcuts)
-- Enable optimal user experience with platform-native UI patterns
-- Maintain full access to latest platform capabilities
+- Enable faster adoption compared to web PWA alone
 
-This document provides the **strategic decision** for MenuMaker mobile development:
+This document evaluates **three technology paths** and provides a recommended strategy:
 
-**Decision**: **Native Development** (Swift/SwiftUI for iOS, Kotlin/Jetpack Compose for Android)
+1. **React Native** (Recommended): ~80% code sharing, faster MVP, growing ecosystem
+2. **Flutter**: 100% code sharing, different ecosystem, learning curve
+3. **Native (Swift/Kotlin)**: Maximum performance, highest maintenance cost
 
-**Rationale**: Maximum performance, best platform integration, superior UX, long-term maintainability, and access to latest platform features without cross-platform framework limitations.
+**Recommendation**: **React Native** for MVP (Phase 3.5), with native bridge for performance-critical features (camera OCR, offline sync).
 
 ---
 
-## Technology Decision Matrix
+## Technology Evaluation Matrix
 
-| Criteria | **Native (Swift + Kotlin)** ✅ | React Native | Flutter |
+| Criteria | React Native | Flutter | Native (iOS + Android) |
 |----------|---|---|---|
-| **Code Sharing** | 0% (separate codebases) | ~80% (UI + business logic) | ~100% (Dart) |
-| **Time to MVP** | 16–20 weeks (2 teams) | 8–10 weeks (1 team) | 8–10 weeks (1 team) |
-| **Performance** | **Excellent** (direct platform APIs) | Good (JS bridge) | Very good (compiled) |
-| **Platform Integration** | **Excellent** (100% native APIs) | Moderate (native modules) | Moderate (platform channels) |
-| **Latest Features** | **Immediate** (day-one support) | Delayed (wait for bindings) | Delayed (wait for bindings) |
-| **App Size** | **~30 MB** per platform | ~45 MB (iOS), ~50 MB (Android) | ~35 MB (iOS), ~40 MB (Android) |
-| **Developer Pool** | Large (separate: Swift/Kotlin) | Very large (React/JS) | Growing (Dart) |
-| **Maintenance Cost** | **Moderate** (2 codebases) | Low (single team) | Low (single team) |
-| **Long-term Scalability** | **Best** (Uber, Twitter, Airbnb*) | Good (some migrate to native) | Good (Google apps) |
-| **UI Consistency** | **Best** (platform-native patterns) | Moderate (custom) | Moderate (Material-first) |
-
-*Airbnb migrated from React Native to native for better performance and UX
-
----
-
-## Strategic Decision: Native Development
-
-**RECOMMENDED for MenuMaker: Native iOS (Swift/SwiftUI) + Native Android (Kotlin/Jetpack Compose)**
-
-### Why Native Over Cross-Platform
-
-#### 1. **Superior Performance**
-- **Direct platform APIs**: No JavaScript bridge overhead
-- **Platform-optimized**: Apps use native rendering, threading, and memory management
-- **Faster cold start**: < 1.5 sec (native) vs. 2–3 sec (cross-platform)
-- **Smooth animations**: 60fps guaranteed on native UI frameworks
-
-#### 2. **Complete Platform Integration**
-- **Day-one feature support**: Access new iOS/Android features immediately (no waiting for framework updates)
-- **Native UI patterns**: SwiftUI matches iOS Human Interface Guidelines perfectly
-- **Material You**: Android apps automatically adapt to user theme preferences
-- **Platform services**: Full access to HealthKit, HomeKit, Wallet, Google Assistant, etc.
-
-#### 3. **Long-term Maintainability**
-- **Stable platform APIs**: Apple and Google maintain backward compatibility
-- **No framework lock-in**: Not dependent on third-party framework updates or breaking changes
-- **Better debugging**: Native tools (Xcode Instruments, Android Profiler) provide superior debugging
-- **Predictable releases**: Aligned with platform release cycles
-
-#### 4. **Superior User Experience**
-- **Platform-native feel**: Apps feel "at home" on each platform
-- **Accessibility**: Full VoiceOver/TalkBack support without workarounds
-- **Haptics & animations**: Native gesture recognizers and spring animations
-- **Dark mode**: Automatic system theme support
-
-#### 5. **Developer Productivity**
-- **Modern declarative UI**: SwiftUI and Jetpack Compose are both declarative, similar to React
-- **Type safety**: Swift and Kotlin are strongly-typed with excellent IDE support
-- **Hot reload**: Both SwiftUI and Compose support live preview and hot reload
-- **Rich ecosystems**: CocoaPods, Swift Package Manager (iOS); Gradle, Maven (Android)
+| **Code Sharing** | ~80% (UI + business logic) | ~100% (Dart runs everywhere) | 0% (completely separate) |
+| **Time to MVP** | 8–10 weeks (shared codebase) | 8–10 weeks (single codebase) | 16–20 weeks (2 teams) |
+| **Developer Pool** | Very large (JS, React) | Growing but smaller | Large (but separate: Swift/Kotlin) |
+| **Performance** | Good (native bridge possible) | Very good (compiled) | Excellent |
+| **Offline Support** | Excellent (AsyncStorage, SQLite) | Excellent (Hive, Sqflite) | Excellent (Room, CoreData) |
+| **Platform Integration** | Moderate (requires native modules) | Moderate (platform channels) | Excellent (native APIs) |
+| **App Size** | ~45 MB (iOS), ~50 MB (Android) | ~35 MB (iOS), ~40 MB (Android) | ~30 MB per app |
+| **Learning Curve** | Low (React knowledge transfers) | Medium (Dart is new) | High (2 languages) |
+| **Community Maturity** | Mature (Expo, React Native community) | Growing (Google backing) | Very mature (Apple/Google) |
+| **Maintenance Cost** | Low (single team) | Low (single team) | High (2+ teams) |
+| **Long-term Scalability** | Good (Airbnb, Microsoft, Shopify use it) | Good (Google Ads, BMW use it) | Best (Uber, Twitter use it) |
 
 ---
 
-## iOS Technology Stack (Native)
+## Detailed Analysis
 
-### Core Technologies
+### Option 1: React Native ✅ RECOMMENDED
+
+**Chosen for MenuMaker MVP (Phase 3.5)**
+
+#### Advantages
+1. **Code Sharing**: 80% of codebase shared (UI screens, business logic, API calls)
+   - Single React codebase for both iOS and Android
+   - Shared state management (Redux/Zustand)
+   - Shared API service layer
+2. **Faster MVP**: Same team can deliver both platforms in 8–10 weeks
+3. **Developer Pool**: Much larger talent pool (React.js developers can transition)
+4. **Offline Support**: Excellent (AsyncStorage, SQLite via `react-native-sqlite-storage`)
+5. **Ecosystem**: Mature (Expo for easy deployment, React Navigation, extensive libraries)
+6. **Proven in Production**: Airbnb, Microsoft Teams, Shopify, Skype use it
+7. **Platform Integration**: Good via native modules (permissions, camera, geolocation)
+
+#### Disadvantages
+1. **Performance**: Slower than native for compute-heavy tasks (but acceptable for menu app)
+2. **Platform-Specific Quirks**: Some UI differences between iOS/Android require platform-specific code
+3. **Native Bridges Needed**: Camera OCR, advanced features may require native modules
+4. **App Store Guidelines**: React Native apps sometimes flagged in review (but growing acceptance)
+
+#### Tech Stack for MenuMaker
 ```json
 {
-  "language": "Swift 5.9+",
-  "uiFramework": "SwiftUI (iOS 15+)",
-  "reactive": "Combine + async/await",
-  "networking": "URLSession (async/await)",
-  "localStorage": "SwiftData + UserDefaults",
-  "secureStorage": "Keychain Services",
-  "dependencyInjection": "Manual DI or Swinject",
-  "imageProcessing": "CoreImage + Vision Framework",
-  "camera": "AVFoundation",
-  "maps": "MapKit",
-  "payments": "StoreKit 2",
-  "push": "UserNotifications + APNs",
-  "analytics": "Firebase Analytics (optional)",
+  "core": {
+    "react-native": "0.73.x",
+    "expo": "^50.x" // For easier setup & OTA updates
+  },
+  "navigation": {
+    "react-navigation": "^6.x",
+    "react-navigation-stack": "^6.x",
+    "react-navigation-bottom-tabs": "^6.x"
+  },
+  "state-management": {
+    "zustand": "^4.x" // or Redux (Zustand preferred for simplicity)
+  },
+  "network": {
+    "axios": "^1.6.x"
+  },
+  "storage": {
+    "react-native-async-storage": "^1.21.x",
+    "react-native-sqlite-storage": "^6.x"
+  },
+  "camera-ocr": {
+    "react-native-camera": "^4.x",
+    "react-native-vision-camera": "^2.x",
+    "react-native-ml-kit": "^0.x" // Firebase ML Kit bridge
+  },
+  "payment": {
+    "react-native-stripe-sdk": "^x.x",
+    "react-native-google-pay": "^x.x"
+  },
+  "notifications": {
+    "react-native-firebase": "^18.x", // FCM + APNs
+    "react-native-push-notification": "^8.x"
+  },
+  "maps": {
+    "react-native-maps": "^1.4.x"
+  },
   "testing": {
-    "unit": "XCTest",
-    "ui": "XCUITest",
-    "performance": "Xcode Instruments"
+    "jest": "^29.x",
+    "detox": "^20.x" // E2E testing
   }
 }
 ```
 
-### iOS Project Structure
+#### Project Structure
 ```
-menumaker-ios/
-├── MenuMaker.xcodeproj
-├── MenuMaker/
-│   ├── App/
-│   │   ├── MenuMakerApp.swift               # App entry point
-│   │   └── AppCoordinator.swift             # Navigation coordination
-│   ├── Features/
+menumaker-mobile/
+├── app.json                         # Expo config
+├── eas.json                         # Expo Application Services (builds)
+├── src/
+│   ├── screens/
 │   │   ├── Auth/
-│   │   │   ├── Views/
-│   │   │   │   ├── LoginView.swift
-│   │   │   │   ├── SignupView.swift
-│   │   │   │   └── ForgotPasswordView.swift
-│   │   │   ├── ViewModels/
-│   │   │   │   └── AuthViewModel.swift
-│   │   │   └── Models/
-│   │   │       └── AuthModels.swift
 │   │   ├── Seller/
-│   │   │   ├── Dashboard/
-│   │   │   ├── MenuEditor/
-│   │   │   ├── Orders/
-│   │   │   └── Reports/
-│   │   └── Customer/
-│   │       ├── Marketplace/
-│   │       ├── Checkout/
-│   │       └── OrderHistory/
-│   ├── Core/
-│   │   ├── Networking/
-│   │   │   ├── APIClient.swift              # URLSession wrapper
-│   │   │   ├── APIEndpoint.swift            # Endpoint definitions
-│   │   │   └── NetworkError.swift
-│   │   ├── Storage/
-│   │   │   ├── KeychainManager.swift        # Secure token storage
-│   │   │   ├── UserDefaultsManager.swift
-│   │   │   └── SwiftDataManager.swift
-│   │   ├── Services/
-│   │   │   ├── AuthService.swift
-│   │   │   ├── LocationService.swift
-│   │   │   ├── NotificationService.swift
-│   │   │   ├── CameraService.swift
-│   │   │   └── OCRService.swift
-│   │   └── Extensions/
-│   │       ├── View+Extensions.swift
-│   │       ├── Date+Extensions.swift
-│   │       └── String+Extensions.swift
-│   ├── Shared/
-│   │   ├── Models/                          # Data models (Codable)
-│   │   ├── Components/                      # Reusable SwiftUI views
-│   │   ├── Theme/
-│   │   │   ├── Colors.swift
-│   │   │   ├── Typography.swift
-│   │   │   └── Spacing.swift
-│   │   └── Constants/
-│   │       └── AppConstants.swift
-│   └── Resources/
-│       ├── Assets.xcassets
-│       ├── Localizable.strings              # English
-│       ├── Localizable-hi.strings           # Hindi
-│       └── Info.plist
-├── MenuMakerTests/                          # Unit tests
-├── MenuMakerUITests/                        # UI tests
-├── Widgets/                                 # Home screen widgets
-├── AppClips/                                # App Clip target
-└── Podfile                                  # CocoaPods dependencies
+│   │   ├── Customer/
+│   │   └── Shared/
+│   ├── components/
+│   ├── services/
+│   │   ├── api.ts
+│   │   ├── auth.ts
+│   │   ├── storage.ts
+│   │   └── ocr.ts                  # Native bridge for ML Kit OCR
+│   ├── store/                      # Zustand store
+│   ├── types/
+│   ├── utils/
+│   └── App.tsx                     # Entry point
+├── ios/
+│   ├── MenuMaker/
+│   └── Podfile                     # CocoaPods for native deps
+├── android/
+│   ├── app/
+│   └── build.gradle                # Gradle for native deps
+├── __tests__/
+└── package.json
+```
+
+#### Development Workflow
+1. **Local Development**: `expo start` → preview on simulator/device
+2. **Hot Reload**: Instant feedback when editing `.tsx` files
+3. **Native Module**: Write native code in `ios/` (Swift) and `android/` (Kotlin) only for camera OCR
+4. **Build for iOS**: `eas build --platform ios` (managed service) or Xcode
+5. **Build for Android**: `eas build --platform android` or Gradle
+6. **Over-The-Air Updates**: Expo allows JS bundle updates without App Store review
+
+---
+
+### Option 2: Flutter
+
+**Alternative: If hiring Dart developers or prioritizing performance**
+
+#### Advantages
+1. **Code Sharing**: 100% (single Dart codebase for both platforms)
+2. **Performance**: Slightly better than React Native (compiled to native code)
+3. **UI Consistency**: Material Design 3 built-in
+4. **Offline Support**: Excellent (Hive, Sqflite)
+5. **Growing Community**: Google backing, increasing adoption
+
+#### Disadvantages
+1. **Smaller Developer Pool**: Dart developers less common than React
+2. **Learning Curve**: New language for most teams
+3. **Ecosystem**: Smaller library ecosystem compared to React Native
+4. **Apple Restriction**: Slightly more complex App Store submission for Dart
+5. **TypeScript**: No native TypeScript (Dart's type system is different)
+
+#### When to Consider Flutter
+- Team has Dart experience or time to train
+- Want maximum code sharing (100%)
+- Willing to invest in different ecosystem
+- Higher performance requirements than React Native provides
+
+**Our Recommendation**: Stick with React Native (better developer pool, faster learning curve for existing React teams).
+
+---
+
+### Option 3: Native iOS + Android
+
+**Alternative: If hiring dedicated iOS and Android teams**
+
+#### Advantages
+1. **Performance**: Maximum (direct access to platform APIs)
+2. **Platform Integration**: 100% support for all iOS/Android features
+3. **App Store Acceptance**: No concerns about third-party frameworks
+4. **Long-term Maintenance**: Easier once codebase established
+
+#### Disadvantages
+1. **Time**: 16–20 weeks (separate iOS + Android teams)
+2. **Cost**: 2x developer cost (Swift + Kotlin developers)
+3. **Maintenance**: Code duplication, hard to keep in sync
+4. **Hiring**: Difficult to find experienced mobile developers
+5. **Onboarding**: New engineers need to learn both platforms
+
+#### When to Choose Native
+- Budget allows 2+ mobile teams
+- Performance is critical (> 99% requirement)
+- Complex platform-specific features needed
+- Long-term app with 5+ year horizon
+
+**Our Recommendation**: Not for MVP. Reconsider at Phase 4+ if performance becomes bottleneck.
+
+---
+
+## Recommendation: React Native for MenuMaker
+
+### Strategic Decision
+**Use React Native for Phase 3.5+ MVP, with selective native bridges for performance-critical features.**
+
+### Rationale
+1. **Team Alignment**: Backend team (Node/React) can contribute to mobile
+2. **Speed to Market**: 8–10 weeks to launch both iOS + Android simultaneously
+3. **Cost Efficiency**: 1 mobile team vs. 2 teams
+4. **Scalability**: Can add native code later (React Native allows gradual migration)
+5. **Offline Capability**: AsyncStorage + SQLite sufficient for sellers/customers
+
+### Native Bridge Strategy
+Use React Native Native Modules for:
+1. **Camera OCR** → ML Kit (Firebase) for fast menu import
+2. **Biometric Auth** → LocalAuthentication (iOS) + BiometricPrompt (Android)
+3. **Offline Sync** → WorkManager (Android) + iOS Background Task for reliable sync
+4. **Maps** → React Native Maps (wraps Google Maps + MapKit)
+
+### Deployment Strategy
+```
+Phase 3.5 (Months 12–15):
+├── Month 12: Design + Setup (Figma mockups, React Native project setup)
+├── Month 13: Core Screens (Auth, Seller Dashboard, Customer Marketplace)
+├── Month 14: Advanced Features (OCR, Payments, Offline Sync)
+└── Month 15: Beta Testing → App Store + Play Store submission
+
+Deployment:
+├── iOS: TestFlight (2 weeks) → App Store (1–3 week review)
+└── Android: Google Play Internal Testing (1 week) → Alpha (1 week) → Beta (2 weeks) → Production
 ```
 
 ---
 
-## Android Technology Stack (Native)
+## Implementation Roadmap
 
-### Core Technologies
-```json
-{
-  "language": "Kotlin 1.9+",
-  "uiFramework": "Jetpack Compose (Material3)",
-  "architecture": "MVVM + Clean Architecture",
-  "dependencyInjection": "Hilt (Dagger)",
-  "reactive": "Kotlin Coroutines + Flow",
-  "networking": "Retrofit + OkHttp",
-  "localStorage": "Room Database + DataStore",
-  "secureStorage": "EncryptedSharedPreferences",
-  "imageLoading": "Coil",
-  "camera": "CameraX",
-  "maps": "Google Maps SDK",
-  "payments": "Google Play Billing Library",
-  "push": "Firebase Cloud Messaging (FCM)",
-  "analytics": "Firebase Analytics (optional)",
-  "testing": {
-    "unit": "JUnit4 + Mockk",
-    "ui": "Espresso + Compose Testing",
-    "integration": "Robolectric"
-  }
-}
-```
+### Phase 3.5.1 (Weeks 1–2): Setup & Infrastructure
+- [ ] Create React Native project (Expo or vanilla RN)
+- [ ] Setup Git repo, CI/CD (GitHub Actions for builds)
+- [ ] Configure native environment (Xcode, Android Studio, CocoaPods, Gradle)
+- [ ] Create design system (colors, typography, components)
+- [ ] Setup testing framework (Jest + Detox for E2E)
 
-### Android Project Structure
-```
-menumaker-android/
-├── app/
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/com/menumaker/
-│   │   │   │   ├── MenuMakerApplication.kt
-│   │   │   │   ├── di/                      # Hilt modules
-│   │   │   │   │   ├── NetworkModule.kt
-│   │   │   │   │   ├── DatabaseModule.kt
-│   │   │   │   │   └── RepositoryModule.kt
-│   │   │   │   ├── features/
-│   │   │   │   │   ├── auth/
-│   │   │   │   │   │   ├── presentation/
-│   │   │   │   │   │   │   ├── LoginScreen.kt
-│   │   │   │   │   │   │   ├── SignupScreen.kt
-│   │   │   │   │   │   │   └── AuthViewModel.kt
-│   │   │   │   │   │   ├── domain/
-│   │   │   │   │   │   │   ├── model/
-│   │   │   │   │   │   │   ├── repository/
-│   │   │   │   │   │   │   └── usecase/
-│   │   │   │   │   │   └── data/
-│   │   │   │   │   │       ├── remote/
-│   │   │   │   │   │       ├── local/
-│   │   │   │   │   │       └── repository/
-│   │   │   │   │   ├── seller/
-│   │   │   │   │   │   ├── dashboard/
-│   │   │   │   │   │   ├── menu/
-│   │   │   │   │   │   ├── orders/
-│   │   │   │   │   │   └── reports/
-│   │   │   │   │   └── customer/
-│   │   │   │   │       ├── marketplace/
-│   │   │   │   │       ├── checkout/
-│   │   │   │   │       └── history/
-│   │   │   │   ├── core/
-│   │   │   │   │   ├── network/
-│   │   │   │   │   │   ├── ApiService.kt
-│   │   │   │   │   │   ├── NetworkResult.kt
-│   │   │   │   │   │   └── AuthInterceptor.kt
-│   │   │   │   │   ├── database/
-│   │   │   │   │   │   ├── MenuMakerDatabase.kt
-│   │   │   │   │   │   └── dao/
-│   │   │   │   │   ├── util/
-│   │   │   │   │   │   ├── Extensions.kt
-│   │   │   │   │   │   └── Constants.kt
-│   │   │   │   │   └── ui/
-│   │   │   │   │       ├── theme/
-│   │   │   │   │       │   ├── Color.kt
-│   │   │   │   │       │   ├── Type.kt
-│   │   │   │   │       │   └── Theme.kt
-│   │   │   │   │       └── components/
-│   │   │   │   └── navigation/
-│   │   │   │       └── AppNavigation.kt
-│   │   │   ├── res/
-│   │   │   │   ├── values/
-│   │   │   │   │   ├── strings.xml          # English
-│   │   │   │   │   ├── strings-hi.xml       # Hindi
-│   │   │   │   │   ├── colors.xml
-│   │   │   │   │   └── themes.xml
-│   │   │   │   ├── drawable/
-│   │   │   │   └── mipmap/
-│   │   │   └── AndroidManifest.xml
-│   │   ├── test/                            # Unit tests
-│   │   └── androidTest/                     # Instrumented tests
-│   └── build.gradle.kts                     # App-level Gradle
-├── build.gradle.kts                         # Project-level Gradle
-└── settings.gradle.kts
-```
+### Phase 3.5.2 (Weeks 3–4): Auth & Onboarding
+- [ ] Implement signup/login screens
+- [ ] JWT token management (AsyncStorage + Keychain)
+- [ ] Biometric authentication (Face ID, Touch ID, fingerprint)
+- [ ] Password reset flow
+- [ ] Tests (unit + E2E)
+
+### Phase 3.5.3 (Weeks 5–7): Core Features (Seller)
+- [ ] Dashboard (orders list, quick stats)
+- [ ] Order detail & fulfillment
+- [ ] Menu editor (drag-drop reordering)
+- [ ] Basic reporting (daily sales, order history)
+- [ ] Tests
+
+### Phase 3.5.4 (Weeks 5–7): Core Features (Customer)
+- [ ] Marketplace map view + list
+- [ ] Seller detail + menu browsing
+- [ ] Checkout & payment
+- [ ] Order history + re-order
+- [ ] Tests
+
+### Phase 3.5.5 (Weeks 8–9): Advanced Features
+- [ ] Camera OCR for menu import (native bridge to ML Kit)
+- [ ] Push notifications (FCM integration)
+- [ ] Offline sync (persist orders locally, sync when online)
+- [ ] Widgets (home screen quick-order, sales summary)
+- [ ] Tests
+
+### Phase 3.5.6 (Weeks 10–11): QA & Optimization
+- [ ] Performance testing (cold start < 2.5s, 60fps)
+- [ ] Memory/battery profiling
+- [ ] Accessibility audit (TalkBack, VoiceOver)
+- [ ] Beta testing (internal 50 users)
+
+### Phase 3.5.7 (Week 12): Launch
+- [ ] App Store submission (TestFlight → review)
+- [ ] Google Play submission (Internal → Alpha → Beta → Production)
+- [ ] Marketing materials (screenshots, app store copy)
 
 ---
 
-## Development Workflow
+## Dependency & Integration Points
 
-### iOS Development Workflow
-1. **Setup**: Install Xcode 15+, CocoaPods/SPM
-2. **Development**:
-   - SwiftUI live preview for instant UI feedback
-   - Combine for reactive data flow
-   - async/await for networking
-3. **Testing**: XCTest (unit), XCUITest (UI), Instruments (performance)
-4. **Build**: Xcode Archive → Export IPA
-5. **Distribution**: TestFlight (beta) → App Store
+### With Backend (Node/Fastify)
+- **API Contract**: Same OpenAPI spec used for web PWA
+- **Authentication**: JWT token (issued by backend, stored in Keychain)
+- **Push Notifications**: Backend sends Firebase Cloud Messaging (FCM) + Apple Push Notification (APNs)
+- **Webhook Verification**: Payment processors send webhooks to backend (app calls backend for status)
 
-### Android Development Workflow
-1. **Setup**: Install Android Studio Hedgehog+, configure Gradle
-2. **Development**:
-   - Jetpack Compose live preview
-   - Kotlin Coroutines + Flow for async operations
-   - Hilt for dependency injection
-3. **Testing**: JUnit + Mockk (unit), Espresso (UI), Profiler (performance)
-4. **Build**: Gradle → Generate AAB/APK
-5. **Distribution**: Internal Testing → Alpha → Beta → Production
+### With Existing Web PWA
+- **Shared API**: Same `/api/v1/...` endpoints
+- **Database**: Same PostgreSQL backend
+- **Storage**: Same S3 for images, files
+- **Authentication**: Same JWT scheme
+
+### With Third-Party Services
+- **Firebase**: Analytics, Cloud Messaging (FCM), ML Kit OCR
+- **Apple**: App Store, APNs, Keychain
+- **Google**: Google Play Store, FCM, Google Maps, Google Pay, ML Kit
+- **Stripe/Razorpay**: Payment processing (via backend webhooks)
 
 ---
 
-## Code Sharing Strategy
+## Rollout Strategy
 
-While the apps are built natively, we can share:
+### Initial Launch (Week 12)
+- iOS app on App Store (TestFlight review → launch)
+- Android app on Google Play (Internal → Alpha → Beta → Production)
+- Target: 500 beta testers (home sellers)
 
-### 1. **API Contracts** (100% shared)
-- OpenAPI specification defines all endpoints
-- Both platforms implement the same API client interface
-- Consistent request/response models
+### Month 1 Post-Launch
+- Monitor crash rates, user feedback
+- Push updates (bug fixes, performance improvements)
+- Target: 1,000 downloads, 4.5+ star rating
 
-### 2. **Business Logic Documentation** (Conceptual sharing)
-- Shared understanding of business rules
-- Consistent validation logic
-- Same authentication flow
+### Month 3 Post-Launch
+- Add Phase 2 features (WhatsApp, OCR, subscriptions)
+- Platform-specific improvements (Material You for Android, iOS 17 features)
+- Target: 5,000+ downloads
 
-### 3. **Design System** (Visual consistency)
-- Shared design tokens (colors, spacing, typography)
-- Consistent component library (implemented natively on each platform)
-- Same user flows and navigation patterns
-
-### 4. **Backend** (100% shared)
-- Single Node.js/Fastify backend serves both apps
-- Same PostgreSQL database
-- Same authentication (JWT)
-
----
-
-## Implementation Timeline
-
-### Phase 1: Foundation (Weeks 1-4)
-**iOS Team** (2 developers):
-- Week 1-2: Project setup, architecture, design system
-- Week 3-4: Authentication, API client, core services
-
-**Android Team** (2 developers):
-- Week 1-2: Project setup, Hilt DI, architecture
-- Week 3-4: Authentication, Retrofit client, core repositories
-
-### Phase 2: Core Features (Weeks 5-10)
-**iOS Team**:
-- Week 5-7: Seller features (dashboard, menu, orders)
-- Week 8-10: Customer features (marketplace, checkout, history)
-
-**Android Team**:
-- Week 5-7: Seller features (dashboard, menu, orders)
-- Week 8-10: Customer features (marketplace, checkout, history)
-
-### Phase 3: Advanced Features (Weeks 11-14)
-**iOS Team**:
-- Camera OCR, Push notifications, Widgets, Siri Shortcuts
-
-**Android Team**:
-- Camera OCR, FCM, Widgets, Material You theming
-
-### Phase 4: Polish & Testing (Weeks 15-16)
-- Performance optimization
-- Accessibility audit
-- Beta testing
-
-### Phase 5: Launch (Weeks 17-18)
-- App Store submission (iOS)
-- Play Store submission (Android)
-
-**Total Timeline**: 18 weeks for both platforms (parallel development)
-
----
-
-## Team Structure
-
-### Required Team
-```
-Mobile Development Team (4 developers):
-├── iOS Team (2 developers)
-│   ├── Senior iOS Developer (Swift/SwiftUI expert)
-│   └── iOS Developer (2+ years SwiftUI experience)
-└── Android Team (2 developers)
-    ├── Senior Android Developer (Kotlin/Compose expert)
-    └── Android Developer (2+ years Compose experience)
-
-Supporting Roles:
-├── Mobile Designer (1): Figma mockups, platform-specific designs
-├── QA Engineer (1): Testing both platforms
-└── DevOps Engineer (0.5): CI/CD, App Store automation
-```
-
----
-
-## Deployment Strategy
-
-### iOS Deployment
-```
-Development → TestFlight Beta → App Store Review → Release
-├── Build with Xcode Cloud or Fastlane
-├── TestFlight: 2 weeks internal testing (50+ users)
-├── App Store review: 1-3 days typically
-└── Phased release: 10% → 50% → 100% over 7 days
-```
-
-### Android Deployment
-```
-Development → Internal Testing → Alpha → Beta → Production
-├── Build with Gradle + GitHub Actions
-├── Internal: 1 week (20+ users)
-├── Alpha: 1 week (100+ users)
-├── Beta: 2 weeks (500+ users)
-└── Staged rollout: 10% → 50% → 100% over 7 days
-```
-
----
-
-## Performance Targets
-
-### iOS Targets
-- **Cold start**: < 1.5 seconds
-- **Memory**: < 120 MB (typical usage)
-- **App size**: < 35 MB (download)
-- **Battery**: < 3% per hour (active use)
-- **Frame rate**: 60fps (animations)
-
-### Android Targets
-- **Cold start**: < 2 seconds
-- **Memory**: < 150 MB (typical usage)
-- **APK size**: < 40 MB (download)
-- **Battery**: < 4% per hour (active use)
-- **Frame rate**: 60fps (animations)
+### Month 6 Post-Launch (Phase 4)
+- Consider native rewrite for performance-critical features
+- Evaluate Wear OS + Apple Watch apps
+- Target: 10,000+ downloads
 
 ---
 
 ## Risk Mitigation
 
-### Risk: Higher Development Cost (2 Teams)
-- **Mitigation**: Parallel development reduces time-to-market
-- **Long-term benefit**: Lower maintenance cost, better performance
+### Risk: React Native Performance Issues
+- **Mitigation**: Use native bridges for heavy lifting (OCR, offline sync)
+- **Fallback**: Gradual migration to native if needed
 
-### Risk: Code Duplication
-- **Mitigation**: Shared API contracts, design system, documentation
-- **Benefit**: Each platform optimized for its ecosystem
+### Risk: App Store/Play Store Rejection
+- **Mitigation**: Follow guidelines strictly, test with App Review Guidelines
+- **Historical**: Most React Native apps approved (Airbnb, Skype, etc.)
 
-### Risk: Platform-Specific Bugs
-- **Mitigation**: Comprehensive testing, CI/CD, beta programs
-- **Benefit**: Platform-native debugging tools are superior
+### Risk: Developer Shortage
+- **Mitigation**: Hire React/TypeScript devs (larger pool than Flutter/native)
+- **Training**: React → React Native learning curve ~1 week
+
+### Risk: Third-Party Library Maintenance
+- **Mitigation**: Use well-maintained libraries (react-native-firebase, @react-navigation)
+- **Fallback**: Maintain critical modules in-house if needed
 
 ---
 
-## Success Metrics
+## Success Criteria
 
-### Technical Excellence
-- ✅ 99%+ crash-free users (both platforms)
-- ✅ 4.5+ star rating (App Store + Play Store)
-- ✅ < 2s cold start time
-- ✅ 60fps UI performance
+✅ **iOS App**
+- [ ] Launches from Xcode simulator in < 2.5 seconds
+- [ ] 4.5+ star rating on App Store (100+ reviews)
+- [ ] 99%+ crash-free user rate
+- [ ] 70%+ push notification opt-in rate
 
-### Business Success
-- ✅ 1,000+ downloads per platform (Month 1)
-- ✅ 20% MAU (monthly active users)
-- ✅ 5% DAU (daily active users)
-- ✅ 70%+ push notification opt-in
+✅ **Android App**
+- [ ] Launches from Android Studio emulator in < 2.5 seconds
+- [ ] 4.5+ star rating on Google Play (100+ reviews)
+- [ ] 99%+ crash-free user rate
+- [ ] 70%+ push notification opt-in rate
+
+✅ **Business**
+- [ ] 1,000 downloads per platform by Month 2
+- [ ] 20% monthly active user (MAU) retention
+- [ ] 5% daily active user (DAU) engagement
+- [ ] Same API surface as web (feature parity)
+
+---
+
+## Alternative Decision Points
+
+### When to Reconsider React Native
+1. **Performance Bottleneck**: If app cold start > 3 seconds consistently
+   - → Migrate performance-critical components to native
+2. **Feature Gaps**: If React Native libraries lack key features
+   - → Build custom native modules
+3. **Platform Updates**: If Apple/Google release breaking changes
+   - → Update native dependencies quickly; document workarounds
+4. **Team Preferences**: If team strongly prefers Flutter/Native
+   - → Reconsider at Phase 4 (18+ months)
+
+### Migration Path to Native (If Needed)
+- Phase 4: Selective rewrite of performance-critical screens (Menu Editor, Checkout)
+- Keep React Native for authentication, reporting, non-critical screens
+- Gradual hybrid approach (React Native + native code coexisting)
 
 ---
 
 ## Conclusion
 
-**Native development is the optimal choice for MenuMaker** because:
+**React Native is the optimal choice for MenuMaker mobile MVP** because:
+1. Leverages existing React expertise on team
+2. Fastest time to market (8–10 weeks for both platforms)
+3. Single codebase to maintain (lower cost)
+4. Sufficient performance for home food seller use case
+5. Proven in production at scale (Airbnb, Microsoft, Shopify)
 
-1. **Best User Experience**: Platform-native UI patterns users expect
-2. **Maximum Performance**: Direct platform APIs, no bridge overhead
-3. **Future-Proof**: Immediate access to new platform features
-4. **Long-term Maintainability**: Stable platform APIs, no framework lock-in
-5. **Competitive Advantage**: Uber, Twitter, Airbnb use native for a reason
+With selective native bridges for camera OCR and offline sync, MenuMaker can deliver a high-quality iOS and Android experience while maintaining cost and velocity.
 
-While the initial development cost is higher (2 teams vs 1), the **superior UX, performance, and maintainability** justify the investment for a production-grade food ordering platform.
-
-**Next Steps**: Proceed with native iOS (Swift/SwiftUI) and Android (Kotlin/Compose) development.
+**Next Steps**: Proceed with React Native design phase; allocate 1 React Native developer by Month 10 (Phase 3.5 start).
 
 ---
 
-**Document Status**: Ready for stakeholder approval and development kickoff
+**Document Status**: Ready for stakeholder review and development kickoff
 

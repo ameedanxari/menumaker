@@ -180,7 +180,18 @@ export class OrderService {
         });
       }
 
-      // Minimum order validation removed - not part of current schema
+      // Check minimum order value
+      if (settings.min_order_value_cents && itemsTotal < settings.min_order_value_cents) {
+        const error = new Error(
+          `Minimum order value not met. Minimum: ₹${settings.min_order_value_cents / 100}, Current: ₹${itemsTotal / 100}`
+        ) as Error & {
+          statusCode: number;
+          code: string;
+        };
+        error.statusCode = 400;
+        error.code = 'MIN_ORDER_NOT_MET';
+        throw error;
+      }
 
       // Calculate delivery fee (simplified - no distance calculation in MVP)
       let deliveryFee = data.delivery_type === 'delivery'

@@ -2,21 +2,24 @@ import { jest, describe, beforeEach, it, expect, afterEach } from '@jest/globals
 import Fastify, { FastifyInstance } from 'fastify';
 import { settingsRoutes } from '../../src/routes/settings.js';
 import { AppDataSource } from '../../src/config/database.js';
+import { generateAccessToken } from '../../src/utils/jwt.js';
 
 // Mock dependencies
 jest.mock('../../src/config/database.js');
-jest.mock('../../src/middleware/auth.js', () => ({
-  authenticate: jest.fn().mockImplementation(async (request: any, reply: any) => {
-    request.user = { userId: 'test-user-id' };
-  }),
-}));
 
 describe('Settings Routes', () => {
   let app: FastifyInstance;
   let mockSettingsRepo: any;
+  let authToken: string;
 
   beforeEach(async () => {
     app = Fastify();
+
+    // Generate auth token for tests
+    authToken = generateAccessToken({
+      userId: 'test-user-id',
+      email: 'test@example.com',
+    });
 
     mockSettingsRepo = {
       findOne: jest.fn(),
@@ -47,6 +50,9 @@ describe('Settings Routes', () => {
       mockSettingsRepo.findOne.mockResolvedValue(mockSettings);
 
       const response = await app.inject({
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
         method: 'GET',
         url: '/api/v1/settings',
       });
@@ -70,6 +76,9 @@ describe('Settings Routes', () => {
       mockSettingsRepo.save.mockResolvedValue(defaultSettings);
 
       const response = await app.inject({
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
         method: 'GET',
         url: '/api/v1/settings',
       });
@@ -92,6 +101,9 @@ describe('Settings Routes', () => {
       mockSettingsRepo.save.mockResolvedValue({ ...mockSettings, language: 'ar' });
 
       const response = await app.inject({
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
         method: 'PATCH',
         url: '/api/v1/settings',
         payload: {
@@ -121,6 +133,9 @@ describe('Settings Routes', () => {
       });
 
       const response = await app.inject({
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
         method: 'PATCH',
         url: '/api/v1/settings',
         payload: {
@@ -144,6 +159,9 @@ describe('Settings Routes', () => {
       mockSettingsRepo.save.mockResolvedValue({ ...mockSettings, biometric_enabled: true });
 
       const response = await app.inject({
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
         method: 'PATCH',
         url: '/api/v1/settings',
         payload: {
@@ -168,6 +186,9 @@ describe('Settings Routes', () => {
       mockSettingsRepo.save.mockResolvedValue(newSettings);
 
       const response = await app.inject({
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
         method: 'PATCH',
         url: '/api/v1/settings',
         payload: {
@@ -197,6 +218,9 @@ describe('Settings Routes', () => {
       });
 
       const response = await app.inject({
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
         method: 'PATCH',
         url: '/api/v1/settings',
         payload: {

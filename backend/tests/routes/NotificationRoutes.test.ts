@@ -2,23 +2,25 @@ import { jest, describe, beforeEach, it, expect, afterEach } from '@jest/globals
 import Fastify, { FastifyInstance } from 'fastify';
 import { notificationRoutes } from '../../src/routes/notifications.js';
 import { AppDataSource } from '../../src/config/database.js';
+import { generateAccessToken } from '../../src/utils/jwt.js';
 
 // Mock dependencies
 jest.mock('../../src/config/database.js');
-jest.mock('../../src/middleware/auth.js', () => ({
-  authenticate: jest.fn().mockImplementation(async (request: any, reply: any) => {
-    // Mock authenticated user
-    request.user = { userId: 'test-user-id' };
-  }),
-}));
 
 describe('Notification Routes', () => {
   let app: FastifyInstance;
   let mockNotificationRepo: any;
+  let authToken: string;
 
   beforeEach(async () => {
     // Create fresh Fastify instance
     app = Fastify();
+
+    // Generate auth token for tests
+    authToken = generateAccessToken({
+      userId: 'test-user-id',
+      email: 'test@example.com',
+    });
 
     // Setup mock repository
     mockNotificationRepo = {
@@ -65,6 +67,9 @@ describe('Notification Routes', () => {
       mockNotificationRepo.findAndCount.mockResolvedValue([mockNotifications, 2]);
 
       const response = await app.inject({
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
         method: 'GET',
         url: '/api/v1/notifications',
       });
@@ -80,6 +85,9 @@ describe('Notification Routes', () => {
       mockNotificationRepo.findAndCount.mockResolvedValue([[], 0]);
 
       const response = await app.inject({
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
         method: 'GET',
         url: '/api/v1/notifications?unread_only=true',
       });
@@ -107,6 +115,9 @@ describe('Notification Routes', () => {
       mockNotificationRepo.findOne.mockResolvedValue(mockNotification);
 
       const response = await app.inject({
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
         method: 'GET',
         url: '/api/v1/notifications/notif-1',
       });
@@ -121,6 +132,9 @@ describe('Notification Routes', () => {
       mockNotificationRepo.findOne.mockResolvedValue(null);
 
       const response = await app.inject({
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
         method: 'GET',
         url: '/api/v1/notifications/nonexistent',
       });
@@ -141,6 +155,9 @@ describe('Notification Routes', () => {
       mockNotificationRepo.save.mockResolvedValue({ ...mockNotification, is_read: true });
 
       const response = await app.inject({
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
         method: 'PATCH',
         url: '/api/v1/notifications/notif-1',
         payload: { is_read: true },
@@ -158,6 +175,9 @@ describe('Notification Routes', () => {
       mockNotificationRepo.update.mockResolvedValue({ affected: 5 });
 
       const response = await app.inject({
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
         method: 'POST',
         url: '/api/v1/notifications/mark-all-read',
       });
@@ -174,6 +194,9 @@ describe('Notification Routes', () => {
       mockNotificationRepo.count.mockResolvedValue(3);
 
       const response = await app.inject({
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
         method: 'GET',
         url: '/api/v1/notifications/unread-count',
       });

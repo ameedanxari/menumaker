@@ -374,13 +374,26 @@ describe('OrderService', () => {
 
   describe('getOrderSummary', () => {
     it('should return business order statistics', async () => {
+      const mockBusiness = {
+        id: 'business-123',
+        owner_id: 'user-123',
+      };
+
       const mockOrders = [
         { id: 'order-1', total_cents: 5000, order_status: 'completed' },
         { id: 'order-2', total_cents: 3000, order_status: 'completed' },
         { id: 'order-3', total_cents: 4000, order_status: 'pending' },
       ];
 
-      mockOrderRepository.find.mockResolvedValue(mockOrders);
+      mockBusinessRepository.findOne.mockResolvedValue(mockBusiness);
+
+      const mockQueryBuilder = {
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockOrders),
+      };
+
+      mockOrderRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
       const result = await orderService.getOrderSummary(
         'business-123',
@@ -395,11 +408,24 @@ describe('OrderService', () => {
     });
 
     it('should filter by date range', async () => {
+      const mockBusiness = {
+        id: 'business-123',
+        owner_id: 'user-123',
+      };
+
       const mockOrders = [
         { id: 'order-1', total_cents: 5000, order_status: 'completed' },
       ];
 
-      mockOrderRepository.find.mockResolvedValue(mockOrders);
+      mockBusinessRepository.findOne.mockResolvedValue(mockBusiness);
+
+      const mockQueryBuilder = {
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockOrders),
+      };
+
+      mockOrderRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
       const startDate = new Date('2025-01-01');
       const endDate = new Date('2025-01-31');
@@ -413,6 +439,8 @@ describe('OrderService', () => {
 
       expect(result.totalOrders).toBe(1);
       expect(result.totalSales).toBe(5000);
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('order.created_at >= :startDate', { startDate });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('order.created_at <= :endDate', { endDate });
     });
   });
 
@@ -420,19 +448,46 @@ describe('OrderService', () => {
     it('should validate minimum order value', async () => {
       const mockBusiness = {
         id: 'business-123',
-        settings: {
-          min_order_value_cents: 5000, // Rs. 50 minimum
-        },
+        owner_id: 'owner-123',
       };
 
-      mockBusinessRepository.findOne.mockResolvedValue(mockBusiness);
+      const mockSettings = {
+        id: 'settings-123',
+        business_id: 'business-123',
+        min_order_value_cents: 5000, // Rs. 50 minimum
+      };
+
+      const mockMenu = {
+        id: 'menu-123',
+        business_id: 'business-123',
+        business: mockBusiness,
+        status: 'published',
+      };
 
       const mockDish = {
         id: 'dish-1',
         price_cents: 1000,
+        business_id: 'business-123',
+        is_available: true,
       };
 
-      mockDishRepository.findOne.mockResolvedValue(mockDish);
+      // Mock query runner manager
+      mockQueryRunner.manager = {
+        findOne: jest.fn().mockImplementation((entity: any, options: any) => {
+          if (entity === Menu || entity.name === 'Menu') return Promise.resolve(mockMenu);
+          if (entity === BusinessSettings || entity.name === 'BusinessSettings') return Promise.resolve(mockSettings);
+          if (entity === Dish || entity.name === 'Dish') return Promise.resolve(mockDish);
+          return Promise.resolve(null);
+        }),
+        findByIds: jest.fn().mockImplementation((entity: any, ids: any[]) => {
+          if (entity === Dish || entity.name === 'Dish') {
+            return Promise.resolve([mockDish]);
+          }
+          return Promise.resolve([]);
+        }),
+        create: jest.fn().mockImplementation((entity: any, data: any) => data),
+        save: jest.fn().mockImplementation((data: any) => Promise.resolve(data)),
+      };
 
       const orderData = {
         menu_id: 'menu-123',
@@ -440,7 +495,7 @@ describe('OrderService', () => {
         customer_phone: '+1234567890',
         delivery_type: 'delivery' as const,
         delivery_address: '123 Main St',
-        items: [{ dish_id: 'dish-1', quantity: 1 }], // Only 10 Rs
+        items: [{ dish_id: 'dish-1', quantity: 1 }], // Only 10 Rs (1000 cents)
       };
 
       await expect(orderService.createOrder(orderData)).rejects.toThrow(

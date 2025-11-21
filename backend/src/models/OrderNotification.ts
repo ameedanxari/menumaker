@@ -1,3 +1,4 @@
+import type { Relation } from 'typeorm';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -5,9 +6,7 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
-  Index,
-  Relation,
-} from 'typeorm';
+  Index} from 'typeorm';
 import { Order } from './Order.js';
 import { User } from './User.js';
 

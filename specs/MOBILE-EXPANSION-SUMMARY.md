@@ -315,11 +315,12 @@ Month 0    Month 2    Month 6    Month 12   Month 15   Month 18
 - `specs/001-menu-maker/plan.md` — Added mobile architecture section (+4 KB, +80 lines)
 
 ### Prerequisite Specifications (Existing)
-- `specs/001-menu-maker/phase-1-spec.md` — Phase 1 user stories (7 MVP features)
-- `specs/001-menu-maker/phase-2-spec.md` — Phase 2 growth features (7 stories)
-- `specs/001-menu-maker/phase-3-spec.md` — Phase 3 scale features (12 stories)
-- `specs/001-menu-maker/data-model.md` — Data model (all entities across phases)
-- `specs/PHASES-ROADMAP.md` — 18-month roadmap (Phases 0-3.5)
+- `specs/001-menu-maker/spec.md` — Phase 1 user stories (7 MVP features)
+- `specs/001-menu-maker/phase-2-spec.md` — Phase 2 growth features (6 stories)
+- `specs/001-menu-maker/phase-3-spec.md` — Phase 3 scale features (9 stories)
+- `specs/001-menu-maker/data-model.md` — Data model (10 Phase 1 entities)
+- `specs/001-menu-maker/phase-2-data-model.md` — Phase 2 data additions (+5 entities)
+- `specs/PHASES-ROADMAP.md` — 12-month roadmap (all phases)
 
 ---
 

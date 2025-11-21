@@ -1,3 +1,4 @@
+import type { Relation } from 'typeorm';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -5,9 +6,7 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
-  Index,
-  Relation,
-} from 'typeorm';
+  Index} from 'typeorm';
 import { Menu } from './Menu.js';
 import { Dish } from './Dish.js';
 

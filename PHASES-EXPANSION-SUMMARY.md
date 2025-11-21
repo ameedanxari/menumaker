@@ -251,9 +251,7 @@ root/
 - Marketing: Rs. 30L (seller acquisition ramped up)
 - Contingency: Rs. 309.5L
 
-### **Total Budget (Phases 0-3, 12 months): Rs. 656.7L**
-
-**Note**: This excludes Phase 3.5 (Mobile Apps, Months 14-18) which adds Rs. 271.5L, bringing the complete 18-month budget to **Rs. 1,130L** (see PHASES-ROADMAP.md for full breakdown).
+### **Total 12-Month Budget: Rs. 656.7L**
 
 ### Profitability Projection
 - Phase 3 annual GMV: Rs. 6,000L (Rs. 500L/month × 12)

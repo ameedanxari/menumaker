@@ -1,7 +1,7 @@
 # Implementation Plan: MenuMaker MVP
 
-**Branch**: `001-menu-maker` | **Date**: 2025-11-10 | **Spec**: `specs/001-menu-maker/phase-1-spec.md`
-**Input**: Feature specification from `specs/001-menu-maker/phase-1-spec.md`
+**Branch**: `001-menu-maker` | **Date**: 2025-11-10 | **Spec**: `specs/001-menu-maker/spec.md`  
+**Input**: Feature specification from `specs/001-menu-maker/spec.md`
 
 ---
 
@@ -49,12 +49,10 @@ Verify alignment with project principles (`memory/constitution.md`):
 
 ```text
 specs/001-menu-maker/
-├── phase-1-spec.md         # Feature specification (Phase 1 MVP)
-├── phase-2-spec.md         # Feature specification (Phase 2 Growth)
-├── phase-3-spec.md         # Feature specification (Phase 3 Scale)
+├── spec.md                 # Feature specification (this project)
 ├── plan.md                 # Implementation plan (this file)
 ├── research.md             # Technology decisions & justifications
-├── data-model.md           # Entities, relationships, schemas (all phases)
+├── data-model.md           # Entities, relationships, schemas
 ├── quickstart.md           # Acceptance scenarios & smoke tests
 ├── contracts/
 │   ├── api.openapi.yaml    # OpenAPI v3 schema for all endpoints
@@ -188,7 +186,7 @@ All endpoints return JSON with status codes 200, 400, 401, 404, 422, 500. Error 
 - `POST /media/upload` — Upload image, returns URL (auth required)
 - `GET /media/social-preview/{menuId}` — Generate social preview image
 - `GET /reports/orders` — Export orders (auth required, returns CSV)
-- `POST /ocr/parse` — OCR parse endpoint (stub only in Phase 1; returns 501 Not Implemented; full implementation in Phase 2)
+- `POST /ocr/parse` — Submit image/text for OCR (future; stub for MVP)
 
 See `contracts/api.openapi.yaml` for full schema.
 
@@ -382,7 +380,7 @@ FRONTEND_URL=http://localhost:3000   # CORS
 
 ## Success Criteria
 
-- ✅ All acceptance criteria from phase-1-spec.md met
+- ✅ All acceptance criteria from spec.md met
 - ✅ Tests pass (>70% coverage)
 - ✅ E2E smoke tests pass (signup → menu publish → order)
 - ✅ Performance: LCP < 2s, API p95 < 200ms

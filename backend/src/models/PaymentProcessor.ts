@@ -1,3 +1,4 @@
+import type { Relation } from 'typeorm';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -5,9 +6,7 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
-  UpdateDateColumn,
-  Relation,
-} from 'typeorm';
+  UpdateDateColumn} from 'typeorm';
 import { Business } from './Business.js';
 
 /**

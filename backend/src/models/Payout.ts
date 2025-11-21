@@ -1,3 +1,4 @@
+import type { Relation } from 'typeorm';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -6,9 +7,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-  Index,
-  Relation,
-} from 'typeorm';
+  Index} from 'typeorm';
 import { Business } from './Business.js';
 import { PaymentProcessor } from './PaymentProcessor.js';
 

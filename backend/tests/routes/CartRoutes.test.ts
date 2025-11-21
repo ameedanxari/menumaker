@@ -2,22 +2,24 @@ import { jest, describe, beforeEach, it, expect, afterEach } from '@jest/globals
 import Fastify, { FastifyInstance } from 'fastify';
 import { cartRoutes } from '../../src/routes/cart.js';
 import { AppDataSource } from '../../src/config/database.js';
+import { generateAccessToken } from '../../src/utils/jwt.js';
 
 // Mock dependencies
 jest.mock('../../src/config/database.js');
-jest.mock('../../src/middleware/auth.js', () => ({
-  authenticate: async (request: any, _reply: any) => {
-    // Mock authenticated user - no auth check, just set the user
-    request.user = { userId: 'test-user-id' };
-  },
-}));
 
 describe('Cart Routes', () => {
   let app: FastifyInstance;
   let mockCartRepo: any;
+  let authToken: string;
 
   beforeEach(async () => {
     app = Fastify();
+
+    // Generate auth token for tests
+    authToken = generateAccessToken({
+      userId: 'test-user-id',
+      email: 'test@example.com',
+    });
 
     mockCartRepo = {
       find: jest.fn(),
@@ -53,6 +55,9 @@ describe('Cart Routes', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/api/v1/cart',
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
       });
 
       expect(response.statusCode).toBe(200);
@@ -78,6 +83,9 @@ describe('Cart Routes', () => {
       const response = await app.inject({
         method: 'POST',
         url: '/api/v1/cart',
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
         payload: {
           cart_name: 'Weekly Favorites',
           cart_items: [{ dish_id: 'dish-1', quantity: 3 }],
@@ -95,6 +103,9 @@ describe('Cart Routes', () => {
       const response = await app.inject({
         method: 'POST',
         url: '/api/v1/cart',
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
         payload: {
           cart_name: 'Test Cart',
           // Missing cart_items and total_cents
@@ -119,6 +130,9 @@ describe('Cart Routes', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/api/v1/cart/cart-1',
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
       });
 
       expect(response.statusCode).toBe(200);
@@ -133,6 +147,9 @@ describe('Cart Routes', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/api/v1/cart/nonexistent',
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
       });
 
       expect(response.statusCode).toBe(404);
@@ -155,6 +172,9 @@ describe('Cart Routes', () => {
       const response = await app.inject({
         method: 'PUT',
         url: '/api/v1/cart/cart-1',
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
         payload: {
           cart_name: 'Updated Name',
         },
@@ -179,6 +199,9 @@ describe('Cart Routes', () => {
       const response = await app.inject({
         method: 'DELETE',
         url: '/api/v1/cart/cart-1',
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
       });
 
       expect(response.statusCode).toBe(200);
@@ -193,6 +216,9 @@ describe('Cart Routes', () => {
       const response = await app.inject({
         method: 'DELETE',
         url: '/api/v1/cart/nonexistent',
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
       });
 
       expect(response.statusCode).toBe(404);

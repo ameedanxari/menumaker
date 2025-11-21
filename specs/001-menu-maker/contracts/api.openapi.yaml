@@ -1460,143 +1460,6 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
 
-  /orders/calculate-delivery:
-    post:
-      summary: Calculate delivery fee before order creation
-      description: |
-        Calculates the delivery fee based on business settings and delivery address.
-        Used by frontend to show total cost before order submission.
-
-        **Calculation Logic**:
-        - `flat`: Returns business.delivery_fee_cents
-        - `distance`: Calculate distance from business to delivery address, apply per-km rate + base fee, then apply rounding rules
-        - `free`: Returns 0
-      tags: [Orders]
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - business_id
-                - delivery_type
-              properties:
-                business_id:
-                  type: string
-                  format: uuid
-                  description: Business ID to calculate delivery fee for
-                delivery_type:
-                  type: string
-                  enum: [pickup, delivery]
-                  description: Order delivery type
-                delivery_address:
-                  type: string
-                  description: Full delivery address (required if delivery_type = 'delivery')
-                  nullable: true
-              example:
-                business_id: "660e8400-e29b-41d4-a716-446655440000"
-                delivery_type: "delivery"
-                delivery_address: "123 Main St, City, PIN 12345"
-      responses:
-        '200':
-          description: Delivery fee calculated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  delivery_fee_cents:
-                    type: integer
-                    description: Calculated delivery fee in cents (paisa for INR)
-                    example: 5000
-                  currency:
-                    type: string
-                    description: Currency code (ISO 4217)
-                    example: "INR"
-                  delivery_type:
-                    type: string
-                    description: Business delivery type configuration
-                    enum: [flat, distance, free]
-                    example: "distance"
-                  distance_km:
-                    type: number
-                    format: float
-                    description: Calculated distance in kilometers (only for distance-based)
-                    nullable: true
-                    example: 4.2
-                  breakdown:
-                    type: object
-                    nullable: true
-                    description: Detailed breakdown (only for distance-based)
-                    properties:
-                      base_fee_cents:
-                        type: integer
-                        example: 2000
-                      distance_fee_cents:
-                        type: integer
-                        example: 2100
-                      total_before_rounding:
-                        type: integer
-                        example: 4100
-                      rounding_applied:
-                        type: integer
-                        example: 900
-                      rounding_rule:
-                        type: string
-                        enum: [none, up_to_10, up_to_50]
-                        example: "up_to_10"
-              examples:
-                flat:
-                  value:
-                    delivery_fee_cents: 5000
-                    currency: "INR"
-                    delivery_type: "flat"
-                    distance_km: null
-                    breakdown: null
-                distance:
-                  value:
-                    delivery_fee_cents: 5000
-                    currency: "INR"
-                    delivery_type: "distance"
-                    distance_km: 4.2
-                    breakdown:
-                      base_fee_cents: 2000
-                      distance_fee_cents: 2100
-                      total_before_rounding: 4100
-                      rounding_applied: 900
-                      rounding_rule: "up_to_10"
-                free:
-                  value:
-                    delivery_fee_cents: 0
-                    currency: "INR"
-                    delivery_type: "free"
-                    distance_km: null
-                    breakdown: null
-        '400':
-          description: Validation error (e.g., missing delivery_address for delivery orders)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error:
-                  code: VALIDATION_ERROR
-                  message: "delivery_address is required for delivery orders"
-        '404':
-          description: Business not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error:
-                  code: NOT_FOUND
-                  message: "Business not found"
-        '422':
-          $ref: '#/components/responses/ValidationError'
-
   /businesses/{business_id}/orders:
     get:
       summary: List orders for business
@@ -1832,10 +1695,7 @@ paths:
   # ===== OCR (Stub) =====
   /ocr/parse:
     post:
-      summary: Parse image or text into dishes (Phase 2 feature; returns 501 in Phase 1)
-      description: |
-        **Phase 1 (MVP)**: This endpoint exists but returns 501 Not Implemented. Use manual dish entry.
-        **Phase 2 (Growth)**: Full OCR implementation using Google Vision API or Tesseract.
+      summary: Parse image or text into dishes (Phase 2 feature; stub for MVP)
       tags: [OCR]
       requestBody:
         required: true
@@ -1847,18 +1707,16 @@ paths:
                 image:
                   type: string
                   format: binary
-                  description: Menu image (JPG, PNG; max 5MB)
                 text:
                   type: string
-                  description: Plain text menu to parse
       responses:
-        '501':
-          description: Not implemented yet - full OCR available in Phase 2
+        '200':
+          description: Parsed dishes
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error:
-                  code: "NOT_IMPLEMENTED"
-                  message: "OCR feature coming in Phase 2. Use manual dish entry for now."
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dish'
+        '501':
+          description: Not implemented (Phase 2)

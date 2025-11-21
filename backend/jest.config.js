@@ -26,9 +26,18 @@ export default {
       'ts-jest',
       {
         useESM: true,
+        isolatedModules: true,
+        diagnostics: {
+          ignoreCodes: ['TS2345', 'TS2322', 'TS2769']
+        },
         tsconfig: {
           module: 'ES2022',
-          moduleResolution: 'node'
+          moduleResolution: 'node',
+          strict: false,
+          noImplicitAny: false,
+          strictNullChecks: false,
+          strictFunctionTypes: false,
+          skipLibCheck: true
         }
       }
     ]

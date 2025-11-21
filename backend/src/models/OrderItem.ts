@@ -1,12 +1,11 @@
+import type { Relation } from 'typeorm';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
   ManyToOne,
-  JoinColumn,
-  Relation,
-} from 'typeorm';
+  JoinColumn} from 'typeorm';
 import { Order } from './Order.js';
 import { Dish } from './Dish.js';
 

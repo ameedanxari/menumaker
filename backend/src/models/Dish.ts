@@ -1,3 +1,4 @@
+import type { Relation } from 'typeorm';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -6,9 +7,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   OneToMany,
-  JoinColumn,
-  Relation,
-} from 'typeorm';
+  JoinColumn} from 'typeorm';
 import { Business } from './Business.js';
 import { CommonDish } from './CommonDish.js';
 import { DishCategory } from './DishCategory.js';
