@@ -43,58 +43,111 @@ class SellerCouponPage(private val composeTestRule: ComposeTestRule) {
 
     // Actions
     fun tapCreateCoupon(): SellerCouponPage {
-        createCouponButton.performClick()
+        composeTestRule.onNode(
+            hasTestTag("CreateCouponButton") or
+            hasText("create", substring = true, ignoreCase = true) or
+            hasText("add coupon", substring = true, ignoreCase = true) or
+            hasText("new coupon", substring = true, ignoreCase = true)
+        ).performClick()
         Thread.sleep(1000)
         return this
     }
 
     fun enterCouponCode(code: String): SellerCouponPage {
-        couponCodeField.performTextInput(code)
+        composeTestRule.onNode(
+            hasTestTag("coupon-code-field") or
+            hasTestTag("CouponCodeField") or
+            hasText("code", substring = true, ignoreCase = true)
+        ).performTextInput(code)
         return this
     }
 
     fun selectDiscountType(type: DiscountType): SellerCouponPage {
         when (type) {
-            DiscountType.PERCENTAGE -> percentageButton.performClick()
-            DiscountType.FIXED_AMOUNT -> fixedAmountButton.performClick()
+            DiscountType.PERCENTAGE -> composeTestRule.onNode(
+                hasTestTag("PercentageDiscountButton") or
+                hasText("percentage", substring = true, ignoreCase = true) or
+                hasText("%", substring = true)
+            ).performClick()
+            DiscountType.FIXED_AMOUNT -> composeTestRule.onNode(
+                hasTestTag("FixedAmountButton") or
+                hasText("fixed", substring = true, ignoreCase = true) or
+                hasText("₹", substring = true) or
+                hasText("amount", substring = true, ignoreCase = true)
+            ).performClick()
         }
         return this
     }
 
     fun enterDiscountValue(value: String): SellerCouponPage {
-        discountValueField.performTextInput(value)
+        composeTestRule.onNode(
+            hasTestTag("discount-value-field") or
+            hasTestTag("DiscountValueField") or
+            hasText("value", substring = true, ignoreCase = true) or
+            hasText("discount", substring = true, ignoreCase = true)
+        ).performTextInput(value)
         return this
     }
 
     fun enterMinOrderAmount(amount: String): SellerCouponPage {
-        if (minOrderAmountField.fetchSemanticsNode(false) != null) {
-            minOrderAmountField.performTextInput(amount)
+        try {
+            composeTestRule.onNode(
+                hasTestTag("min-order-amount-field") or
+                hasTestTag("MinOrderAmountField") or
+                hasText("minimum order", substring = true, ignoreCase = true) or
+                hasText("min amount", substring = true, ignoreCase = true)
+            ).performTextInput(amount)
+        } catch (e: AssertionError) {
+            // Field not found or not required
         }
         return this
     }
 
     fun enterMaxDiscount(amount: String): SellerCouponPage {
-        if (maxDiscountField.fetchSemanticsNode(false) != null) {
-            maxDiscountField.performTextInput(amount)
+        try {
+            composeTestRule.onNode(
+                hasTestTag("max-discount-field") or
+                hasTestTag("MaxDiscountField") or
+                hasText("maximum discount", substring = true, ignoreCase = true) or
+                hasText("max discount", substring = true, ignoreCase = true)
+            ).performTextInput(amount)
+        } catch (e: AssertionError) {
+            // Field not found or not required
         }
         return this
     }
 
     fun enterUsageLimit(limit: String): SellerCouponPage {
-        if (usageLimitField.fetchSemanticsNode(false) != null) {
-            usageLimitField.performTextInput(limit)
+        try {
+            composeTestRule.onNode(
+                hasTestTag("usage-limit-field") or
+                hasTestTag("UsageLimitField") or
+                hasText("usage limit", substring = true, ignoreCase = true) or
+                hasText("max uses", substring = true, ignoreCase = true)
+            ).performTextInput(limit)
+        } catch (e: AssertionError) {
+            // Field not found or not required
         }
         return this
     }
 
     fun saveCoupon(): SellerCouponPage {
-        saveCouponButton.performClick()
+        composeTestRule.onNode(
+            hasTestTag("SaveCouponButton") or
+            hasText("save", substring = true, ignoreCase = true) or
+            hasText("create", substring = true, ignoreCase = true) or
+            hasText("add", substring = true, ignoreCase = true)
+        ).performClick()
         Thread.sleep(1000)
         return this
     }
 
     fun cancelCouponCreation(): SellerCouponPage {
-        cancelButton.performClick()
+        composeTestRule.onNode(
+            hasTestTag("CancelButton") or
+            hasText("cancel", substring = true, ignoreCase = true) or
+            hasText("back", ignoreCase = true)
+        ).performClick()
         return this
     }
 
@@ -107,30 +160,58 @@ class SellerCouponPage(private val composeTestRule: ComposeTestRule) {
     }
 
     fun toggleCouponActive(): SellerCouponPage {
-        if (toggleActiveSwitch.fetchSemanticsNode(false) != null) {
-            toggleActiveSwitch.performClick()
+        try {
+            composeTestRule.onNode(
+                hasTestTag("toggle-active-switch") or
+                hasTestTag("CouponActiveToggle") or
+                hasContentDescription("toggle active", substring = true, ignoreCase = true)
+            ).performClick()
             Thread.sleep(1000)
+        } catch (e: AssertionError) {
+            // Toggle not found or not applicable
         }
         return this
     }
 
     fun deleteCoupon(): SellerCouponPage {
-        deleteButton.performClick()
-        if (confirmDeleteButton.fetchSemanticsNode(false) != null) {
-            confirmDeleteButton.performClick()
+        composeTestRule.onNode(
+            hasTestTag("DeleteCouponButton") or
+            hasText("delete", substring = true, ignoreCase = true) or
+            hasText("remove", substring = true, ignoreCase = true)
+        ).performClick()
+
+        try {
+            composeTestRule.onNode(
+                hasTestTag("ConfirmDeleteButton") or
+                hasText("confirm", substring = true, ignoreCase = true) or
+                hasText("yes", ignoreCase = true) or
+                hasText("delete", ignoreCase = true)
+            ).performClick()
+        } catch (e: AssertionError) {
+            // Confirm button not found - direct delete
         }
         Thread.sleep(1000)
         return this
     }
 
     fun swipeToDelete(index: Int = 0): SellerCouponPage {
-        if (couponList.fetchSemanticsNodes().size > index) {
-            couponList[index].performTouchInput {
+        val coupons = composeTestRule.onAllNodesWithTag("CouponItem")
+        if (coupons.fetchSemanticsNodes().size > index) {
+            coupons[index].performTouchInput {
                 swipeLeft()
             }
-            val deleteAction = composeTestRule.onNodeWithText("Delete", ignoreCase = true)
-            if (deleteAction.fetchSemanticsNode(false) != null) {
+            Thread.sleep(500)
+
+            val deleteAction = composeTestRule.onNode(
+                hasTestTag("SwipeDeleteAction") or
+                hasText("Delete", ignoreCase = true) or
+                hasText("Remove", ignoreCase = true)
+            )
+            try {
                 deleteAction.performClick()
+                Thread.sleep(500)
+            } catch (e: AssertionError) {
+                // Delete action not found
             }
         }
         return this
@@ -153,39 +234,56 @@ class SellerCouponPage(private val composeTestRule: ComposeTestRule) {
     // Assertions
     fun assertScreenDisplayed(): SellerCouponPage {
         composeTestRule.waitUntil(timeoutMillis = 2000) {
-            createCouponButton.fetchSemanticsNode(false) != null ||
+            try { createCouponButton.assertExists(); true } catch (e: AssertionError) { false } ||
             couponList.fetchSemanticsNodes().isNotEmpty() ||
-            emptyStateMessage.fetchSemanticsNode(false) != null
+            try { emptyStateMessage.assertExists(); true } catch (e: AssertionError) { false }
         }
         return this
     }
 
     fun assertCouponFormDisplayed(): SellerCouponPage {
-        couponCodeField.assertExists()
+        composeTestRule.onNode(
+            hasTestTag("coupon-code-field") or
+            hasTestTag("CouponCodeField") or
+            hasText("code", substring = true, ignoreCase = true)
+        ).assertExists()
         return this
     }
 
     fun assertCouponExists(code: String): SellerCouponPage {
-        composeTestRule.onNodeWithText(code).assertExists()
+        composeTestRule.onNode(
+            hasTestTag("CouponItem_$code") or
+            hasText(code, substring = true)
+        ).assertExists()
         return this
     }
 
     fun assertCouponSaved(): SellerCouponPage {
         Thread.sleep(1000)
-        couponCodeField.assertDoesNotExist()
+        // Verify form is closed by checking code field doesn't exist
+        composeTestRule.onNode(
+            hasTestTag("coupon-code-field") or
+            hasTestTag("CouponCodeField")
+        ).assertDoesNotExist()
         return this
     }
 
     fun assertCouponCount(expectedCount: Int): SellerCouponPage {
-        val actualCount = couponList.fetchSemanticsNodes().size
+        val coupons = composeTestRule.onAllNodesWithTag("CouponItem")
+        val actualCount = coupons.fetchSemanticsNodes().size
         assert(actualCount == expectedCount) {
-            "Should have $expectedCount coupons, found $actualCount"
+            "Expected $expectedCount coupons, but found $actualCount"
         }
         return this
     }
 
     fun assertEmptyState(): SellerCouponPage {
-        emptyStateMessage.assertExists()
+        composeTestRule.onNode(
+            hasTestTag("EmptyStateMessage") or
+            hasText("no coupon", substring = true, ignoreCase = true) or
+            hasText("no coupons available", substring = true, ignoreCase = true) or
+            hasText("create your first coupon", substring = true, ignoreCase = true)
+        ).assertExists()
         return this
     }
 

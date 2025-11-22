@@ -431,25 +431,20 @@ final class SettingsFlowTests: XCTestCase {
     // MARK: - Helper Methods
 
     private func navigateToSettings() {
-        let profileTab = app.tabBars.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'profile'")).firstMatch
+        // Navigate to More tab
+        let moreTab = app.tabBars.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'more' OR label CONTAINS[c] 'profile'")).firstMatch
 
-        if profileTab.waitForExistence(timeout: 2) {
-            profileTab.tap()
+        if moreTab.waitForExistence(timeout: 2) {
+            moreTab.tap()
             sleep(1)
         }
 
-        let profilePage = ProfilePage(app: app)
+        // Tap Settings in the More screen
+        let settingsLink = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'settings'")).firstMatch
 
-        if profilePage.settingsButton.waitForExistence(timeout: 2) {
-            profilePage.tapSettings()
-        } else {
-            // Look for settings in navigation bar
-            let settingsButton = app.navigationBars.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'setting'")).firstMatch
-
-            if settingsButton.waitForExistence(timeout: 2) {
-                settingsButton.tap()
-                sleep(1)
-            }
+        if settingsLink.waitForExistence(timeout: 2) {
+            settingsLink.tap()
+            sleep(1)
         }
     }
 }

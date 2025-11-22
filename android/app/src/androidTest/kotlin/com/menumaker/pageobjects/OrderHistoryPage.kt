@@ -101,8 +101,8 @@ class OrderHistoryPage(private val composeTestRule: ComposeTestRule) {
     fun assertScreenDisplayed(): OrderHistoryPage {
         composeTestRule.waitUntil(timeoutMillis = 2000) {
             ordersList.fetchSemanticsNodes().isNotEmpty() ||
-            emptyStateMessage.fetchSemanticsNode(false) != null ||
-            activeTab.fetchSemanticsNode(false) != null
+            try { emptyStateMessage.assertExists(); true } catch (e: AssertionError) { false } ||
+            try { activeTab.assertExists(); true } catch (e: AssertionError) { false }
         }
         return this
     }
@@ -148,9 +148,12 @@ class OrderHistoryPage(private val composeTestRule: ComposeTestRule) {
 
     fun assertOrderDetailsDisplayed(): OrderHistoryPage {
         // Check if order details like ID, date, or total are displayed
-        val hasOrderDetails = composeTestRule.onNode(
-            hasText("₹", substring = true)
-        ).fetchSemanticsNode(false) != null
+        val hasOrderDetails = try {
+            composeTestRule.onNode(hasText("₹", substring = true)).assertExists()
+            true
+        } catch (e: AssertionError) {
+            false
+        }
         assert(hasOrderDetails) {
             "Order details should be displayed"
         }

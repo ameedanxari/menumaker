@@ -119,9 +119,14 @@ class SellerAnalyticsPage(private val composeTestRule: ComposeTestRule) {
         val csvOption = composeTestRule.onNodeWithText("CSV")
         val pdfOption = composeTestRule.onNodeWithText("PDF")
 
-        when {
-            csvOption.fetchSemanticsNode(false) != null -> csvOption.performClick()
-            pdfOption.fetchSemanticsNode(false) != null -> pdfOption.performClick()
+        try {
+            csvOption.performClick()
+        } catch (e: AssertionError) {
+            try {
+                pdfOption.performClick()
+            } catch (e: AssertionError) {
+                // No export options found
+            }
         }
         return this
     }
@@ -141,9 +146,9 @@ class SellerAnalyticsPage(private val composeTestRule: ComposeTestRule) {
     // Assertions
     fun assertScreenDisplayed(): SellerAnalyticsPage {
         composeTestRule.waitUntil(timeoutMillis = 2000) {
-            totalSalesLabel.fetchSemanticsNode(false) != null ||
-            totalOrdersLabel.fetchSemanticsNode(false) != null ||
-            salesChart.fetchSemanticsNode(false) != null ||
+            try { totalSalesLabel.assertExists(); true } catch (e: AssertionError) { false } ||
+            try { totalOrdersLabel.assertExists(); true } catch (e: AssertionError) { false } ||
+            try { salesChart.assertExists(); true } catch (e: AssertionError) { false } ||
             dashboardCards.fetchSemanticsNodes().isNotEmpty()
         }
         return this
@@ -151,9 +156,9 @@ class SellerAnalyticsPage(private val composeTestRule: ComposeTestRule) {
 
     fun assertSalesMetricsDisplayed(): SellerAnalyticsPage {
         assert(
-            totalSalesLabel.fetchSemanticsNode(false) != null ||
-            totalOrdersLabel.fetchSemanticsNode(false) != null ||
-            totalRevenueLabel.fetchSemanticsNode(false) != null
+            try { totalSalesLabel.assertExists(); true } catch (e: AssertionError) { false } ||
+            try { totalOrdersLabel.assertExists(); true } catch (e: AssertionError) { false } ||
+            try { totalRevenueLabel.assertExists(); true } catch (e: AssertionError) { false }
         ) {
             "Sales metrics should be displayed"
         }
@@ -173,7 +178,7 @@ class SellerAnalyticsPage(private val composeTestRule: ComposeTestRule) {
     fun assertPopularItemsDisplayed(): SellerAnalyticsPage {
         assert(
             popularItemsList.fetchSemanticsNodes().isNotEmpty() ||
-            topSellingSection.fetchSemanticsNode(false) != null
+            try { topSellingSection.assertExists(); true } catch (e: AssertionError) { false }
         ) {
             "Popular items section should be displayed"
         }
@@ -182,9 +187,9 @@ class SellerAnalyticsPage(private val composeTestRule: ComposeTestRule) {
 
     fun assertCustomerInsightsDisplayed(): SellerAnalyticsPage {
         assert(
-            newCustomersLabel.fetchSemanticsNode(false) != null ||
-            repeatCustomersLabel.fetchSemanticsNode(false) != null ||
-            customerInsightsSection.fetchSemanticsNode(false) != null
+            try { newCustomersLabel.assertExists(); true } catch (e: AssertionError) { false } ||
+            try { repeatCustomersLabel.assertExists(); true } catch (e: AssertionError) { false } ||
+            try { customerInsightsSection.assertExists(); true } catch (e: AssertionError) { false }
         ) {
             "Customer insights should be displayed"
         }
@@ -193,8 +198,8 @@ class SellerAnalyticsPage(private val composeTestRule: ComposeTestRule) {
 
     fun assertRatingDisplayed(): SellerAnalyticsPage {
         assert(
-            averageRatingLabel.fetchSemanticsNode(false) != null ||
-            totalReviewsLabel.fetchSemanticsNode(false) != null
+            try { averageRatingLabel.assertExists(); true } catch (e: AssertionError) { false } ||
+            try { totalReviewsLabel.assertExists(); true } catch (e: AssertionError) { false }
         ) {
             "Rating information should be displayed"
         }
@@ -203,8 +208,8 @@ class SellerAnalyticsPage(private val composeTestRule: ComposeTestRule) {
 
     fun assertPayoutsDisplayed(): SellerAnalyticsPage {
         assert(
-            pendingPayoutsLabel.fetchSemanticsNode(false) != null ||
-            completedPayoutsLabel.fetchSemanticsNode(false) != null
+            try { pendingPayoutsLabel.assertExists(); true } catch (e: AssertionError) { false } ||
+            try { completedPayoutsLabel.assertExists(); true } catch (e: AssertionError) { false }
         ) {
             "Payout information should be displayed"
         }
@@ -223,8 +228,8 @@ class SellerAnalyticsPage(private val composeTestRule: ComposeTestRule) {
 
     fun assertDataUpdated(): SellerAnalyticsPage {
         assert(
-            totalSalesLabel.fetchSemanticsNode(false) != null ||
-            totalOrdersLabel.fetchSemanticsNode(false) != null
+            try { totalSalesLabel.assertExists(); true } catch (e: AssertionError) { false } ||
+            try { totalOrdersLabel.assertExists(); true } catch (e: AssertionError) { false }
         ) {
             "Data should be updated"
         }

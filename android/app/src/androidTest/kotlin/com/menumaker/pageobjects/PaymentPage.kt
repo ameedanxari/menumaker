@@ -129,8 +129,8 @@ class PaymentPage(private val composeTestRule: ComposeTestRule) {
     // Assertions
     fun assertScreenDisplayed(): PaymentPage {
         composeTestRule.waitUntil(timeoutMillis = 2000) {
-            cardPaymentOption.fetchSemanticsNode(false) != null ||
-            cashPaymentOption.fetchSemanticsNode(false) != null
+            try { cardPaymentOption.assertExists(); true } catch (e: AssertionError) { false } ||
+            try { cashPaymentOption.assertExists(); true } catch (e: AssertionError) { false }
         }
         return this
     }

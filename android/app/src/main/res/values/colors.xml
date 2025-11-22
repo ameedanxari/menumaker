@@ -41,4 +41,7 @@
     <!-- Surface -->
     <color name="surface_light">#FFFFFF</color>
     <color name="surface_dark">#1E1E1E</color>
+
+    <!-- Launcher Icon -->
+    <color name="ic_launcher_background">#FF9800</color>
 </resources>

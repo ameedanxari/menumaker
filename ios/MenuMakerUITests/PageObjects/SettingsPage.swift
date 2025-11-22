@@ -17,23 +17,23 @@ struct SettingsPage {
     }
 
     var orderNotificationsToggle: XCUIElement {
-        app.switches.matching(NSPredicate(format: "identifier CONTAINS 'orderNotification'")).firstMatch
+        app.switches["orderNotificationToggle"]
     }
 
     var promoNotificationsToggle: XCUIElement {
-        app.switches.matching(NSPredicate(format: "identifier CONTAINS 'promoNotification'")).firstMatch
+        app.switches["promoNotificationToggle"]
     }
 
     var pushNotificationsToggle: XCUIElement {
-        app.switches.matching(NSPredicate(format: "identifier CONTAINS 'pushNotification'")).firstMatch
+        app.switches["pushNotificationToggle"]
     }
 
     var emailNotificationsToggle: XCUIElement {
-        app.switches.matching(NSPredicate(format: "identifier CONTAINS 'emailNotification'")).firstMatch
+        app.switches["emailNotificationToggle"]
     }
 
     var whatsappNotificationsToggle: XCUIElement {
-        app.switches.matching(NSPredicate(format: "identifier CONTAINS 'whatsappNotification'")).firstMatch
+        app.switches["whatsappNotificationToggle"]
     }
 
     var languageSettings: XCUIElement {
@@ -93,11 +93,11 @@ struct SettingsPage {
     }
 
     var darkModeToggle: XCUIElement {
-        app.switches.matching(NSPredicate(format: "identifier CONTAINS 'darkMode'")).firstMatch
+        app.switches["darkModeToggle"]
     }
 
     var soundToggle: XCUIElement {
-        app.switches.matching(NSPredicate(format: "identifier CONTAINS 'sound'")).firstMatch
+        app.switches["soundToggle"]
     }
 
     var autoPlayVideosToggle: XCUIElement {

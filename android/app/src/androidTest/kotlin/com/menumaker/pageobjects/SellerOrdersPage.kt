@@ -45,7 +45,9 @@ class SellerOrdersPage(private val composeTestRule: ComposeTestRule) {
         hasText("no new orders", substring = true, ignoreCase = true)
     )
     private val rejectionReasonField = composeTestRule.onNodeWithTag("rejection-reason-field")
-    private val confirmRejectButton = composeTestRule.onNodeWithText("Reject") or composeTestRule.onNodeWithText("Confirm")
+    private fun getConfirmRejectButton() = composeTestRule.onNode(
+        hasText("Reject", ignoreCase = true) or hasText("Confirm", ignoreCase = true)
+    )
 
     // Actions
     fun tapFirstOrder(): SellerOrdersPage {
@@ -83,15 +85,21 @@ class SellerOrdersPage(private val composeTestRule: ComposeTestRule) {
     fun rejectOrder(reason: String? = null): SellerOrdersPage {
         rejectButton.performClick()
 
-        if (reason != null && rejectionReasonField.fetchSemanticsNode(false) != null) {
-            rejectionReasonField.performTextInput(reason)
+        if (reason != null) {
+            try {
+                rejectionReasonField.performTextInput(reason)
+            } catch (e: AssertionError) {
+                // Rejection reason field not found, continue
+            }
         }
 
         val confirmBtn = composeTestRule.onNode(
             hasText("reject", ignoreCase = true) or hasText("confirm", ignoreCase = true)
         )
-        if (confirmBtn.fetchSemanticsNode(false) != null) {
+        try {
             confirmBtn.performClick()
+        } catch (e: AssertionError) {
+            // Confirm button not found, continue
         }
 
         Thread.sleep(1000)
@@ -114,7 +122,12 @@ class SellerOrdersPage(private val composeTestRule: ComposeTestRule) {
     fun assertScreenDisplayed(): SellerOrdersPage {
         composeTestRule.waitUntil(timeoutMillis = 2000) {
             orderCards.fetchSemanticsNodes().isNotEmpty() ||
-            emptyStateMessage.fetchSemanticsNode(false) != null
+            try {
+                emptyStateMessage.assertExists()
+                true
+            } catch (e: AssertionError) {
+                false
+            }
         }
         return this
     }
@@ -140,7 +153,12 @@ class SellerOrdersPage(private val composeTestRule: ComposeTestRule) {
     }
 
     fun assertOrderDetailDisplayed(): SellerOrdersPage {
-        orderIdLabel.assertExists() or orderTotalLabel.assertExists()
+        assert(
+            try { orderIdLabel.assertExists(); true } catch (e: AssertionError) { false } ||
+            try { orderTotalLabel.assertExists(); true } catch (e: AssertionError) { false }
+        ) {
+            "Order details should be displayed"
+        }
         return this
     }
 

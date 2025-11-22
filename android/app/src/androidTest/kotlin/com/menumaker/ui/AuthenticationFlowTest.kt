@@ -333,10 +333,9 @@ class AuthenticationFlowTest {
     @Test
     fun loginScreen_backButton_closesApp() {
         // Press back button on login screen
-        composeTestRule.onRoot().performKeyPress(androidx.compose.ui.input.key.KeyEvent(
-            androidx.compose.ui.input.key.Key.Back,
-            androidx.compose.ui.input.key.KeyEventType.Up
-        ))
+        composeTestRule.activityRule.scenario.onActivity { activity ->
+            activity.onBackPressed()
+        }
 
         // App should close or show exit confirmation
         // This is implementation dependent
@@ -352,10 +351,9 @@ class AuthenticationFlowTest {
         composeTestRule.waitForIdle()
 
         // Press back
-        composeTestRule.onRoot().performKeyPress(androidx.compose.ui.input.key.KeyEvent(
-            androidx.compose.ui.input.key.Key.Back,
-            androidx.compose.ui.input.key.KeyEventType.Up
-        ))
+        composeTestRule.activityRule.scenario.onActivity { activity ->
+            activity.onBackPressed()
+        }
 
         // Verify return to login
         composeTestRule.waitForIdle()

@@ -54,9 +54,11 @@ class NotificationPage(private val composeTestRule: ComposeTestRule) {
                 swipeLeft()
             }
             val deleteButton = composeTestRule.onNodeWithText("Delete", ignoreCase = true)
-            if (deleteButton.fetchSemanticsNode(false) != null) {
+            try {
                 deleteButton.performClick()
                 Thread.sleep(1000)
+            } catch (e: AssertionError) {
+                // Delete button not found
             }
         }
         return this
@@ -77,9 +79,11 @@ class NotificationPage(private val composeTestRule: ComposeTestRule) {
             hasText("confirm", substring = true, ignoreCase = true) or
             hasText("yes", ignoreCase = true)
         )
-        if (confirmButton.fetchSemanticsNode(false) != null) {
+        try {
             confirmButton.performClick()
             Thread.sleep(1000)
+        } catch (e: AssertionError) {
+            // Confirm button not found
         }
         return this
     }
@@ -117,8 +121,8 @@ class NotificationPage(private val composeTestRule: ComposeTestRule) {
     fun assertScreenDisplayed(): NotificationPage {
         composeTestRule.waitUntil(timeoutMillis = 2000) {
             notificationsList.fetchSemanticsNodes().isNotEmpty() ||
-            emptyStateMessage.fetchSemanticsNode(false) != null ||
-            markAllReadButton.fetchSemanticsNode(false) != null
+            try { emptyStateMessage.assertExists(); true } catch (e: AssertionError) { false } ||
+            try { markAllReadButton.assertExists(); true } catch (e: AssertionError) { false }
         }
         return this
     }

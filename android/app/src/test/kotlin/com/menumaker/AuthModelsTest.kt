@@ -22,9 +22,11 @@ class AuthModelsTest {
             "email": "test@example.com",
             "name": "Test User",
             "phone": "+1234567890",
+            "address": null,
+            "photo_url": null,
             "role": "customer",
-            "createdAt": "2025-01-01T00:00:00Z",
-            "updatedAt": "2025-01-02T00:00:00Z"
+            "created_at": "2025-01-01T00:00:00Z",
+            "updated_at": "2025-01-02T00:00:00Z"
         }
         """
 
@@ -142,18 +144,18 @@ class AuthModelsTest {
         {
             "success": true,
             "data": {
-                "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-                "refreshToken": "refresh_token_123",
+                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                "refresh_token": "refresh_token_123",
                 "user": {
                     "id": "user123",
                     "email": "test@example.com",
                     "name": "Test User",
                     "phone": null,
                     "address": null,
-                    "photoUrl": null,
+                    "photo_url": null,
                     "role": "customer",
-                    "createdAt": "2025-01-01T00:00:00Z",
-                    "updatedAt": null
+                    "created_at": "2025-01-01T00:00:00Z",
+                    "updated_at": null
                 }
             }
         }
@@ -170,18 +172,18 @@ class AuthModelsTest {
     fun `AuthData contains valid tokens and user`() {
         val json = """
         {
-            "accessToken": "access_token_123",
-            "refreshToken": "refresh_token_456",
+            "access_token": "access_token_123",
+            "refresh_token": "refresh_token_456",
             "user": {
                 "id": "user123",
                 "email": "test@example.com",
                 "name": "Test User",
                 "phone": null,
                 "address": null,
-                "photoUrl": null,
+                "photo_url": null,
                 "role": "customer",
-                "createdAt": "2025-01-01T00:00:00Z",
-                "updatedAt": null
+                "created_at": "2025-01-01T00:00:00Z",
+                "updated_at": null
             }
         }
         """

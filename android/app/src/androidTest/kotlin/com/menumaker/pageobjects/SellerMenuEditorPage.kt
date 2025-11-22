@@ -54,6 +54,12 @@ class SellerMenuEditorPage(private val composeTestRule: ComposeTestRule) {
         return this
     }
 
+    fun tapFirstItem(): SellerMenuEditorPage {
+        menuItems.onFirst().performClick()
+        Thread.sleep(500)
+        return this
+    }
+
     fun deleteFirstItem(): SellerMenuEditorPage {
         menuItems.onFirst().performClick()
         Thread.sleep(500)

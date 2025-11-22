@@ -47,9 +47,11 @@ class FavoritesPage(private val composeTestRule: ComposeTestRule) {
             }
             // Tap delete button if it appears
             val deleteButton = composeTestRule.onNodeWithText("Delete", ignoreCase = true)
-            if (deleteButton.fetchSemanticsNode(false) != null) {
+            try {
                 deleteButton.performClick()
                 Thread.sleep(1000)
+            } catch (e: AssertionError) {
+                // Delete button not found
             }
         }
         return this
@@ -77,7 +79,7 @@ class FavoritesPage(private val composeTestRule: ComposeTestRule) {
     fun assertScreenDisplayed(): FavoritesPage {
         composeTestRule.waitUntil(timeoutMillis = 2000) {
             favoritesList.fetchSemanticsNodes().isNotEmpty() ||
-            emptyStateMessage.fetchSemanticsNode(false) != null
+            try { emptyStateMessage.assertExists(); true } catch (e: AssertionError) { false }
         }
         return this
     }

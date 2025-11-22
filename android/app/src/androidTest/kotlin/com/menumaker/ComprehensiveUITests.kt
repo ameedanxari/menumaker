@@ -1,5 +1,6 @@
 package com.menumaker
 
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.menumaker.pageobjects.*
@@ -60,10 +61,8 @@ class ComprehensiveUITests {
         val editorPage = SellerMenuEditorPage(composeTestRule)
 
         // Tap existing item
-        editorPage.menuItems.onFirst().performClick()
-        Thread.sleep(500)
-
         editorPage
+            .tapFirstItem()
             .enterItemName("Updated Pizza")
             .tapSave()
             .assertItemExists("Updated Pizza")

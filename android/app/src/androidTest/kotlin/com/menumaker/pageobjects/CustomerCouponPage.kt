@@ -62,14 +62,18 @@ class CustomerCouponPage(private val composeTestRule: ComposeTestRule) {
     fun applyCoupon(code: String): CustomerCouponPage {
         // Find and tap the coupon with matching code
         val couponElement = composeTestRule.onNodeWithText(code)
-        if (couponElement.fetchSemanticsNode(false) != null) {
+        try {
             couponElement.performClick()
             Thread.sleep(1000)
+        } catch (e: AssertionError) {
+            // Coupon not found
         }
 
-        if (applyCouponButton.fetchSemanticsNode(false) != null) {
+        try {
             applyCouponButton.performClick()
             Thread.sleep(1000)
+        } catch (e: AssertionError) {
+            // Apply button not found
         }
 
         return this
@@ -78,9 +82,11 @@ class CustomerCouponPage(private val composeTestRule: ComposeTestRule) {
     fun applyFirstAvailableCoupon(): CustomerCouponPage {
         tapFirstCoupon()
 
-        if (applyCouponButton.fetchSemanticsNode(false) != null) {
+        try {
             applyCouponButton.performClick()
             Thread.sleep(1000)
+        } catch (e: AssertionError) {
+            // Apply button not found
         }
 
         return this
@@ -104,9 +110,11 @@ class CustomerCouponPage(private val composeTestRule: ComposeTestRule) {
             CouponFilter.EXPIRED -> composeTestRule.onNodeWithText("expired", ignoreCase = true)
         }
 
-        if (filterButton.fetchSemanticsNode(false) != null) {
+        try {
             filterButton.performClick()
             Thread.sleep(1000)
+        } catch (e: AssertionError) {
+            // Filter button not found
         }
 
         return this
@@ -116,8 +124,8 @@ class CustomerCouponPage(private val composeTestRule: ComposeTestRule) {
     fun assertScreenDisplayed(): CustomerCouponPage {
         composeTestRule.waitUntil(timeoutMillis = 2000) {
             availableCouponsList.fetchSemanticsNodes().isNotEmpty() ||
-            emptyStateMessage.fetchSemanticsNode(false) != null ||
-            viewAllCouponsButton.fetchSemanticsNode(false) != null
+            try { emptyStateMessage.assertExists(); true } catch (e: AssertionError) { false } ||
+            try { viewAllCouponsButton.assertExists(); true } catch (e: AssertionError) { false }
         }
         return this
     }
@@ -130,10 +138,9 @@ class CustomerCouponPage(private val composeTestRule: ComposeTestRule) {
     }
 
     fun assertCouponApplied(): CustomerCouponPage {
-        assert(
-            appliedCouponBadge.fetchSemanticsNode(false) != null ||
-            removeCouponButton.fetchSemanticsNode(false) != null
-        ) {
+        val badgeExists = try { appliedCouponBadge.assertExists(); true } catch (e: AssertionError) { false }
+        val removeButtonExists = try { removeCouponButton.assertExists(); true } catch (e: AssertionError) { false }
+        assert(badgeExists || removeButtonExists) {
             "Coupon should be applied"
         }
         return this
@@ -156,10 +163,9 @@ class CustomerCouponPage(private val composeTestRule: ComposeTestRule) {
     }
 
     fun assertCouponDetails(): CustomerCouponPage {
-        assert(
-            couponDescriptionLabel.fetchSemanticsNode(false) != null ||
-            validityLabel.fetchSemanticsNode(false) != null
-        ) {
+        val descriptionExists = try { couponDescriptionLabel.assertExists(); true } catch (e: AssertionError) { false }
+        val validityExists = try { validityLabel.assertExists(); true } catch (e: AssertionError) { false }
+        assert(descriptionExists || validityExists) {
             "Coupon details should be displayed"
         }
         return this
