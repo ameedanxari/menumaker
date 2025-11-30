@@ -47,7 +47,7 @@ final class SellerAnalyticsTests: XCTestCase {
 
         guard analyticsPage.totalSalesLabel.waitForExistence(timeout: 2) ||
               analyticsPage.totalOrdersLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Sales metrics not implemented yet")
+            XCTFail("Sales metrics not implemented yet - UI element not found or feature not implemented"); return
         }
 
         analyticsPage.assertSalesMetricsDisplayed()
@@ -61,7 +61,7 @@ final class SellerAnalyticsTests: XCTestCase {
 
         guard analyticsPage.todayTab.waitForExistence(timeout: 2) ||
               analyticsPage.weekTab.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Time period tabs not implemented yet")
+            XCTFail("Time period tabs not implemented yet - UI element not found or feature not implemented"); return
         }
 
         analyticsPage.assertTimePeriodsDisplayed()
@@ -76,7 +76,7 @@ final class SellerAnalyticsTests: XCTestCase {
         let analyticsPage = SellerAnalyticsPage(app: app)
 
         guard analyticsPage.todayTab.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Today view not implemented yet")
+            XCTFail("Today view not implemented yet - UI element not found or feature not implemented"); return
         }
 
         analyticsPage.switchToTodayView()
@@ -94,7 +94,7 @@ final class SellerAnalyticsTests: XCTestCase {
         let analyticsPage = SellerAnalyticsPage(app: app)
 
         guard analyticsPage.weekTab.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Week view not implemented yet")
+            XCTFail("Week view not implemented yet - UI element not found or feature not implemented"); return
         }
 
         analyticsPage.switchToWeekView()
@@ -111,7 +111,7 @@ final class SellerAnalyticsTests: XCTestCase {
         let analyticsPage = SellerAnalyticsPage(app: app)
 
         guard analyticsPage.monthTab.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Month view not implemented yet")
+            XCTFail("Month view not implemented yet - UI element not found or feature not implemented"); return
         }
 
         analyticsPage.switchToMonthView()
@@ -128,7 +128,7 @@ final class SellerAnalyticsTests: XCTestCase {
         let analyticsPage = SellerAnalyticsPage(app: app)
 
         guard analyticsPage.customRangeTab.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Custom range not implemented yet")
+            XCTFail("Custom range not implemented yet - UI element not found or feature not implemented"); return
         }
 
         analyticsPage.switchToCustomRange()
@@ -145,7 +145,7 @@ final class SellerAnalyticsTests: XCTestCase {
         let analyticsPage = SellerAnalyticsPage(app: app)
 
         guard analyticsPage.salesChart.waitForExistence(timeout: 3) else {
-            throw XCTSkip("Sales chart not implemented yet")
+            XCTFail("Sales chart not implemented yet - UI element not found or feature not implemented"); return
         }
 
         analyticsPage.assertChartDisplayed()
@@ -162,7 +162,7 @@ final class SellerAnalyticsTests: XCTestCase {
 
         guard analyticsPage.firstPopularItem.waitForExistence(timeout: 2) ||
               analyticsPage.topSellingSection.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Popular items not implemented yet")
+            XCTFail("Popular items not implemented yet - UI element not found or feature not implemented"); return
         }
 
         analyticsPage.assertPopularItemsDisplayed()
@@ -176,7 +176,7 @@ final class SellerAnalyticsTests: XCTestCase {
         analyticsPage.scrollToSection(.popularItems)
 
         guard analyticsPage.firstPopularItem.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No popular items available")
+            XCTFail("No popular items available - UI element not found or feature not implemented"); return
         }
 
         analyticsPage.tapFirstPopularItem()
@@ -195,7 +195,7 @@ final class SellerAnalyticsTests: XCTestCase {
 
         guard analyticsPage.newCustomersLabel.waitForExistence(timeout: 2) ||
               analyticsPage.customerInsightsSection.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Customer insights not implemented yet")
+            XCTFail("Customer insights not implemented yet - UI element not found or feature not implemented"); return
         }
 
         analyticsPage.assertCustomerInsightsDisplayed()
@@ -226,7 +226,7 @@ final class SellerAnalyticsTests: XCTestCase {
 
         guard analyticsPage.pendingPayoutsLabel.waitForExistence(timeout: 2) ||
               analyticsPage.completedPayoutsLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Payouts section not implemented yet")
+            XCTFail("Payouts section not implemented yet - UI element not found or feature not implemented"); return
         }
 
         analyticsPage.assertPayoutsDisplayed()
@@ -241,7 +241,7 @@ final class SellerAnalyticsTests: XCTestCase {
         let analyticsPage = SellerAnalyticsPage(app: app)
 
         guard analyticsPage.exportButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Export feature not implemented yet")
+            XCTFail("Export feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         analyticsPage

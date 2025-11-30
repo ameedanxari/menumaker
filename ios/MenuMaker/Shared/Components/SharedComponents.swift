@@ -7,6 +7,7 @@ struct CustomTextField: View {
     @Binding var text: String
     var keyboardType: UIKeyboardType = .default
     var icon: String? = nil
+    var accessibilityId: String? = nil
 
     var body: some View {
         HStack(spacing: 12) {
@@ -18,6 +19,7 @@ struct CustomTextField: View {
             TextField(placeholder, text: $text)
                 .keyboardType(keyboardType)
                 .autocapitalization(.none)
+                .accessibilityIdentifier(accessibilityId ?? "")
         }
         .padding()
         .background(Color.theme.surface)
@@ -29,6 +31,7 @@ struct CustomSecureField: View {
     let placeholder: String
     @Binding var text: String
     var icon: String = "lock"
+    var accessibilityId: String? = nil
 
     var body: some View {
         HStack(spacing: 12) {
@@ -36,6 +39,7 @@ struct CustomSecureField: View {
                 .foregroundColor(.theme.textSecondary)
 
             SecureField(placeholder, text: $text)
+                .accessibilityIdentifier(accessibilityId ?? "")
         }
         .padding()
         .background(Color.theme.surface)

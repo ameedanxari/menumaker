@@ -27,6 +27,21 @@ android {
         buildConfigField("String", "API_BASE_URL", "\"${System.getenv("API_BASE_URL") ?: "http://10.0.2.2:3001/api/v1/"}\"")
     }
 
+    flavorDimensions += "appMode"
+
+    productFlavors {
+        create("seller") {
+            dimension = "appMode"
+            applicationIdSuffix = ".seller"
+            versionNameSuffix = "-seller"
+        }
+        create("customer") {
+            dimension = "appMode"
+            applicationIdSuffix = ".customer"
+            versionNameSuffix = "-customer"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true

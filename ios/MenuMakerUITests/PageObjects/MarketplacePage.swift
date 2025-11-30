@@ -25,7 +25,7 @@ struct MarketplacePage {
     }
 
     var sellerCards: XCUIElementQuery {
-        app.scrollViews.otherElements.matching(identifier: "SellerCard")
+        app.buttons.matching(identifier: "SellerCard")
     }
 
     var firstSellerCard: XCUIElement {
@@ -105,6 +105,8 @@ struct MarketplacePage {
 
     @discardableResult
     func tapFirstSeller() -> SellerMenuPage {
+        // Wait for first seller card to appear
+        XCTAssertTrue(firstSellerCard.waitForExistence(timeout: 10), "First seller card should appear")
         firstSellerCard.tap()
         return SellerMenuPage(app: app)
     }
@@ -121,13 +123,13 @@ struct MarketplacePage {
     // MARK: - Assertions
 
     @discardableResult
-    func assertScreenDisplayed(timeout: TimeInterval = 2) -> MarketplacePage {
+    func assertScreenDisplayed(timeout: TimeInterval = 10) -> MarketplacePage {
         XCTAssertTrue(searchBar.waitForExistence(timeout: timeout), "Marketplace screen should be displayed")
         return self
     }
 
     @discardableResult
-    func assertSellersDisplayed(timeout: TimeInterval = 3) -> MarketplacePage {
+    func assertSellersDisplayed(timeout: TimeInterval = 10) -> MarketplacePage {
         XCTAssertTrue(firstSellerCard.waitForExistence(timeout: timeout), "Sellers should be displayed")
         return self
     }

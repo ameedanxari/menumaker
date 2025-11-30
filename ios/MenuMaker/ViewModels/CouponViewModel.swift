@@ -73,7 +73,7 @@ class CouponViewModel: ObservableObject {
             let minOrderValueCents = Int(params.minOrderValue * 100)
             let validUntilString = params.validUntil.map { ISO8601DateFormatter().string(from: $0) }
 
-            let coupon = try await repository.createCoupon(
+            _ = try await repository.createCoupon(
                 businessId: businessId,
                 code: params.code.uppercased(),
                 discountType: params.discountType,
@@ -85,14 +85,22 @@ class CouponViewModel: ObservableObject {
                 totalUsageLimit: params.totalUsageLimit
             )
 
-            coupons.append(coupon)
+            // Refresh all coupon lists from repository to ensure UI updates
+            coupons = repository.coupons
             activeCoupons = repository.getActiveCoupons()
+            expiredCoupons = repository.getExpiredCoupons()
+
+            // Force UI update by explicitly notifying observers
+            objectWillChange.send()
 
             analyticsService.track(.couponCreated, parameters: [
                 "code": params.code,
                 "discount_type": params.discountType.rawValue,
                 "discount_value": params.discountValue
             ])
+
+            // Ensure full refresh
+            await loadCoupons()
 
         } catch {
             errorMessage = error.localizedDescription

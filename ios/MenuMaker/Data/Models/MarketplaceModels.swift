@@ -91,6 +91,7 @@ struct CartItem: Codable, Identifiable {
 struct Cart: Codable {
     var items: [CartItem]
     let businessId: String
+    var appliedCoupon: Coupon?
 
     var totalCents: Int {
         items.reduce(0) { $0 + ($1.priceCents * $1.quantity) }
@@ -102,6 +103,55 @@ struct Cart: Codable {
 
     var formattedTotal: String {
         String(format: "₹%.2f", total)
+    }
+    
+    var discountCents: Int {
+        guard let coupon = appliedCoupon, coupon.isActive && !coupon.isExpired else {
+            return 0
+        }
+        
+        // Check minimum order requirement
+        guard totalCents >= coupon.minOrderValueCents else {
+            return 0
+        }
+        
+        var discountAmount: Int
+        
+        switch coupon.discountTypeEnum {
+        case .percentage:
+            discountAmount = (totalCents * coupon.discountValue) / 100
+            
+            // Apply max discount cap if specified
+            if let maxCents = coupon.maxDiscountCents {
+                discountAmount = min(discountAmount, maxCents)
+            }
+            
+        case .fixed:
+            discountAmount = coupon.discountValue
+        }
+        
+        // Discount cannot exceed total
+        return min(discountAmount, totalCents)
+    }
+    
+    var discount: Double {
+        Double(discountCents) / 100.0
+    }
+    
+    var formattedDiscount: String {
+        String(format: "₹%.2f", discount)
+    }
+    
+    var finalTotalCents: Int {
+        max(0, totalCents - discountCents)
+    }
+    
+    var finalTotal: Double {
+        Double(finalTotalCents) / 100.0
+    }
+    
+    var formattedFinalTotal: String {
+        String(format: "₹%.2f", finalTotal)
     }
 
     var itemsCount: Int {
@@ -142,6 +192,15 @@ struct Cart: Codable {
 
     mutating func clear() {
         items.removeAll()
+        appliedCoupon = nil
+    }
+    
+    mutating func applyCoupon(_ coupon: Coupon) {
+        appliedCoupon = coupon
+    }
+    
+    mutating func removeCoupon() {
+        appliedCoupon = nil
     }
 }
 

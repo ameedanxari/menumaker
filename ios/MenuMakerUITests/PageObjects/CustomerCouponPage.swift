@@ -21,7 +21,7 @@ struct CustomerCouponPage {
     }
 
     var viewAllCouponsButton: XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'view all' OR label CONTAINS[c] 'see all'")).firstMatch
+        app.buttons["view-all-coupons-button"]
     }
 
     var applyCouponButton: XCUIElement {
@@ -93,12 +93,12 @@ struct CustomerCouponPage {
     func applyCoupon(code: String) -> CustomerCouponPage {
         // Find and tap the coupon with matching code
         let couponElement = app.staticTexts[code]
-        if couponElement.waitForExistence(timeout: 2) {
+        if couponElement.waitForExistence(timeout: 10) {
             couponElement.tap()
             sleep(1)
         }
 
-        if applyCouponButton.waitForExistence(timeout: 1) {
+        if applyCouponButton.waitForExistence(timeout: 5) {
             applyCouponButton.tap()
             sleep(1)
         }
@@ -110,7 +110,7 @@ struct CustomerCouponPage {
     func applyFirstAvailableCoupon() -> CustomerCouponPage {
         tapFirstCoupon()
 
-        if applyCouponButton.waitForExistence(timeout: 1) {
+        if applyCouponButton.waitForExistence(timeout: 5) {
             applyCouponButton.tap()
             sleep(1)
         }
@@ -127,7 +127,7 @@ struct CustomerCouponPage {
 
     @discardableResult
     func searchCoupon(_ query: String) -> CustomerCouponPage {
-        if searchCouponField.waitForExistence(timeout: 1) {
+        if searchCouponField.waitForExistence(timeout: 5) {
             searchCouponField.tap()
             searchCouponField.typeText(query)
         }
@@ -146,7 +146,7 @@ struct CustomerCouponPage {
             filterButton = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'expired'")).firstMatch
         }
 
-        if filterButton.waitForExistence(timeout: 1) {
+        if filterButton.waitForExistence(timeout: 5) {
             filterButton.tap()
             sleep(1)
         }
@@ -166,7 +166,7 @@ struct CustomerCouponPage {
     // MARK: - Assertions
 
     @discardableResult
-    func assertScreenDisplayed(timeout: TimeInterval = 2) -> CustomerCouponPage {
+    func assertScreenDisplayed(timeout: TimeInterval = 10) -> CustomerCouponPage {
         XCTAssertTrue(firstAvailableCoupon.waitForExistence(timeout: timeout) ||
                      emptyStateMessage.waitForExistence(timeout: timeout) ||
                      viewAllCouponsButton.waitForExistence(timeout: timeout),
@@ -182,7 +182,7 @@ struct CustomerCouponPage {
 
     @discardableResult
     func assertCouponApplied() -> CustomerCouponPage {
-        XCTAssertTrue(appliedCouponBadge.waitForExistence(timeout: 2) ||
+        XCTAssertTrue(appliedCouponBadge.waitForExistence(timeout: 10) ||
                      removeCouponButton.exists,
                      "Coupon should be applied")
         return self

@@ -40,8 +40,9 @@ final class CouponFlowTests: XCTestCase {
 
         let couponPage = SellerCouponPage(app: app)
 
-        guard couponPage.createCouponButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Coupon creation feature not implemented yet")
+        guard couponPage.createCouponButton.waitForExistence(timeout: 10) else {
+            XCTFail("Coupon creation feature not accessible - 'add-coupon-button' not found")
+            return
         }
 
         couponPage
@@ -63,8 +64,9 @@ final class CouponFlowTests: XCTestCase {
 
         let couponPage = SellerCouponPage(app: app)
 
-        guard couponPage.createCouponButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Coupon creation feature not implemented yet")
+        guard couponPage.createCouponButton.waitForExistence(timeout: 10) else {
+            XCTFail("Coupon creation feature not accessible - 'add-coupon-button' not found")
+            return
         }
 
         couponPage
@@ -86,8 +88,9 @@ final class CouponFlowTests: XCTestCase {
 
         let couponPage = SellerCouponPage(app: app)
 
-        guard couponPage.createCouponButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Coupon creation feature not implemented yet")
+        guard couponPage.createCouponButton.waitForExistence(timeout: 10) else {
+            XCTFail("Coupon creation feature not accessible - 'add-coupon-button' not found")
+            return
         }
 
         couponPage
@@ -108,8 +111,9 @@ final class CouponFlowTests: XCTestCase {
 
         let couponPage = SellerCouponPage(app: app)
 
-        guard couponPage.createCouponButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Coupon creation feature not implemented yet")
+        guard couponPage.createCouponButton.waitForExistence(timeout: 10) else {
+            XCTFail("Coupon creation feature not accessible - 'add-coupon-button' not found")
+            return
         }
 
         couponPage
@@ -129,8 +133,9 @@ final class CouponFlowTests: XCTestCase {
 
         let couponPage = SellerCouponPage(app: app)
 
-        guard couponPage.firstCoupon.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No coupons available to edit")
+        guard couponPage.firstCoupon.waitForExistence(timeout: 10) else {
+            XCTFail("TEST DATA ISSUE: No coupons available to edit - create test data in setUp")
+            return
         }
 
         couponPage
@@ -148,8 +153,9 @@ final class CouponFlowTests: XCTestCase {
 
         let couponPage = SellerCouponPage(app: app)
 
-        guard couponPage.firstCoupon.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No coupons available")
+        guard couponPage.firstCoupon.waitForExistence(timeout: 10) else {
+            XCTFail("TEST DATA ISSUE: No coupons available - create test data in setUp")
+            return
         }
 
         couponPage
@@ -165,8 +171,9 @@ final class CouponFlowTests: XCTestCase {
 
         let couponPage = SellerCouponPage(app: app)
 
-        guard couponPage.firstCoupon.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No coupons to delete")
+        guard couponPage.firstCoupon.waitForExistence(timeout: 10) else {
+            XCTFail("TEST DATA ISSUE: No coupons to delete - create test data in setUp")
+            return
         }
 
         let initialCount = couponPage.couponList.count
@@ -185,8 +192,9 @@ final class CouponFlowTests: XCTestCase {
 
         let couponPage = SellerCouponPage(app: app)
 
-        guard couponPage.createCouponButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Coupon creation feature not implemented yet")
+        guard couponPage.createCouponButton.waitForExistence(timeout: 10) else {
+            XCTFail("Coupon creation feature not accessible - 'add-coupon-button' not found")
+            return
         }
 
         couponPage
@@ -206,8 +214,9 @@ final class CouponFlowTests: XCTestCase {
 
         let couponPage = SellerCouponPage(app: app)
 
-        guard couponPage.createCouponButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Coupon creation feature not implemented yet")
+        guard couponPage.createCouponButton.waitForExistence(timeout: 10) else {
+            XCTFail("Coupon creation feature not accessible - 'add-coupon-button' not found")
+            return
         }
 
         let coupons = [
@@ -218,14 +227,22 @@ final class CouponFlowTests: XCTestCase {
 
         for (code, type, value, minOrder) in coupons {
             couponPage.createCoupon(code: code, type: type, value: value, minOrder: minOrder)
-            sleep(1)
+            // Wait for form to dismiss by checking that code field no longer exists
+            XCTAssertTrue(couponPage.couponCodeField.waitForNonExistence(timeout: 5),
+                         "Coupon form should dismiss after creating '\(code)'")
         }
 
-        // Verify all coupons were created
-        for (code, _, _, _) in coupons {
+        // Verify all coupons were created - wait for first one to ensure list has loaded
+        guard app.staticTexts[coupons[0].0].waitForExistence(timeout: 5) else {
+            XCTFail("Created coupons should appear in list - '\(coupons[0].0)' not found")
+            return
+        }
+
+        // Verify remaining coupons exist
+        for (code, _, _, _) in coupons.dropFirst() {
             let couponLabel = app.staticTexts[code]
             if !couponLabel.exists {
-                XCTFail("Coupon '\(code)' should exist")
+                XCTFail("Coupon '\(code)' should exist in list")
             }
         }
     }
@@ -239,9 +256,10 @@ final class CouponFlowTests: XCTestCase {
 
         let customerCouponPage = CustomerCouponPage(app: app)
 
-        guard customerCouponPage.viewAllCouponsButton.waitForExistence(timeout: 2) ||
-              customerCouponPage.firstAvailableCoupon.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Coupon browsing not implemented yet")
+        guard customerCouponPage.viewAllCouponsButton.waitForExistence(timeout: 10) ||
+              customerCouponPage.firstAvailableCoupon.waitForExistence(timeout: 10) else {
+            XCTFail("FEATURE NOT IMPLEMENTED: Coupon browsing UI missing - 'viewAllCouponsButton' or 'firstAvailableCoupon' not found in checkout/cart view")
+            return
         }
 
         if customerCouponPage.viewAllCouponsButton.exists {
@@ -258,8 +276,9 @@ final class CouponFlowTests: XCTestCase {
 
         let cartPage = CartPage(app: app)
 
-        guard cartPage.couponField.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Coupon application not implemented yet")
+        guard cartPage.couponField.waitForExistence(timeout: 10) else {
+            XCTFail("FEATURE NOT IMPLEMENTED: Coupon application field missing - 'couponField' not found in cart/checkout view")
+            return
         }
 
         cartPage
@@ -276,8 +295,9 @@ final class CouponFlowTests: XCTestCase {
 
         let customerCouponPage = CustomerCouponPage(app: app)
 
-        guard customerCouponPage.firstAvailableCoupon.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No coupons available")
+        guard customerCouponPage.firstAvailableCoupon.waitForExistence(timeout: 10) else {
+            XCTFail("TEST DATA ISSUE: No coupons available - create test coupons in setUp or verify mock data")
+            return
         }
 
         customerCouponPage
@@ -292,8 +312,9 @@ final class CouponFlowTests: XCTestCase {
 
         let customerCouponPage = CustomerCouponPage(app: app)
 
-        guard customerCouponPage.firstAvailableCoupon.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No coupons available")
+        guard customerCouponPage.firstAvailableCoupon.waitForExistence(timeout: 10) else {
+            XCTFail("TEST DATA ISSUE: No coupons available - create test coupons in setUp or verify mock data")
+            return
         }
 
         customerCouponPage
@@ -310,8 +331,9 @@ final class CouponFlowTests: XCTestCase {
 
         let cartPage = CartPage(app: app)
 
-        guard cartPage.couponField.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Coupon application not implemented yet")
+        guard cartPage.couponField.waitForExistence(timeout: 10) else {
+            XCTFail("FEATURE NOT IMPLEMENTED: Coupon application field missing - 'couponField' not found in cart/checkout view")
+            return
         }
 
         cartPage.applyCoupon("INVALIDCODE999")
@@ -320,7 +342,7 @@ final class CouponFlowTests: XCTestCase {
 
         let customerCouponPage = CustomerCouponPage(app: app)
         // Should show error for invalid coupon
-        if customerCouponPage.couponErrorMessage.waitForExistence(timeout: 2) {
+        if customerCouponPage.couponErrorMessage.waitForExistence(timeout: 10) {
             customerCouponPage.assertCouponError()
         }
     }
@@ -333,8 +355,9 @@ final class CouponFlowTests: XCTestCase {
         navigateToMarketplace()
 
         let marketplacePage = MarketplacePage(app: app)
-        guard marketplacePage.firstSellerCard.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No sellers available")
+        guard marketplacePage.firstSellerCard.waitForExistence(timeout: 10) else {
+            XCTFail("TEST DATA ISSUE: No sellers available in marketplace - verify mock data or navigation")
+            return
         }
 
         let menuPage = marketplacePage.tapFirstSeller()
@@ -342,8 +365,9 @@ final class CouponFlowTests: XCTestCase {
 
         let cartPage = menuPage.navigateToCart()
 
-        guard cartPage.couponField.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Coupon application not implemented yet")
+        guard cartPage.couponField.waitForExistence(timeout: 10) else {
+            XCTFail("FEATURE NOT IMPLEMENTED: Coupon application field missing - 'couponField' not found in cart/checkout view")
+            return
         }
 
         // Try to apply coupon that has minimum order requirement
@@ -353,7 +377,7 @@ final class CouponFlowTests: XCTestCase {
 
         let customerCouponPage = CustomerCouponPage(app: app)
         // Should show error about minimum order not met
-        if customerCouponPage.couponErrorMessage.waitForExistence(timeout: 2) {
+        if customerCouponPage.couponErrorMessage.waitForExistence(timeout: 10) {
             XCTAssertTrue(customerCouponPage.couponErrorMessage.label.contains("minimum") ||
                          customerCouponPage.couponErrorMessage.label.contains("order"),
                          "Should show minimum order error")
@@ -367,15 +391,17 @@ final class CouponFlowTests: XCTestCase {
 
         let customerCouponPage = CustomerCouponPage(app: app)
 
-        guard customerCouponPage.viewAllCouponsButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Coupon browsing not implemented yet")
+        guard customerCouponPage.viewAllCouponsButton.waitForExistence(timeout: 10) else {
+            XCTFail("FEATURE NOT IMPLEMENTED: Coupon browsing UI missing - 'viewAllCouponsButton' not found")
+            return
         }
 
         customerCouponPage
             .tapViewAllCoupons()
 
-        guard customerCouponPage.searchCouponField.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Coupon search not implemented yet")
+        guard customerCouponPage.searchCouponField.waitForExistence(timeout: 10) else {
+            XCTFail("FEATURE NOT IMPLEMENTED: Coupon search field missing - 'searchCouponField' not found in coupon browse view")
+            return
         }
 
         customerCouponPage.searchCoupon("SAVE")
@@ -390,15 +416,17 @@ final class CouponFlowTests: XCTestCase {
 
         let customerCouponPage = CustomerCouponPage(app: app)
 
-        guard customerCouponPage.viewAllCouponsButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Coupon browsing not implemented yet")
+        guard customerCouponPage.viewAllCouponsButton.waitForExistence(timeout: 10) else {
+            XCTFail("FEATURE NOT IMPLEMENTED: Coupon browsing UI missing - 'viewAllCouponsButton' not found")
+            return
         }
 
         customerCouponPage
             .tapViewAllCoupons()
 
         guard customerCouponPage.filterButtons.count > 0 else {
-            throw XCTSkip("Coupon filtering not implemented yet")
+            XCTFail("FEATURE NOT IMPLEMENTED: Coupon filtering missing - no filter buttons found in coupon browse view")
+            return
         }
 
         customerCouponPage
@@ -417,8 +445,9 @@ final class CouponFlowTests: XCTestCase {
         // Get original total
         let originalTotalLabel = cartPage.totalPrice.label
 
-        guard cartPage.couponField.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Coupon application not implemented yet")
+        guard cartPage.couponField.waitForExistence(timeout: 10) else {
+            XCTFail("FEATURE NOT IMPLEMENTED: Coupon application field missing - 'couponField' not found in cart/checkout view")
+            return
         }
 
         cartPage.applyCoupon("TESTCODE")
@@ -442,15 +471,17 @@ final class CouponFlowTests: XCTestCase {
 
         let customerCouponPage = CustomerCouponPage(app: app)
 
-        guard customerCouponPage.viewAllCouponsButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Coupon browsing not implemented yet")
+        guard customerCouponPage.viewAllCouponsButton.waitForExistence(timeout: 10) else {
+            XCTFail("FEATURE NOT IMPLEMENTED: Coupon browsing UI missing - 'viewAllCouponsButton' not found")
+            return
         }
 
         customerCouponPage
             .tapViewAllCoupons()
 
-        guard customerCouponPage.firstAvailableCoupon.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No coupons available")
+        guard customerCouponPage.firstAvailableCoupon.waitForExistence(timeout: 10) else {
+            XCTFail("TEST DATA ISSUE: No coupons available - create test coupons in setUp or verify mock data")
+            return
         }
 
         customerCouponPage
@@ -467,8 +498,9 @@ final class CouponFlowTests: XCTestCase {
 
         let cartPage = CartPage(app: app)
 
-        guard cartPage.couponField.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Coupon application not implemented yet")
+        guard cartPage.couponField.waitForExistence(timeout: 10) else {
+            XCTFail("FEATURE NOT IMPLEMENTED: Coupon application field missing - 'couponField' not found in cart/checkout view")
+            return
         }
 
         // Apply coupon
@@ -491,8 +523,9 @@ final class CouponFlowTests: XCTestCase {
 
         let cartPage = CartPage(app: app)
 
-        guard cartPage.couponField.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Coupon application not implemented yet")
+        guard cartPage.couponField.waitForExistence(timeout: 10) else {
+            XCTFail("FEATURE NOT IMPLEMENTED: Coupon application field missing - 'couponField' not found in cart/checkout view")
+            return
         }
 
         // Try to apply expired coupon
@@ -501,7 +534,7 @@ final class CouponFlowTests: XCTestCase {
         sleep(2)
 
         let customerCouponPage = CustomerCouponPage(app: app)
-        if customerCouponPage.couponErrorMessage.waitForExistence(timeout: 2) {
+        if customerCouponPage.couponErrorMessage.waitForExistence(timeout: 10) {
             XCTAssertTrue(customerCouponPage.couponErrorMessage.label.contains("expired") ||
                          customerCouponPage.couponErrorMessage.label.contains("invalid"),
                          "Should show expired coupon error")
@@ -512,7 +545,7 @@ final class CouponFlowTests: XCTestCase {
 
     private func loginAsSeller() {
         let loginPage = LoginPage(app: app)
-        if loginPage.emailField.waitForExistence(timeout: 2) {
+        if loginPage.emailField.waitForExistence(timeout: 10) {
             loginPage.login(email: "seller@example.com", password: "password123")
             _ = app.tabBars.firstMatch.waitForExistence(timeout: 5)
         }
@@ -520,7 +553,7 @@ final class CouponFlowTests: XCTestCase {
 
     private func loginAsCustomer() {
         let loginPage = LoginPage(app: app)
-        if loginPage.emailField.waitForExistence(timeout: 2) {
+        if loginPage.emailField.waitForExistence(timeout: 10) {
             loginPage.login(email: "test@example.com", password: "password123")
             _ = app.tabBars.firstMatch.waitForExistence(timeout: 5)
         }
@@ -530,19 +563,19 @@ final class CouponFlowTests: XCTestCase {
         // Try direct coupons tab first
         let couponsTab = app.tabBars.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'coupon'")).firstMatch
 
-        if couponsTab.waitForExistence(timeout: 2) {
+        if couponsTab.waitForExistence(timeout: 10) {
             couponsTab.tap()
             return
         }
 
         // Try navigating via More tab -> Coupons link
         let moreTab = app.tabBars.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'more'")).firstMatch
-        if moreTab.waitForExistence(timeout: 2) {
+        if moreTab.waitForExistence(timeout: 10) {
             moreTab.tap()
             sleep(1)
 
             let couponsLink = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'coupon'")).firstMatch
-            if couponsLink.waitForExistence(timeout: 2) {
+            if couponsLink.waitForExistence(timeout: 10) {
                 couponsLink.tap()
                 return
             }
@@ -550,12 +583,12 @@ final class CouponFlowTests: XCTestCase {
 
         // Fallback: Try navigating via navigation bar menu button
         let menuButton = app.navigationBars.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'menu'")).firstMatch
-        if menuButton.waitForExistence(timeout: 2) {
+        if menuButton.waitForExistence(timeout: 10) {
             menuButton.tap()
             sleep(1)
 
             let couponsOption = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'coupon'")).firstMatch
-            if couponsOption.waitForExistence(timeout: 2) {
+            if couponsOption.waitForExistence(timeout: 10) {
                 couponsOption.tap()
             }
         }
@@ -563,7 +596,7 @@ final class CouponFlowTests: XCTestCase {
 
     private func navigateToMarketplace() {
         let marketplaceTab = app.tabBars.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'marketplace' OR label CONTAINS[c] 'home'")).firstMatch
-        if marketplaceTab.waitForExistence(timeout: 2) {
+        if marketplaceTab.waitForExistence(timeout: 10) {
             marketplaceTab.tap()
         }
     }
@@ -573,13 +606,14 @@ final class CouponFlowTests: XCTestCase {
         navigateToMarketplace()
 
         let marketplacePage = MarketplacePage(app: app)
-        if marketplacePage.firstSellerCard.waitForExistence(timeout: 2) {
+        if marketplacePage.firstSellerCard.waitForExistence(timeout: 10) {
             let menuPage = marketplacePage.tapFirstSeller()
             menuPage
                 .addFirstItemToCart()
                 .addItemToCart(at: 1)
 
-            _ = menuPage.navigateToCart()
+            let cartPage = menuPage.navigateToCart()
+            cartPage.assertCartNotEmpty()
         }
     }
 }

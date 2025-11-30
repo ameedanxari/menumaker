@@ -49,7 +49,7 @@ final class FavoritesAndHistoryTests: XCTestCase {
         let marketplacePage = MarketplacePage(app: app)
 
         guard marketplacePage.firstSellerCard.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No sellers available")
+            XCTFail("No sellers available - UI element not found or feature not implemented"); return
         }
 
         marketplacePage.tapFirstSeller()
@@ -59,7 +59,7 @@ final class FavoritesAndHistoryTests: XCTestCase {
         let favoriteButton = app.buttons.matching(NSPredicate(format: "label CONTAINS '❤' OR identifier CONTAINS 'favorite'")).firstMatch
 
         guard favoriteButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Favorite feature not implemented yet")
+            XCTFail("Favorite feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         favoriteButton.tap()
@@ -79,7 +79,7 @@ final class FavoritesAndHistoryTests: XCTestCase {
         let favoritesPage = FavoritesPage(app: app)
 
         guard favoritesPage.firstFavorite.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No favorites available")
+            XCTFail("No favorites available - UI element not found or feature not implemented"); return
         }
 
         let initialCount = favoritesPage.favoritesList.count
@@ -101,7 +101,7 @@ final class FavoritesAndHistoryTests: XCTestCase {
         let favoritesPage = FavoritesPage(app: app)
 
         guard favoritesPage.firstFavorite.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No favorites available")
+            XCTFail("No favorites available - UI element not found or feature not implemented"); return
         }
 
         favoritesPage.tapFirstFavorite()
@@ -120,7 +120,7 @@ final class FavoritesAndHistoryTests: XCTestCase {
         let favoritesPage = FavoritesPage(app: app)
 
         guard favoritesPage.searchBar.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Search favorites not implemented yet")
+            XCTFail("Search favorites not implemented yet - UI element not found or feature not implemented"); return
         }
 
         favoritesPage.searchFavorites("test")
@@ -206,7 +206,7 @@ final class FavoritesAndHistoryTests: XCTestCase {
         let orderHistoryPage = OrderHistoryPage(app: app)
 
         guard orderHistoryPage.cancelledTab.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Cancelled orders tab not implemented yet")
+            XCTFail("Cancelled orders tab not implemented yet - UI element not found or feature not implemented"); return
         }
 
         orderHistoryPage.switchToCancelledOrders()
@@ -221,7 +221,7 @@ final class FavoritesAndHistoryTests: XCTestCase {
         let orderHistoryPage = OrderHistoryPage(app: app)
 
         guard orderHistoryPage.firstOrder.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No orders available")
+            XCTFail("No orders available - UI element not found or feature not implemented"); return
         }
 
         orderHistoryPage.tapFirstOrder()
@@ -241,7 +241,7 @@ final class FavoritesAndHistoryTests: XCTestCase {
         orderHistoryPage.switchToCompletedOrders()
 
         guard orderHistoryPage.reorderButtons.firstMatch.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Reorder feature not implemented yet")
+            XCTFail("Reorder feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         orderHistoryPage.reorderFirst()
@@ -268,7 +268,7 @@ final class FavoritesAndHistoryTests: XCTestCase {
         orderHistoryPage.switchToActiveOrders()
 
         guard orderHistoryPage.trackButtons.firstMatch.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Track order not implemented yet")
+            XCTFail("Track order not implemented yet - UI element not found or feature not implemented"); return
         }
 
         orderHistoryPage.trackFirstOrder()
@@ -286,7 +286,7 @@ final class FavoritesAndHistoryTests: XCTestCase {
         let orderHistoryPage = OrderHistoryPage(app: app)
 
         guard orderHistoryPage.searchBar.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Order search not implemented yet")
+            XCTFail("Order search not implemented yet - UI element not found or feature not implemented"); return
         }
 
         orderHistoryPage.searchOrders("pizza")
@@ -301,7 +301,7 @@ final class FavoritesAndHistoryTests: XCTestCase {
         let orderHistoryPage = OrderHistoryPage(app: app)
 
         guard orderHistoryPage.filterButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Order filtering not implemented yet")
+            XCTFail("Order filtering not implemented yet - UI element not found or feature not implemented"); return
         }
 
         orderHistoryPage.filterByDateRange(.last7Days)
@@ -357,7 +357,7 @@ final class FavoritesAndHistoryTests: XCTestCase {
         let orderHistoryPage = OrderHistoryPage(app: app)
 
         guard orderHistoryPage.helpButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Help support not implemented yet")
+            XCTFail("Help support not implemented yet - UI element not found or feature not implemented"); return
         }
 
         orderHistoryPage.tapHelp()
@@ -420,7 +420,7 @@ final class FavoritesAndHistoryTests: XCTestCase {
         let favoritesPage = FavoritesPage(app: app)
 
         guard favoritesPage.firstFavorite.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No favorites available")
+            XCTFail("No favorites available - UI element not found or feature not implemented"); return
         }
 
         // Open favorite seller

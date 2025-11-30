@@ -17,7 +17,8 @@
       "Bash(adb devices:*)",
       "Bash(xcodebuild test:*)",
       "Bash(xcodebuild:*)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(xcrun simctl list:*)"
     ],
     "deny": [],
     "ask": []

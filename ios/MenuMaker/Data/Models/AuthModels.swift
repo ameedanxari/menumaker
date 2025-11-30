@@ -68,6 +68,7 @@ struct User: Codable, Identifiable {
     let address: String?
     let photoUrl: String?
     let role: String
+    let businessId: String?  // Business ID for seller accounts
     let createdAt: String
     let updatedAt: String?
 

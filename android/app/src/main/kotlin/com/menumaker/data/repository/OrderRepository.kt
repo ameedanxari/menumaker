@@ -11,6 +11,8 @@ import javax.inject.Inject
 
 interface OrderRepository {
     fun getOrdersByBusiness(businessId: String): Flow<Resource<List<OrderDto>>>
+    fun getCustomerOrders(): Flow<Resource<List<OrderDto>>>
+    fun createOrder(order: Map<String, Any>): Flow<Resource<OrderDto>>
     fun getOrderById(id: String): Flow<Resource<OrderDto>>
     fun updateOrderStatus(id: String, status: String): Flow<Resource<OrderDto>>
 }
@@ -38,6 +40,38 @@ class OrderRepositoryImpl @Inject constructor(
                 emit(Resource.Success(orders))
             } else {
                 emit(Resource.Error(response.message() ?: "Failed to load orders"))
+            }
+        } catch (e: Exception) {
+            emit(Resource.Error(e.message ?: "An error occurred", e))
+        }
+    }
+
+    override fun getCustomerOrders(): Flow<Resource<List<OrderDto>>> = flow {
+        emit(Resource.Loading)
+        try {
+            val response = apiService.getCustomerOrders()
+            if (response.isSuccessful && response.body() != null) {
+                val orders = response.body()!!.data.orders
+                // We might want to cache these too, but for now just return
+                emit(Resource.Success(orders))
+            } else {
+                emit(Resource.Error(response.message() ?: "Failed to load orders"))
+            }
+        } catch (e: Exception) {
+            emit(Resource.Error(e.message ?: "An error occurred", e))
+        }
+    }
+
+    override fun createOrder(order: Map<String, Any>): Flow<Resource<OrderDto>> = flow {
+        emit(Resource.Loading)
+        try {
+            val response = apiService.createOrder(order)
+            if (response.isSuccessful && response.body() != null) {
+                val createdOrder = response.body()!!.data.order
+                orderDao.insertOrder(createdOrder.toEntity())
+                emit(Resource.Success(createdOrder))
+            } else {
+                emit(Resource.Error(response.message() ?: "Failed to create order"))
             }
         } catch (e: Exception) {
             emit(Resource.Error(e.message ?: "An error occurred", e))

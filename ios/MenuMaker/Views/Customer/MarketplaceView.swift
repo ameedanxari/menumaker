@@ -32,7 +32,6 @@ struct MarketplaceView: View {
                     LazyVStack(spacing: 16) {
                         ForEach(viewModel.filteredSellers) { seller in
                             SellerCard(seller: seller)
-                                .accessibilityIdentifier("seller-card-\(seller.id)")
                         }
                     }
                     .padding()
@@ -113,9 +112,12 @@ struct CuisineFilter: View {
 
 struct SellerCard: View {
     let seller: MarketplaceSeller
+    @State private var navigateToMenu = false
 
     var body: some View {
-        NavigationLink(destination: SellerMenuView(businessId: seller.id)) {
+        Button(action: {
+            navigateToMenu = true
+        }) {
             VStack(alignment: .leading, spacing: 12) {
                 // Logo
                 if let logoUrl = seller.logoUrl {
@@ -182,6 +184,15 @@ struct SellerCard: View {
         }
         .buttonStyle(PlainButtonStyle())
         .accessibilityIdentifier("SellerCard")
+        .background(
+            NavigationLink(
+                destination: SellerMenuView(businessId: seller.id),
+                isActive: $navigateToMenu
+            ) {
+                EmptyView()
+            }
+            .hidden()
+        )
     }
 }
 

@@ -49,6 +49,7 @@ struct AuthModelsTests {
             address: nil,
             photoUrl: nil,
             role: "admin",
+            businessId: nil,
             createdAt: "2025-01-01T00:00:00Z",
             updatedAt: nil
         )
@@ -67,6 +68,7 @@ struct AuthModelsTests {
             address: nil,
             photoUrl: nil,
             role: "customer",
+            businessId: nil,
             createdAt: "2025-01-01T00:00:00Z",
             updatedAt: nil
         )
@@ -85,6 +87,7 @@ struct AuthModelsTests {
             address: nil,
             photoUrl: nil,
             role: "seller",
+            businessId: "business1",
             createdAt: "2025-01-01T00:00:00Z",
             updatedAt: nil
         )

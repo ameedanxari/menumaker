@@ -28,7 +28,6 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyOrdersScreen(
-    businessId: String, // TODO: In future, fetch user's orders across all businesses
     viewModel: OrderViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
     onNavigateToOrderDetail: (String) -> Unit = {}
@@ -38,8 +37,8 @@ fun MyOrdersScreen(
     var searchQuery by remember { mutableStateOf("") }
 
     // Load orders when screen opens
-    LaunchedEffect(businessId) {
-        viewModel.loadOrders(businessId)
+    LaunchedEffect(Unit) {
+        viewModel.loadCustomerOrders()
     }
 
     Scaffold(

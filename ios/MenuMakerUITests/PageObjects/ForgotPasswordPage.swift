@@ -40,6 +40,9 @@ struct ForgotPasswordPage {
 
     @discardableResult
     func enterEmail(_ email: String) -> ForgotPasswordPage {
+        // Wait for field to be hittable before interacting
+        XCTAssertTrue(emailField.waitForExistence(timeout: 3), "Email field should exist")
+
         emailField.tap()
         emailField.typeText(email)
         return self

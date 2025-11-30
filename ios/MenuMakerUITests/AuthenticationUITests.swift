@@ -211,34 +211,25 @@ final class AuthenticationUITests: XCTestCase {
         let loginPage = LoginPage(app: app)
         loginPage.login(email: "test@example.com", password: "password123")
 
-        // Wait for home screen
-        XCTAssertTrue(app.navigationBars["MenuMaker"].waitForExistence(timeout: 5) ||
-                     app.tabBars.firstMatch.waitForExistence(timeout: 5),
+        // Wait for tab bar to appear
+        XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 5),
                      "Should navigate to home after login")
 
-        // Navigate to profile/more
-        let moreTab = app.tabBars.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'more' OR label CONTAINS[c] 'profile'")).firstMatch
-        guard moreTab.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Profile/More tab not found")
-        }
+        // Navigate to More tab
+        let moreTab = app.tabBars.buttons["More"]
+        XCTAssertTrue(moreTab.waitForExistence(timeout: 3), "More tab should exist")
         moreTab.tap()
 
-        // Tap logout
-        let logoutButton = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'logout' OR label CONTAINS[c] 'sign out'")).firstMatch
-        guard logoutButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Logout button not found")
-        }
-        logoutButton.tap()
+        // Use More page object
+        let morePage = MorePage(app: app)
+        morePage
+            .assertScreenDisplayed()
+            .assertLogoutButtonExists()
+            .tapLogout()
 
-        // Confirm logout in the confirmation dialog
-        // Use firstMatch because SwiftUI creates nested buttons in dialogs
-        let confirmButton = app.buttons["confirm-logout-button"].firstMatch
-        if confirmButton.waitForExistence(timeout: 2) {
-            confirmButton.tap()
-        }
-
-        // Verify back on login screen
-        XCTAssertTrue(loginPage.emailField.waitForExistence(timeout: 3), "Should return to login screen after logout")
+        // Confirm logout and verify back on login screen
+        let returnedLoginPage = morePage.confirmLogout()
+        returnedLoginPage.assertScreenDisplayed()
     }
 
     // MARK: - Accessibility Tests

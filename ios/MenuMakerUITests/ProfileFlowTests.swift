@@ -47,7 +47,7 @@ final class ProfileFlowTests: XCTestCase {
 
         guard profilePage.nameLabel.waitForExistence(timeout: 2) ||
               profilePage.emailLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Profile info not implemented yet")
+            XCTFail("Profile info not implemented yet - UI element not found or feature not implemented"); return
         }
 
         profilePage.assertProfileInfoDisplayed()
@@ -70,7 +70,7 @@ final class ProfileFlowTests: XCTestCase {
         let profilePage = ProfilePage(app: app)
 
         guard profilePage.editProfileButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Edit profile feature not implemented yet")
+            XCTFail("Edit profile feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         profilePage
@@ -89,7 +89,7 @@ final class ProfileFlowTests: XCTestCase {
         let profilePage = ProfilePage(app: app)
 
         guard profilePage.editProfileButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Edit profile feature not implemented yet")
+            XCTFail("Edit profile feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         profilePage
@@ -108,7 +108,7 @@ final class ProfileFlowTests: XCTestCase {
         let profilePage = ProfilePage(app: app)
 
         guard profilePage.editProfileButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Edit profile feature not implemented yet")
+            XCTFail("Edit profile feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         profilePage
@@ -130,7 +130,7 @@ final class ProfileFlowTests: XCTestCase {
 
         guard profilePage.profilePhoto.waitForExistence(timeout: 2) ||
               profilePage.editPhotoButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Profile photo feature not implemented yet")
+            XCTFail("Profile photo feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         profilePage.tapEditPhoto()
@@ -148,7 +148,7 @@ final class ProfileFlowTests: XCTestCase {
         let profilePage = ProfilePage(app: app)
 
         guard profilePage.changePasswordButton.waitForExistence(timeout: 3) else {
-            throw XCTSkip("Change password feature not implemented yet")
+            XCTFail("Change password feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         profilePage
@@ -171,7 +171,7 @@ final class ProfileFlowTests: XCTestCase {
         let profilePage = ProfilePage(app: app)
 
         guard profilePage.changePasswordButton.waitForExistence(timeout: 3) else {
-            throw XCTSkip("Change password feature not implemented yet")
+            XCTFail("Change password feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         profilePage
@@ -192,7 +192,7 @@ final class ProfileFlowTests: XCTestCase {
         let profilePage = ProfilePage(app: app)
 
         guard profilePage.changePasswordButton.waitForExistence(timeout: 3) else {
-            throw XCTSkip("Change password feature not implemented yet")
+            XCTFail("Change password feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         profilePage
@@ -217,7 +217,7 @@ final class ProfileFlowTests: XCTestCase {
         let profilePage = ProfilePage(app: app)
 
         guard profilePage.logoutButton.waitForExistence(timeout: 3) else {
-            throw XCTSkip("Logout feature not implemented yet")
+            XCTFail("Logout feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         profilePage
@@ -234,7 +234,7 @@ final class ProfileFlowTests: XCTestCase {
         let profilePage = ProfilePage(app: app)
 
         guard profilePage.ordersButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Orders navigation not implemented yet")
+            XCTFail("Orders navigation not implemented yet - UI element not found or feature not implemented"); return
         }
 
         profilePage.tapOrders()
@@ -252,7 +252,7 @@ final class ProfileFlowTests: XCTestCase {
         let profilePage = ProfilePage(app: app)
 
         guard profilePage.favoritesButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Favorites navigation not implemented yet")
+            XCTFail("Favorites navigation not implemented yet - UI element not found or feature not implemented"); return
         }
 
         profilePage.tapFavorites()
@@ -270,7 +270,7 @@ final class ProfileFlowTests: XCTestCase {
         let profilePage = ProfilePage(app: app)
 
         guard profilePage.settingsButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Settings navigation not implemented yet")
+            XCTFail("Settings navigation not implemented yet - UI element not found or feature not implemented"); return
         }
 
         profilePage.tapSettings()
@@ -288,7 +288,7 @@ final class ProfileFlowTests: XCTestCase {
         let profilePage = ProfilePage(app: app)
 
         guard profilePage.referralsButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Referrals navigation not implemented yet")
+            XCTFail("Referrals navigation not implemented yet - UI element not found or feature not implemented"); return
         }
 
         profilePage.tapReferrals()
@@ -306,7 +306,7 @@ final class ProfileFlowTests: XCTestCase {
         let profilePage = ProfilePage(app: app)
 
         guard profilePage.helpButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Help navigation not implemented yet")
+            XCTFail("Help navigation not implemented yet - UI element not found or feature not implemented"); return
         }
 
         profilePage.tapHelp()
@@ -324,7 +324,7 @@ final class ProfileFlowTests: XCTestCase {
         let profilePage = ProfilePage(app: app)
 
         guard profilePage.editProfileButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Edit profile feature not implemented yet")
+            XCTFail("Edit profile feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         profilePage
@@ -348,7 +348,7 @@ final class ProfileFlowTests: XCTestCase {
         let profilePage = ProfilePage(app: app)
 
         guard profilePage.editProfileButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Edit profile feature not implemented yet")
+            XCTFail("Edit profile feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         profilePage
@@ -373,7 +373,7 @@ final class ProfileFlowTests: XCTestCase {
         let profilePage = ProfilePage(app: app)
 
         guard profilePage.editProfileButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Edit profile feature not implemented yet")
+            XCTFail("Edit profile feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         let newName = "Integration Test User"
@@ -406,7 +406,7 @@ final class ProfileFlowTests: XCTestCase {
         let profilePage = ProfilePage(app: app)
 
         guard profilePage.logoutButton.waitForExistence(timeout: 3) else {
-            throw XCTSkip("Logout feature not implemented yet")
+            XCTFail("Logout feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         profilePage.tapLogout()

@@ -31,6 +31,14 @@ class OrderViewModel @Inject constructor(
         }
     }
 
+    fun loadCustomerOrders() {
+        viewModelScope.launch {
+            orderRepository.getCustomerOrders().collect { resource ->
+                _ordersState.value = resource
+            }
+        }
+    }
+
     fun loadOrderDetail(orderId: String) {
         viewModelScope.launch {
             orderRepository.getOrderById(orderId).collect { resource ->

@@ -1,0 +1,100 @@
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS tests/OrderService.test.ts
+  ● Console
+
+    console.log
+      ✅ Twilio WhatsApp client initialized
+
+      at src/services/WhatsAppService.ts:2811:11
+
+    console.log
+      Business or settings not found, skipping WhatsApp
+
+      at WhatsAppService.notifySellerNewOrder (src/services/WhatsAppService.ts:3075:17)
+
+(node:49279) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:49278) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:49277) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS tests/routes/SettingsRoutes.test.ts
+PASS tests/routes/NotificationRoutes.test.ts
+PASS tests/routes/CartRoutes.test.ts
+-------------------------|---------|----------|---------|---------|---------------------------------------------------------------------------------------------------------------
+File                     | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                                                             
+-------------------------|---------|----------|---------|---------|---------------------------------------------------------------------------------------------------------------
+All files                |   79.16 |    62.46 |   53.47 |   83.12 |                                                                                                               
+ config                  |     100 |      100 |     100 |     100 |                                                                                                               
+  database.ts            |     100 |      100 |     100 |     100 |                                                                                                               
+ middleware              |      40 |     37.5 |      50 |      40 |                                                                                                               
+  auth.ts                |      40 |     37.5 |      50 |      40 | 6,19-39                                                                                                       
+ models                  |   81.94 |    61.37 |   35.29 |   89.18 |                                                                                                               
+  AdminUser.ts           |   85.71 |    58.53 |     100 |   95.45 | 4                                                                                                             
+  AuditLog.ts            |   80.76 |    56.09 |   66.66 |      90 | 4,40                                                                                                          
+  Business.ts            |      64 |    58.53 |    12.5 |   78.37 | 4,49,106,110,114,118,122,126                                                                                  
+  BusinessSettings.ts    |   88.67 |    56.75 |      50 |   95.65 | 4,112                                                                                                         
+  CommonDish.ts          |   86.66 |    56.75 |     100 |   95.83 | 4                                                                                                             
+  ContentFlag.ts         |   81.25 |       60 |      50 |   88.46 | 4,62,79                                                                                                       
+  CookieConsent.ts       |   85.18 |    58.53 |     100 |   95.23 | 4                                                                                                             
+  Coupon.ts              |   89.15 |    66.66 |   28.57 |    92.2 | 4,121,274,283,292,407                                                                                         
+  DeletionRequest.ts     |   82.75 |    62.26 |   66.66 |    91.3 | 4,48                                                                                                          
+  DeliveryIntegration.ts |   88.09 |    67.41 |      25 |   91.02 | 4,92,255,264,395,404,413                                                                                      
+  Dish.ts                |   71.73 |     55.1 |   18.18 |   83.33 | 4,57,110,119,136,140                                                                                          
+  DishCategory.ts        |   74.19 |    55.55 |   33.33 |   86.95 | 4,62,83                                                                                                       
+  EnhancedReferral.ts    |   90.84 |    69.92 |   18.18 |   92.64 | 4,76,85,94,103,198,320,481,579,699                                                                            
+  FeatureFlag.ts         |   85.18 |    55.55 |     100 |   95.23 | 4                                                                                                             
+  LegalTemplate.ts       |   82.14 |       60 |   66.66 |    90.9 | 4,67                                                                                                          
+  Marketplace.ts         |   87.69 |    66.23 |   33.33 |   91.52 | 4,93,217,296,305                                                                                              
+  Menu.ts                |   69.69 |       60 |      25 |   83.33 | 4,35,72,76                                                                                                    
+  MenuItem.ts            |   71.42 |    54.54 |   33.33 |      85 | 4,30,39                                                                                                       
+  Notification.ts        |      80 |    54.05 |   66.66 |   89.47 | 4,35                                                                                                          
+  Order.ts               |    70.9 |    60.37 |   14.28 |      80 | 4,38-48,66,75,168,172                                                                                         
+  OrderItem.ts           |   64.51 |    54.54 |   22.22 |   70.83 | 4,26-35,43,52                                                                                                 
+  OrderNotification.ts   |   74.19 |    56.75 |   33.33 |   86.95 | 4,34,71                                                                                                       
+  POSIntegration.ts      |   87.93 |    64.38 |      40 |    92.3 | 4,89,231,240                                                                                                  
+  Payment.ts             |   83.72 |    59.64 |      40 |   89.18 | 4,125,134,143                                                                                                 
+  PaymentProcessor.ts    |   85.29 |    58.49 |   66.66 |   92.85 | 4,110                                                                                                         
+  Payout.ts              |   86.27 |    63.93 |      40 |   93.18 | 4,141,154                                                                                                     
+  PayoutSchedule.ts      |   85.71 |    63.15 |      50 |   91.66 | 4,141,150                                                                                                     
+  Referral.ts            |   84.61 |    63.93 |      50 |    90.9 | 4,69,78                                                                                                       
+  Review.ts              |   80.32 |    65.75 |      20 |   86.79 | 4,115,124,133,214,254,263                                                                                     
+  ReviewHelpful.ts       |   73.91 |    54.54 |      50 |   82.35 | 4,32,41                                                                                                       
+  SavedCart.ts           |   84.61 |    58.53 |     100 |      95 | 4                                                                                                             
+  Subscription.ts        |    65.9 |    61.64 |   22.22 |   68.42 | 4,88-123,136                                                                                                  
+  SupportTicket.ts       |   82.35 |    63.15 |      50 |   89.28 | 4,45,54                                                                                                       
+  TaxInvoice.ts          |   86.36 |    62.26 |      50 |    92.1 | 4,114,123                                                                                                     
+  User.ts                |      80 |    61.22 |   33.33 |   90.62 | 4,117,121                                                                                                     
+  UserSettings.ts        |   82.14 |    56.75 |   66.66 |    90.9 | 4,40                                                                                                          
+ routes                  |   95.18 |    80.64 |     100 |   95.18 |                                                                                                               
+  cart.ts                |    92.3 |    76.47 |     100 |    92.3 | 111,122,124                                                                                                   
+  notifications.ts       |   96.55 |       80 |     100 |   96.55 | 83                                                                                                            
+  settings.ts            |     100 |      100 |     100 |     100 |                                                                                                               
+ services                |   72.84 |    66.13 |   79.41 |   72.82 |                                                                                                               
+  AuthService.ts         |   98.59 |    95.45 |     100 |   98.59 | 86                                                                                                            
+  BusinessService.ts     |   85.48 |       85 |   77.77 |   86.88 | 118,131-140                                                                                                   
+  CouponService.ts       |   66.88 |    56.36 |   78.26 |   65.77 | 150-170,179,186,191,203,232,235,270,272,274,276,319,358-437                                                   
+  DishService.ts         |   89.61 |       90 |     100 |   89.61 | 93-96,134-137                                                                                                 
+  OrderService.ts        |   67.53 |    66.33 |   83.33 |   67.39 | 26,29,33-46,62-65,68-71,76-79,82-85,92-95,104-107,112-117,127,151,185,219-222,233,236,249-252,263,266,277-280 
+  ReviewService.ts       |   99.37 |    97.77 |     100 |   99.35 | 452                                                                                                           
+  WhatsAppService.ts     |   16.36 |    15.71 |   15.38 |   16.66 | 17,24-115,131-143,159-176,186-275                                                                             
+ utils                   |   83.33 |       75 |     100 |   83.33 |                                                                                                               
+  jwt.ts                 |   85.71 |       75 |     100 |   85.71 | 5,8                                                                                                           
+  password.ts            |     100 |      100 |     100 |     100 |                                                                                                               
+  slug.ts                |   71.42 |      100 |     100 |   71.42 | 23-24                                                                                                         
+-------------------------|---------|----------|---------|---------|---------------------------------------------------------------------------------------------------------------
+Jest: "global" coverage threshold for branches (70%) not met: 62.46%
+Jest: "global" coverage threshold for functions (70%) not met: 53.47%
+
+Test Suites: 1 failed, 9 passed, 10 total
+Tests:       1 failed, 204 passed, 205 total
+Snapshots:   0 total
+Time:        3.286 s
+Ran all test suites.
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path /Users/macintosh/Documents/Projects/MenuMaker/backend
+npm error workspace @menumaker/backend@1.0.0
+npm error location /Users/macintosh/Documents/Projects/MenuMaker/backend
+npm error command failed
+npm error command sh -c JWT_SECRET=test-secret-key-for-ci-testing-32-chars-minimum WHATSAPP_ENABLED=true TWILIO_ACCOUNT_SID=AC00000000000000000000000000000000 TWILIO_AUTH_TOKEN=test-token-32-chars-minimum NODE_OPTIONS=--experimental-vm-modules jest --coverage --coverageReporters=text

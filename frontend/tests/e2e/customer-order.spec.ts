@@ -238,17 +238,13 @@ test.describe('Customer Order Flow', () => {
 
       // Increase quantity
       const increaseButton = page.locator('button[aria-label="Increase quantity"]');
-      if (await increaseButton.isVisible()) {
-        await increaseButton.click();
-        await expect(page.locator('[data-testid="cart-count"]')).toContainText('2');
-      }
+      await increaseButton.click();
+      await expect(page.locator('[data-testid="cart-count"]')).toContainText('2');
 
       // Decrease quantity
       const decreaseButton = page.locator('button[aria-label="Decrease quantity"]');
-      if (await decreaseButton.isVisible()) {
-        await decreaseButton.click();
-        await expect(page.locator('[data-testid="cart-count"]')).toContainText('1');
-      }
+      await decreaseButton.click();
+      await expect(page.locator('[data-testid="cart-count"]')).toContainText('1');
     });
 
     test('should remove item from cart', async ({ page }) => {
@@ -275,12 +271,10 @@ test.describe('Customer Order Flow', () => {
 
       // Remove item
       const removeButton = page.locator('button[aria-label="Remove item"]');
-      if (await removeButton.isVisible()) {
-        await removeButton.click();
+      await removeButton.click();
 
-        // Cart should be empty
-        await expect(page.locator('text=/cart is empty|no items/i')).toBeVisible();
-      }
+      // Cart should be empty
+      await expect(page.locator('text=/cart is empty|no items/i')).toBeVisible();
     });
 
     test('should calculate cart total correctly', async ({ page }) => {
@@ -573,9 +567,7 @@ test.describe('Customer Order Flow', () => {
 
       // Cart should be empty
       const cartBadge = page.locator('[data-testid="cart-count"]');
-      if (await cartBadge.isVisible()) {
-        await expect(cartBadge).toContainText('0');
-      }
+      await expect(cartBadge).toContainText('0');
     });
   });
 });

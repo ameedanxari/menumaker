@@ -1,9 +1,10 @@
 import SwiftUI
 
 struct CartView: View {
-    @StateObject private var viewModel = CartViewModel()
+    @EnvironmentObject private var viewModel: CartViewModel
     @State private var showCheckout = false
     @State private var couponCode = ""
+    @State private var showCouponBrowse = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -28,8 +29,10 @@ struct CartView: View {
                         CouponSection(
                             couponCode: $couponCode,
                             appliedCoupon: viewModel.appliedCoupon,
+                            businessId: viewModel.cart?.businessId ?? "",
                             onApply: { await viewModel.applyCoupon(couponCode) },
-                            onRemove: { viewModel.removeCoupon() }
+                            onRemove: { viewModel.removeCoupon() },
+                            onBrowse: { showCouponBrowse = true }
                         )
                         .accessibilityIdentifier("coupon-section")
 
@@ -56,6 +59,16 @@ struct CartView: View {
         .accessibilityIdentifier("cart-screen")
         .sheet(isPresented: $showCheckout) {
             CheckoutView(viewModel: viewModel)
+        }
+        .sheet(isPresented: $showCouponBrowse) {
+            if let businessId = viewModel.cart?.businessId {
+                CouponBrowseView(businessId: businessId) { coupon in
+                    couponCode = coupon.code
+                    Task {
+                        await viewModel.applyCoupon(coupon.code)
+                    }
+                }
+            }
         }
     }
 }
@@ -118,8 +131,10 @@ struct CartItemRow: View {
 struct CouponSection: View {
     @Binding var couponCode: String
     let appliedCoupon: Coupon?
+    let businessId: String
     let onApply: () async -> Void
     let onRemove: () -> Void
+    let onBrowse: () -> Void
 
     var body: some View {
         VStack(spacing: 12) {
@@ -146,19 +161,31 @@ struct CouponSection: View {
                     .accessibilityIdentifier("remove-coupon-button")
                 }
             } else {
-                HStack {
-                    TextField("Enter Coupon Code", text: $couponCode)
-                        .textCase(.uppercase)
-                        .accessibilityIdentifier("coupon-code-field")
+                VStack(spacing: 12) {
+                    HStack {
+                        TextField("Enter Coupon Code", text: $couponCode)
+                            .textCase(.uppercase)
+                            .accessibilityIdentifier("coupon-field")
 
-                    Button("Apply") {
-                        Task {
-                            await onApply()
+                        Button("Apply") {
+                            Task {
+                                await onApply()
+                            }
                         }
+                        .buttonStyle(.bordered)
+                        .disabled(couponCode.isEmpty)
+                        .accessibilityIdentifier("apply-coupon-button")
                     }
-                    .buttonStyle(.bordered)
-                    .disabled(couponCode.isEmpty)
-                    .accessibilityIdentifier("apply-coupon-button")
+                    
+                    Button(action: onBrowse) {
+                        HStack {
+                            Image(systemName: "ticket")
+                            Text("View All Coupons")
+                        }
+                        .font(.subheadline)
+                        .foregroundColor(.theme.primary)
+                    }
+                    .accessibilityIdentifier("view-all-coupons-button")
                 }
             }
         }

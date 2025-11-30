@@ -10,14 +10,26 @@ class CartRepository: ObservableObject {
 
     private let userDefaults = UserDefaults.standard
     private let cartKey = "menumaker_cart"
+    
+    // Use in-memory storage for UI testing
+    private var isUITesting: Bool {
+        ProcessInfo.processInfo.arguments.contains("UI-Testing")
+    }
 
     private init() {
+        print("DEBUG: CartRepository init. isUITesting: \(isUITesting)")
         loadCart()
     }
 
     // MARK: - Cart Management
 
     func loadCart() {
+        // In UI testing, cart is only stored in memory
+        if isUITesting {
+            print("DEBUG: CartRepository loadCart skipped (UI Testing)")
+            return
+        }
+        
         guard let data = userDefaults.data(forKey: cartKey),
               let cart = try? JSONDecoder().decode(Cart.self, from: data) else {
             return
@@ -27,6 +39,12 @@ class CartRepository: ObservableObject {
     }
 
     func saveCart() {
+        // In UI testing, cart is only stored in memory (self.cart)
+        if isUITesting {
+            print("DEBUG: CartRepository saveCart skipped (UI Testing). Current items: \(cart?.items.count ?? 0)")
+            return
+        }
+        
         guard let cart = cart,
               let data = try? JSONEncoder().encode(cart) else {
             return
@@ -36,34 +54,49 @@ class CartRepository: ObservableObject {
     }
 
     func clearCart() {
+        print("DEBUG: CartRepository clearCart")
         cart = nil
-        userDefaults.removeObject(forKey: cartKey)
+        
+        // Only clear UserDefaults if not in UI testing
+        if !isUITesting {
+            userDefaults.removeObject(forKey: cartKey)
+        }
     }
 
     // MARK: - Item Management
 
     func addItem(_ dish: Dish, businessId: String) {
-        if cart == nil {
-            cart = Cart(items: [], businessId: businessId)
-        }
-
+        print("DEBUG: CartRepository addItem called for dish: \(dish.name)")
+        
+        // Get or create cart
+        var currentCart = cart ?? Cart(items: [], businessId: businessId)
+        
         // Check if cart belongs to different business
-        if let existingCart = cart, existingCart.businessId != businessId {
-            // Clear cart and create new one
-            cart = Cart(items: [], businessId: businessId)
+        if currentCart.businessId != businessId {
+            currentCart = Cart(items: [], businessId: businessId)
         }
-
-        cart?.addItem(dish)
+        
+        // Add item to cart
+        currentCart.addItem(dish)
+        
+        // Explicitly reassign to trigger @Published
+        cart = currentCart
+        
+        print("DEBUG: CartRepository addItem complete. Cart items: \(cart?.items.count ?? 0)")
         saveCart()
     }
 
     func removeItem(_ dishId: String) {
-        cart?.removeItem(dishId)
+        guard var currentCart = cart else { return }
+        currentCart.removeItem(dishId)
+        cart = currentCart
         saveCart()
     }
 
     func updateQuantity(_ dishId: String, quantity: Int) {
-        cart?.updateQuantity(dishId, quantity: quantity)
+        guard var currentCart = cart else { return }
+        currentCart.updateQuantity(dishId, quantity: quantity)
+        cart = currentCart
         saveCart()
     }
 

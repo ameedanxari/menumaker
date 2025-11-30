@@ -70,6 +70,13 @@ interface ApiService {
         @Query("limit") limit: Int? = null
     ): Response<OrderListResponse>
 
+    @GET("orders/my-orders")
+    suspend fun getCustomerOrders(
+        @Query("status") status: String? = null,
+        @Query("limit") limit: Int? = null,
+        @Query("offset") offset: Int? = null
+    ): Response<OrderListResponse>
+
     @GET("orders/{id}")
     suspend fun getOrderById(@Path("id") id: String): Response<OrderResponse>
 

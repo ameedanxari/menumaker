@@ -1,0 +1,81 @@
+
+> @menumaker/backend@1.0.0 test
+> JWT_SECRET=test-secret-key-for-ci-testing-32-chars-minimum WHATSAPP_ENABLED=true TWILIO_ACCOUNT_SID=AC00000000000000000000000000000000 TWILIO_AUTH_TOKEN=test-token-32-chars-minimum NODE_OPTIONS=--experimental-vm-modules jest tests/OrderService.test.ts
+
+ts-jest[config] (WARN) 
+    The "ts-jest" config option "isolatedModules" is deprecated and will be removed in v30.0.0. Please use "isolatedModules: true" in /Users/macintosh/Documents/Projects/MenuMaker/backend/tsconfig.json instead, see https://www.typescriptlang.org/tsconfig/#isolatedModules
+  
+  console.log
+    ✅ Twilio WhatsApp client initialized
+
+      at src/services/WhatsAppService.ts:14:13
+
+(node:35230) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+FAIL tests/OrderService.test.ts (6.282 s)
+  OrderService
+    createOrder
+      ✓ should throw error if dish is not available (47 ms)
+      ✓ should throw error if delivery is not enabled (12 ms)
+      ✕ should create order successfully (89 ms)
+    getOrdersByBusiness
+      ✓ should return all orders for a business (7 ms)
+      ✓ should filter orders by status (19 ms)
+    updateOrder
+      ✓ should update order status (7 ms)
+      ✓ should set fulfilled_at when status is fulfilled (7 ms)
+    getOrderById
+      ✓ should get order by ID (11 ms)
+      ✓ should throw error if order not found (8 ms)
+    getOrderSummary
+      ✓ should return business order statistics (19 ms)
+      ✓ should filter by date range (20 ms)
+    order validation
+      ✓ should validate minimum order value (16 ms)
+    error handling
+      ✓ should handle database errors gracefully (44 ms)
+      ✓ should handle update errors when order not found (4 ms)
+    getCustomerOrders
+      ✓ should return customer orders with items and business (5 ms)
+      ✓ should filter orders by status (3 ms)
+      ✓ should apply pagination limits (3 ms)
+      ✓ should order by created_at DESC (3 ms)
+    cancelOrder
+      ✓ should cancel order when status is pending (4 ms)
+      ✓ should cancel order when status is confirmed (2 ms)
+      ✓ should append cancellation reason to notes (2 ms)
+      ✓ should throw error if order not found (2 ms)
+      ✓ should throw error if user does not own the order (2 ms)
+      ✓ should throw error if order is preparing (2 ms)
+      ✓ should throw error if order is out for delivery (2 ms)
+      ✓ should throw error if order is already delivered (3 ms)
+      ✓ should throw error if order is already cancelled (2 ms)
+
+  ● OrderService › createOrder › should create order successfully
+
+    Order not found
+
+      204 |         itemsTotal >= settings.min_order_free_delivery_cents &&
+      205 |         data.delivery_type === 'delivery'
+    > 206 |       ) {
+          |          ^
+      207 |         deliveryFee = 0; // Free delivery applied
+      208 |       }
+      209 |
+
+      at OrderService.getOrderById (src/services/OrderService.ts:206:27)
+      at OrderService.createOrder (src/services/OrderService.ts:182:34)
+      at Object.<anonymous> (tests/OrderService.test.ts:265:28)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 26 passed, 27 total
+Snapshots:   0 total
+Time:        7.493 s, estimated 10 s
+Ran all test suites matching /tests\/OrderService.test.ts/i.
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path /Users/macintosh/Documents/Projects/MenuMaker/backend
+npm error workspace @menumaker/backend@1.0.0
+npm error location /Users/macintosh/Documents/Projects/MenuMaker/backend
+npm error command failed
+npm error command sh -c JWT_SECRET=test-secret-key-for-ci-testing-32-chars-minimum WHATSAPP_ENABLED=true TWILIO_ACCOUNT_SID=AC00000000000000000000000000000000 TWILIO_AUTH_TOKEN=test-token-32-chars-minimum NODE_OPTIONS=--experimental-vm-modules jest tests/OrderService.test.ts

@@ -28,6 +28,11 @@ class AuthRepository: ObservableObject {
         try await keychainManager.saveRefreshToken(response.data.refreshToken)
         try await keychainManager.saveUserId(response.data.user.id)
         try await keychainManager.saveUserEmail(response.data.user.email)
+        
+        // Save business ID for sellers
+        if let businessId = response.data.user.businessId {
+            try await keychainManager.saveBusinessId(businessId)
+        }
 
         return response.data
     }
@@ -47,6 +52,11 @@ class AuthRepository: ObservableObject {
         try await keychainManager.saveRefreshToken(response.data.refreshToken)
         try await keychainManager.saveUserId(response.data.user.id)
         try await keychainManager.saveUserEmail(response.data.user.email)
+        
+        // Save business ID for sellers
+        if let businessId = response.data.user.businessId {
+            try await keychainManager.saveBusinessId(businessId)
+        }
 
         return response.data
     }

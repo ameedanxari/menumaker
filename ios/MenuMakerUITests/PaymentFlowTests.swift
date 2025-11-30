@@ -47,7 +47,7 @@ final class PaymentFlowTests: XCTestCase {
 
         guard paymentPage.cardPaymentOption.waitForExistence(timeout: 2) ||
               paymentPage.cashPaymentOption.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Payment methods not implemented yet")
+            XCTFail("Payment methods not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage.assertPaymentMethodsDisplayed()
@@ -60,7 +60,7 @@ final class PaymentFlowTests: XCTestCase {
         let paymentPage = PaymentPage(app: app)
 
         guard paymentPage.cashPaymentOption.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Cash payment not implemented yet")
+            XCTFail("Cash payment not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage
@@ -82,7 +82,7 @@ final class PaymentFlowTests: XCTestCase {
         let paymentPage = PaymentPage(app: app)
 
         guard paymentPage.cardPaymentOption.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Card payment not implemented yet")
+            XCTFail("Card payment not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage.selectPaymentMethod(.card)
@@ -90,7 +90,7 @@ final class PaymentFlowTests: XCTestCase {
         sleep(1)
 
         guard paymentPage.cardNumberField.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Card form not implemented yet")
+            XCTFail("Card form not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage.assertCardFormDisplayed()
@@ -103,16 +103,15 @@ final class PaymentFlowTests: XCTestCase {
         let paymentPage = PaymentPage(app: app)
 
         guard paymentPage.upiPaymentOption.waitForExistence(timeout: 2) else {
-            throw XCTSkip("UPI payment not implemented yet")
+            XCTFail("UPI payment not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage.selectPaymentMethod(.upi)
 
         sleep(1)
 
-        if paymentPage.upiIdField.waitForExistence(timeout: 2) {
-            paymentPage.assertUpiFormDisplayed()
-        }
+        XCTAssertTrue(paymentPage.upiIdField.waitForExistence(timeout: 2), "UPI ID field should be displayed")
+        paymentPage.assertUpiFormDisplayed()
     }
 
     // MARK: - Card Payment Tests (P0)
@@ -124,14 +123,14 @@ final class PaymentFlowTests: XCTestCase {
         let paymentPage = PaymentPage(app: app)
 
         guard paymentPage.cardPaymentOption.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Card payment not implemented yet")
+            XCTFail("Card payment not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage
             .selectPaymentMethod(.card)
 
         guard paymentPage.cardNumberField.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Card form not implemented yet")
+            XCTFail("Card form not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage
@@ -151,14 +150,14 @@ final class PaymentFlowTests: XCTestCase {
         let paymentPage = PaymentPage(app: app)
 
         guard paymentPage.cardPaymentOption.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Card payment not implemented yet")
+            XCTFail("Card payment not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage
             .selectPaymentMethod(.card)
 
         guard paymentPage.cardNumberField.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Card form not implemented yet")
+            XCTFail("Card form not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage
@@ -188,13 +187,13 @@ final class PaymentFlowTests: XCTestCase {
         let paymentPage = PaymentPage(app: app)
 
         guard paymentPage.cardPaymentOption.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Card payment not implemented yet")
+            XCTFail("Card payment not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage.selectPaymentMethod(.card)
 
         guard paymentPage.saveCardCheckbox.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Save card feature not implemented yet")
+            XCTFail("Save card feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage
@@ -217,14 +216,14 @@ final class PaymentFlowTests: XCTestCase {
         let paymentPage = PaymentPage(app: app)
 
         guard paymentPage.upiPaymentOption.waitForExistence(timeout: 2) else {
-            throw XCTSkip("UPI payment not implemented yet")
+            XCTFail("UPI payment not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage
             .selectPaymentMethod(.upi)
 
         guard paymentPage.upiIdField.waitForExistence(timeout: 2) else {
-            throw XCTSkip("UPI form not implemented yet")
+            XCTFail("UPI form not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage
@@ -243,13 +242,13 @@ final class PaymentFlowTests: XCTestCase {
         let paymentPage = PaymentPage(app: app)
 
         guard paymentPage.cardPaymentOption.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Card payment not implemented yet")
+            XCTFail("Card payment not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage.selectPaymentMethod(.card)
 
         guard paymentPage.firstSavedCard.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No saved cards or feature not implemented yet")
+            XCTFail("No saved cards or feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage
@@ -269,13 +268,13 @@ final class PaymentFlowTests: XCTestCase {
         let paymentPage = PaymentPage(app: app)
 
         guard paymentPage.cardPaymentOption.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Card payment not implemented yet")
+            XCTFail("Card payment not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage.selectPaymentMethod(.card)
 
         guard paymentPage.addNewCardButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Add new card feature not implemented yet")
+            XCTFail("Add new card feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage
@@ -295,14 +294,14 @@ final class PaymentFlowTests: XCTestCase {
         let paymentPage = PaymentPage(app: app)
 
         guard paymentPage.cardPaymentOption.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Card payment not implemented yet")
+            XCTFail("Card payment not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage
             .selectPaymentMethod(.card)
 
         guard paymentPage.cardNumberField.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Card form not implemented yet")
+            XCTFail("Card form not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage.enterCardDetails(
@@ -324,7 +323,7 @@ final class PaymentFlowTests: XCTestCase {
         let paymentPage = PaymentPage(app: app)
 
         guard paymentPage.cancelButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Cancel payment not implemented yet")
+            XCTFail("Cancel payment not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage.cancelPayment()
@@ -343,7 +342,7 @@ final class PaymentFlowTests: XCTestCase {
         let paymentPage = PaymentPage(app: app)
 
         guard paymentPage.cashPaymentOption.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Cash payment not implemented yet")
+            XCTFail("Cash payment not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage
@@ -352,12 +351,11 @@ final class PaymentFlowTests: XCTestCase {
 
         sleep(5)
 
-        if paymentPage.paymentSuccessMessage.waitForExistence(timeout: 10) {
-            paymentPage.assertPaymentSuccess()
+        XCTAssertTrue(paymentPage.paymentSuccessMessage.waitForExistence(timeout: 10), "Payment success message should appear")
+        paymentPage.assertPaymentSuccess()
 
-            // Should navigate to order tracking or confirmation
-            sleep(2)
-        }
+        // Should navigate to order tracking or confirmation
+        sleep(2)
     }
 
     @MainActor
@@ -367,14 +365,14 @@ final class PaymentFlowTests: XCTestCase {
         let paymentPage = PaymentPage(app: app)
 
         guard paymentPage.cardPaymentOption.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Card payment not implemented yet")
+            XCTFail("Card payment not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage
             .selectPaymentMethod(.card)
 
         guard paymentPage.cardNumberField.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Card form not implemented yet")
+            XCTFail("Card form not implemented yet - UI element not found or feature not implemented"); return
         }
 
         paymentPage
@@ -408,9 +406,8 @@ final class PaymentFlowTests: XCTestCase {
 
         let paymentPage = PaymentPage(app: app)
 
-        if paymentPage.securePaymentBadge.waitForExistence(timeout: 2) {
-            paymentPage.assertSecurePaymentBadgeVisible()
-        }
+        XCTAssertTrue(paymentPage.securePaymentBadge.waitForExistence(timeout: 2), "Secure payment badge should be visible")
+        paymentPage.assertSecurePaymentBadgeVisible()
     }
 
     @MainActor
@@ -419,9 +416,8 @@ final class PaymentFlowTests: XCTestCase {
 
         let paymentPage = PaymentPage(app: app)
 
-        if paymentPage.orderTotalLabel.waitForExistence(timeout: 2) {
-            paymentPage.assertOrderTotalDisplayed()
-        }
+        XCTAssertTrue(paymentPage.orderTotalLabel.waitForExistence(timeout: 2), "Order total should be displayed")
+        paymentPage.assertOrderTotalDisplayed()
     }
 
     // MARK: - Helper Methods

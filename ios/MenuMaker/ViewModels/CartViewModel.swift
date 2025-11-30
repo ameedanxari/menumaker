@@ -4,7 +4,6 @@ import Combine
 /// Cart management view model
 @MainActor
 class CartViewModel: ObservableObject {
-    @Published var cart: Cart?
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var appliedCoupon: Coupon?
@@ -13,21 +12,26 @@ class CartViewModel: ObservableObject {
     private let cartRepository = CartRepository.shared
     private let couponRepository = CouponRepository.shared
     private let analyticsService = AnalyticsService.shared
+    private var cancellables = Set<AnyCancellable>()
 
-    init() {
-        loadCart()
+    // Observe the repository's cart directly
+    var cart: Cart? {
+        cartRepository.cart
     }
 
-    // MARK: - Cart Management
-
-    func loadCart() {
-        cartRepository.loadCart()
-        cart = cartRepository.cart
+    init() {
+        print("DEBUG: CartViewModel init")
+        // Subscribe to cart changes from repository
+        cartRepository.$cart
+            .sink { [weak self] newCart in
+                print("DEBUG: CartViewModel received cart update. Items: \(newCart?.items.count ?? 0)")
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     func addItem(_ dish: Dish, businessId: String) {
         cartRepository.addItem(dish, businessId: businessId)
-        cart = cartRepository.cart
 
         analyticsService.track(.cartItemAdded, parameters: [
             "dish_id": dish.id,
@@ -38,27 +42,22 @@ class CartViewModel: ObservableObject {
 
     func removeItem(_ dishId: String) {
         cartRepository.removeItem(dishId)
-        cart = cartRepository.cart
     }
 
     func updateQuantity(_ dishId: String, quantity: Int) {
         cartRepository.updateQuantity(dishId, quantity: quantity)
-        cart = cartRepository.cart
     }
 
     func incrementQuantity(_ dishId: String) {
         cartRepository.incrementQuantity(dishId)
-        cart = cartRepository.cart
     }
 
     func decrementQuantity(_ dishId: String) {
         cartRepository.decrementQuantity(dishId)
-        cart = cartRepository.cart
     }
 
     func clearCart() {
         cartRepository.clearCart()
-        cart = nil
         appliedCoupon = nil
         discount = 0.0
     }
@@ -127,7 +126,7 @@ class CartViewModel: ObservableObject {
             )
 
             // Clear cart and coupon after successful checkout
-            cart = nil
+            // Cart is cleared by cartRepository.createOrder() internally
             appliedCoupon = nil
             discount = 0.0
 

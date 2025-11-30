@@ -48,7 +48,7 @@ final class SettingsFlowTests: XCTestCase {
         let settingsPage = SettingsPage(app: app)
 
         guard settingsPage.notificationSettings.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Notification settings not implemented yet")
+            XCTFail("Notification settings not implemented yet - UI element not found or feature not implemented"); return
         }
 
         settingsPage.tapNotificationSettings()
@@ -69,7 +69,7 @@ final class SettingsFlowTests: XCTestCase {
         }
 
         guard settingsPage.orderNotificationsToggle.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Order notifications toggle not implemented yet")
+            XCTFail("Order notifications toggle not implemented yet - UI element not found or feature not implemented"); return
         }
 
         settingsPage.toggleOrderNotifications()
@@ -88,7 +88,7 @@ final class SettingsFlowTests: XCTestCase {
         }
 
         guard settingsPage.promoNotificationsToggle.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Promo notifications toggle not implemented yet")
+            XCTFail("Promo notifications toggle not implemented yet - UI element not found or feature not implemented"); return
         }
 
         settingsPage.togglePromoNotifications()
@@ -107,7 +107,7 @@ final class SettingsFlowTests: XCTestCase {
         }
 
         guard settingsPage.pushNotificationsToggle.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Push notifications toggle not implemented yet")
+            XCTFail("Push notifications toggle not implemented yet - UI element not found or feature not implemented"); return
         }
 
         settingsPage.togglePushNotifications()
@@ -126,7 +126,7 @@ final class SettingsFlowTests: XCTestCase {
         }
 
         guard settingsPage.whatsappNotificationsToggle.waitForExistence(timeout: 2) else {
-            throw XCTSkip("WhatsApp notifications toggle not implemented yet")
+            XCTFail("WhatsApp notifications toggle not implemented yet - UI element not found or feature not implemented"); return
         }
 
         settingsPage.toggleWhatsAppNotifications()
@@ -143,7 +143,7 @@ final class SettingsFlowTests: XCTestCase {
         let settingsPage = SettingsPage(app: app)
 
         guard settingsPage.languageSettings.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Language settings not implemented yet")
+            XCTFail("Language settings not implemented yet - UI element not found or feature not implemented"); return
         }
 
         settingsPage.tapLanguageSettings()
@@ -160,7 +160,7 @@ final class SettingsFlowTests: XCTestCase {
         let settingsPage = SettingsPage(app: app)
 
         guard settingsPage.languageSettings.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Language settings not implemented yet")
+            XCTFail("Language settings not implemented yet - UI element not found or feature not implemented"); return
         }
 
         settingsPage
@@ -179,14 +179,14 @@ final class SettingsFlowTests: XCTestCase {
         let settingsPage = SettingsPage(app: app)
 
         guard settingsPage.languageSettings.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Language settings not implemented yet")
+            XCTFail("Language settings not implemented yet - UI element not found or feature not implemented"); return
         }
 
         settingsPage
             .tapLanguageSettings()
 
         guard settingsPage.hindiOption.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Hindi language not available")
+            XCTFail("Hindi language not available - UI element not found or feature not implemented"); return
         }
 
         settingsPage.selectLanguage(.hindi)
@@ -203,7 +203,7 @@ final class SettingsFlowTests: XCTestCase {
         let settingsPage = SettingsPage(app: app)
 
         guard settingsPage.darkModeToggle.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Dark mode toggle not implemented yet")
+            XCTFail("Dark mode toggle not implemented yet - UI element not found or feature not implemented"); return
         }
 
         settingsPage.toggleDarkMode()
@@ -220,7 +220,7 @@ final class SettingsFlowTests: XCTestCase {
         let settingsPage = SettingsPage(app: app)
 
         guard settingsPage.soundToggle.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Sound toggle not implemented yet")
+            XCTFail("Sound toggle not implemented yet - UI element not found or feature not implemented"); return
         }
 
         settingsPage.toggleSound()
@@ -237,7 +237,7 @@ final class SettingsFlowTests: XCTestCase {
         let settingsPage = SettingsPage(app: app)
 
         guard settingsPage.privacySettings.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Privacy settings not implemented yet")
+            XCTFail("Privacy settings not implemented yet - UI element not found or feature not implemented"); return
         }
 
         settingsPage.tapPrivacySettings()
@@ -253,7 +253,7 @@ final class SettingsFlowTests: XCTestCase {
         settingsPage.scrollToBottom()
 
         guard settingsPage.privacyPolicyButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Privacy policy not implemented yet")
+            XCTFail("Privacy policy not implemented yet - UI element not found or feature not implemented"); return
         }
 
         settingsPage.tapPrivacyPolicy()
@@ -269,7 +269,7 @@ final class SettingsFlowTests: XCTestCase {
         settingsPage.scrollToBottom()
 
         guard settingsPage.termsButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Terms and conditions not implemented yet")
+            XCTFail("Terms and conditions not implemented yet - UI element not found or feature not implemented"); return
         }
 
         settingsPage.tapTerms()
@@ -287,7 +287,7 @@ final class SettingsFlowTests: XCTestCase {
         settingsPage.scrollToBottom()
 
         guard settingsPage.aboutSettings.waitForExistence(timeout: 2) else {
-            throw XCTSkip("About settings not implemented yet")
+            XCTFail("About settings not implemented yet - UI element not found or feature not implemented"); return
         }
 
         settingsPage.tapAbout()
@@ -327,7 +327,7 @@ final class SettingsFlowTests: XCTestCase {
         let settingsPage = SettingsPage(app: app)
 
         guard settingsPage.helpButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Help and support not implemented yet")
+            XCTFail("Help and support not implemented yet - UI element not found or feature not implemented"); return
         }
 
         settingsPage.tapHelp()
@@ -342,7 +342,7 @@ final class SettingsFlowTests: XCTestCase {
         let settingsPage = SettingsPage(app: app)
 
         guard settingsPage.faqButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("FAQ not implemented yet")
+            XCTFail("FAQ not implemented yet - UI element not found or feature not implemented"); return
         }
 
         settingsPage.tapFAQ()
@@ -360,7 +360,7 @@ final class SettingsFlowTests: XCTestCase {
         settingsPage.scrollToBottom()
 
         guard settingsPage.clearCacheButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Clear cache not implemented yet")
+            XCTFail("Clear cache not implemented yet - UI element not found or feature not implemented"); return
         }
 
         settingsPage.tapClearCache()
@@ -383,7 +383,7 @@ final class SettingsFlowTests: XCTestCase {
         }
 
         guard settingsPage.orderNotificationsToggle.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Notification settings not implemented yet")
+            XCTFail("Notification settings not implemented yet - UI element not found or feature not implemented"); return
         }
 
         // Toggle setting

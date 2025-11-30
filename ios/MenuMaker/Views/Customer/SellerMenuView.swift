@@ -3,7 +3,6 @@ import SwiftUI
 struct SellerMenuView: View {
     let businessId: String
     @StateObject private var dishViewModel = DishViewModel()
-    @StateObject private var cartRepository = CartRepository.shared
     @State private var selectedCategory: String?
 
     var body: some View {
@@ -32,23 +31,34 @@ struct SellerMenuView: View {
             if dishViewModel.isLoading && dishViewModel.dishes.isEmpty {
                 ProgressView()
                     .frame(maxHeight: .infinity)
+                    .onAppear {
+                        print("DEBUG: SellerMenuView - Loading dishes...")
+                    }
             } else if filteredDishes.isEmpty {
                 EmptyState(
                     icon: "fork.knife",
                     title: "No Menu Items",
                     message: "This seller hasn't added any menu items yet"
                 )
+                .onAppear {
+                    print("DEBUG: SellerMenuView - No dishes found. Total dishes: \(dishViewModel.dishes.count), isLoading: \(dishViewModel.isLoading)")
+                }
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 12) {
+                    VStack(spacing: 12) {
                         ForEach(filteredDishes) { dish in
                             MenuItemCard(dish: dish, onAddToCart: {
                                 addToCart(dish)
                             })
-                            .accessibilityIdentifier("MenuItem")
+                            .onAppear {
+                                print("DEBUG: SellerMenuView - Rendering MenuItemCard for: \(dish.name)")
+                            }
                         }
                     }
                     .padding()
+                }
+                .onAppear {
+                    print("DEBUG: SellerMenuView - Showing \(filteredDishes.count) dishes")
                 }
             }
         }
@@ -56,7 +66,9 @@ struct SellerMenuView: View {
         .navigationTitle("Menu")
         .navigationBarTitleDisplayMode(.inline)
         .task {
+            print("DEBUG: SellerMenuView - Starting to load dishes for businessId: \(businessId)")
             await dishViewModel.loadDishesByBusiness(businessId)
+            print("DEBUG: SellerMenuView - Finished loading. Dishes count: \(dishViewModel.dishes.count)")
         }
     }
 
@@ -68,7 +80,7 @@ struct SellerMenuView: View {
     }
 
     private func addToCart(_ dish: Dish) {
-        cartRepository.addItem(dish, businessId: businessId)
+        CartRepository.shared.addItem(dish, businessId: businessId)
     }
 }
 
@@ -123,6 +135,7 @@ struct MenuItemCard: View {
 
             // Add Button
             Button(action: {
+                print("DEBUG: Add to cart button tapped for dish: \(dish.name)")
                 onAddToCart()
                 showQuantitySelector = true
                 // Hide after animation
@@ -137,8 +150,14 @@ struct MenuItemCard: View {
                     .background(Color.theme.primary)
                     .clipShape(Circle())
             }
+            .accessibilityIdentifier("add-to-cart-button")
             .accessibilityLabel("Add to cart")
+            .onAppear {
+                print("DEBUG: MenuItemCard button appeared for dish: \(dish.name) with identifier: add-to-cart-button")
+            }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("MenuItem")
         .padding()
         .background(Color.theme.surface)
         .cornerRadius(AppConstants.UI.cornerRadius)

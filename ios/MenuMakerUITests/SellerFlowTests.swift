@@ -36,7 +36,7 @@ final class SellerFlowTests: XCTestCase {
         // Navigate to menu tab
         let menuTab = app.tabBars.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'menu'")).firstMatch
         guard menuTab.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Menu tab not found - seller interface may not be implemented")
+            XCTFail("Menu tab not found - seller interface may not be implemented - UI element not found or feature not implemented"); return
         }
         menuTab.tap()
 
@@ -68,7 +68,7 @@ final class SellerFlowTests: XCTestCase {
 
         // Assume at least one item exists
         guard menuEditor.firstMenuItem.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No menu items found to edit")
+            XCTFail("No menu items found to edit - UI element not found or feature not implemented"); return
         }
 
         menuEditor
@@ -86,7 +86,7 @@ final class SellerFlowTests: XCTestCase {
         let menuEditor = SellerMenuEditorPage(app: app)
 
         guard menuEditor.firstMenuItem.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No menu items found")
+            XCTFail("No menu items found - UI element not found or feature not implemented"); return
         }
 
         menuEditor
@@ -103,7 +103,7 @@ final class SellerFlowTests: XCTestCase {
         let menuEditor = SellerMenuEditorPage(app: app)
 
         guard menuEditor.firstMenuItem.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No menu items found to delete")
+            XCTFail("No menu items found to delete - UI element not found or feature not implemented"); return
         }
 
         let initialCount = menuEditor.menuItems.count
@@ -188,7 +188,7 @@ final class SellerFlowTests: XCTestCase {
         ordersPage.switchToNewOrders()
 
         guard ordersPage.firstOrder.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No new orders found")
+            XCTFail("No new orders found - UI element not found or feature not implemented"); return
         }
 
         ordersPage
@@ -211,7 +211,7 @@ final class SellerFlowTests: XCTestCase {
         ordersPage.switchToNewOrders()
 
         guard ordersPage.firstOrder.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No new orders found")
+            XCTFail("No new orders found - UI element not found or feature not implemented"); return
         }
 
         ordersPage
@@ -231,7 +231,7 @@ final class SellerFlowTests: XCTestCase {
         ordersPage.switchToActiveOrders()
 
         guard ordersPage.firstOrder.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No active orders found")
+            XCTFail("No active orders found - UI element not found or feature not implemented"); return
         }
 
         ordersPage
@@ -251,7 +251,7 @@ final class SellerFlowTests: XCTestCase {
         ordersPage.switchToActiveOrders()
 
         guard ordersPage.firstOrder.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No active orders found")
+            XCTFail("No active orders found - UI element not found or feature not implemented"); return
         }
 
         ordersPage
@@ -291,7 +291,7 @@ final class SellerFlowTests: XCTestCase {
         let ordersPage = SellerOrdersPage(app: app)
 
         guard ordersPage.firstOrder.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No orders found")
+            XCTFail("No orders found - UI element not found or feature not implemented"); return
         }
 
         ordersPage

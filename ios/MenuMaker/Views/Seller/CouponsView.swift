@@ -26,10 +26,10 @@ struct CouponsView: View {
                 .accessibilityIdentifier("empty-coupons-state")
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 12) {
+                    VStack(spacing: 12) {
                         ForEach(displayedCoupons) { coupon in
                             CouponCard(coupon: coupon, viewModel: viewModel)
-                                .accessibilityIdentifier("coupon-card-\(coupon.id)")
+                                .accessibilityIdentifier("CouponItem")
                         }
                     }
                     .padding()
@@ -230,12 +230,24 @@ struct AddCouponView: View {
                     .disabled(!isFormValid)
                     .accessibilityIdentifier("save-coupon-button")
                 }
+
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        hideKeyboard()
+                    }
+                }
             }
         }
     }
 
     private var isFormValid: Bool {
         !code.isEmpty && !discountValue.isEmpty && !minOrderValue.isEmpty
+    }
+
+    private func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
+                                       to: nil, from: nil, for: nil)
     }
 
     private func createCoupon() async {

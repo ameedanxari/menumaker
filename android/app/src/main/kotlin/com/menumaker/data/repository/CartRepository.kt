@@ -8,6 +8,7 @@ import javax.inject.Inject
 
 interface CartRepository {
     fun getCartItems(businessId: String): Flow<List<CartEntity>>
+    fun getAllCartItems(): Flow<List<CartEntity>>
     suspend fun addToCart(item: CartEntity)
     suspend fun updateCartItem(item: CartEntity)
     suspend fun removeFromCart(dishId: String)
@@ -21,6 +22,10 @@ class CartRepositoryImpl @Inject constructor(
 
     override fun getCartItems(businessId: String): Flow<List<CartEntity>> {
         return cartDao.getCartItems(businessId)
+    }
+
+    override fun getAllCartItems(): Flow<List<CartEntity>> {
+        return cartDao.getAllCartItems()
     }
 
     override suspend fun addToCart(item: CartEntity) {

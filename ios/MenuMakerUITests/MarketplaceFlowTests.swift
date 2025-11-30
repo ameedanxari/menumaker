@@ -101,7 +101,7 @@ final class MarketplaceFlowTests: XCTestCase {
             XCTAssertTrue(marketplacePage.firstSellerCard.exists || marketplacePage.emptyState.exists,
                          "Should show filtered results or empty state")
         } else {
-            throw XCTSkip("No cuisine filters available")
+            XCTFail("No cuisine filters available - UI element not found or feature not implemented"); return
         }
     }
 
@@ -194,7 +194,7 @@ final class MarketplaceFlowTests: XCTestCase {
 
         let cartPage = menuPage.navigateToCart()
         guard cartPage.couponField.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Coupon feature not implemented yet")
+            XCTFail("Coupon feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         cartPage
@@ -216,7 +216,7 @@ final class MarketplaceFlowTests: XCTestCase {
 
         let cartPage = menuPage.navigateToCart()
         guard cartPage.checkoutButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Checkout button not found")
+            XCTFail("Checkout button not found - UI element not found or feature not implemented"); return
         }
 
         cartPage.assertCartNotEmpty()
@@ -230,7 +230,7 @@ final class MarketplaceFlowTests: XCTestCase {
         // Navigate directly to cart without adding items
         let cartTab = app.tabBars.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'cart'")).firstMatch
         guard cartTab.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Cart tab not found")
+            XCTFail("Cart tab not found - UI element not found or feature not implemented"); return
         }
         cartTab.tap()
 

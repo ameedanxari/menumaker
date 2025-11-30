@@ -60,37 +60,37 @@ struct SignupView: View {
                     VStack(spacing: 16) {
                         CustomTextField(
                             placeholder: "Full Name",
-                            text: $name
+                            text: $name,
+                            accessibilityId: "name-field"
                         )
-                        .accessibilityIdentifier("name-field")
 
                         CustomTextField(
                             placeholder: "Email",
                             text: $email,
-                            keyboardType: .emailAddress
+                            keyboardType: .emailAddress,
+                            accessibilityId: "email-field"
                         )
-                        .accessibilityIdentifier("email-field")
 
                         CustomTextField(
                             placeholder: "Phone (Optional)",
                             text: $phone,
-                            keyboardType: .numberPad
+                            keyboardType: .numberPad,
+                            accessibilityId: "phone-field"
                         )
-                        .accessibilityIdentifier("phone-field")
 
                         CustomSecureField(
                             placeholder: "Password",
-                            text: $password
+                            text: $password,
+                            accessibilityId: "password-field"
                         )
                         .textContentType(.newPassword)
-                        .accessibilityIdentifier("password-field")
 
                         CustomSecureField(
                             placeholder: "Confirm Password",
-                            text: $confirmPassword
+                            text: $confirmPassword,
+                            accessibilityId: "confirm-password-field"
                         )
                         .textContentType(.newPassword)
-                        .accessibilityIdentifier("confirm-password-field")
 
                         if let errorMessage = validationError ?? authViewModel.errorMessage {
                             Text(errorMessage)

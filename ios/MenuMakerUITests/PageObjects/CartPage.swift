@@ -13,7 +13,7 @@ struct CartPage {
     // MARK: - Elements
 
     var cartItems: XCUIElementQuery {
-        app.scrollViews.otherElements.matching(identifier: "CartItem")
+        app.descendants(matching: .any).matching(identifier: "CartItem")
     }
 
     var firstCartItem: XCUIElement {
@@ -100,7 +100,7 @@ struct CartPage {
     // MARK: - Assertions
 
     @discardableResult
-    func assertScreenDisplayed(timeout: TimeInterval = 2) -> CartPage {
+    func assertScreenDisplayed(timeout: TimeInterval = 10) -> CartPage {
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'cart'")).firstMatch.waitForExistence(timeout: timeout),
                      "Cart screen should be displayed")
         return self
@@ -108,13 +108,13 @@ struct CartPage {
 
     @discardableResult
     func assertCartNotEmpty() -> CartPage {
-        XCTAssertTrue(firstCartItem.waitForExistence(timeout: 2), "Cart should contain items")
+        XCTAssertTrue(firstCartItem.waitForExistence(timeout: 10), "Cart should contain items")
         return self
     }
 
     @discardableResult
     func assertCartEmpty() -> CartPage {
-        XCTAssertTrue(emptyCartMessage.waitForExistence(timeout: 2), "Cart should be empty")
+        XCTAssertTrue(emptyCartMessage.waitForExistence(timeout: 10), "Cart should be empty")
         return self
     }
 

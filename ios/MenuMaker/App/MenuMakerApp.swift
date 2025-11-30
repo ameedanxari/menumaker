@@ -56,6 +56,37 @@ struct MenuMakerApp: App {
         NotificationService.shared.requestAuthorization()
     }
 
+    /*
+    # Task: Debug Coupon Test Failures
+
+    ## Phase 1: Initial Analysis
+    - [x] Identified test failures <!-- id: 1 -->
+    - [x] Analyzed Page Object expectations <!-- id: 2 -->
+
+    ## Phase 2: Accessibility Identifier Fixes
+    - [x] Fixed `CouponBrowseView` accessibility identifier (AvailableCoupon) <!-- id: 3 -->
+    - [x] Fixed `MarketplaceView` identifier conflict <!-- id: 4 -->
+    - [x] Fixed `CouponCard` identifier (CouponItem) <!-- id: 5 -->
+    - [x] Added accessibility label to Coupons link in MoreView <!-- id: 6 -->
+
+    ## Phase 3: Mock Data Seeding
+    - [x] Seeded default coupons in `APIClient.mockCoupons` <!-- id: 7 -->
+
+    ## Phase 4: Business ID Storage Fix
+    - [x] Added `businessId` to `User` model (optional, for sellers) <!-- id: 8 -->
+    - [x] Updated `AuthRepository` to save business ID to Keychain <!-- id: 9 -->
+    - [x] Fixed all User initializations in code and tests <!-- id: 10 -->
+
+    ## Phase 5: Customer UI Implementation
+    - [x] Created `CustomerTabView` with Marketplace, Cart, Orders, Profile tabs <!-- id: 11 -->
+    - [x] Updated `MenuMakerApp` for role-based UI switching <!-- id: 12 -->
+    - [x] Added accessibility identifiers for customer tabs <!-- id: 13 -->
+
+    ## Phase 6: Testing & Verification
+    - [x] ✅ testSellerCouponScreenDisplays PASSED! <!-- id: 14 -->
+    - [/] Running full CouponFlowTests suite to verify customer flow <!-- id: 15 -->
+    - [ ] Analyze remaining failures and apply fixes <!-- id: 16 -->
+    */
     private func handleScenePhaseChange(to newPhase: ScenePhase) {
         switch newPhase {
         case .active:
@@ -90,6 +121,9 @@ struct MenuMakerApp: App {
 
         // Clear any cached data
         URLCache.shared.removeAllCachedResponses()
+        
+        // Reset mock data storage
+        APIClient.resetMockData()
 
         print("🧪 App state reset for UI testing")
     }
@@ -103,7 +137,12 @@ struct ContentView: View {
     var body: some View {
         Group {
             if authViewModel.isAuthenticated {
-                MainTabView()
+                // Show different UI based on user role
+                if authViewModel.currentUser?.isSeller == true {
+                    MainTabView()  // Seller UI: Dashboard, Orders, Menu, More
+                } else {
+                    CustomerTabView()  // Customer UI: Marketplace, Cart, Orders, Profile
+                }
             } else {
                 NavigationView {
                     LoginView()

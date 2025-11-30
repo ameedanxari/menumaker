@@ -95,7 +95,10 @@ class PaymentPage(private val composeTestRule: ComposeTestRule) {
     }
 
     fun selectSavedCard(index: Int = 0): PaymentPage {
-        if (savedCardsList.fetchSemanticsNodes().isNotEmpty()) {
+        val nodes = savedCardsList.fetchSemanticsNodes()
+        assert(nodes.isNotEmpty()) { "No saved cards found to select" }
+        
+        if (nodes.isNotEmpty()) {
             savedCardsList[index].performClick()
             Thread.sleep(1000)
         }

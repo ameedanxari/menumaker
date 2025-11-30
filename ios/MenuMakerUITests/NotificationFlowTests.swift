@@ -47,7 +47,7 @@ final class NotificationFlowTests: XCTestCase {
 
         guard notificationPage.firstNotification.waitForExistence(timeout: 2) ||
               notificationPage.emptyStateMessage.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Notifications not implemented yet")
+            XCTFail("Notifications not implemented yet - UI element not found or feature not implemented"); return
         }
 
         // Should show notifications or empty state
@@ -63,7 +63,7 @@ final class NotificationFlowTests: XCTestCase {
         let notificationPage = NotificationPage(app: app)
 
         guard notificationPage.firstNotification.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No notifications available")
+            XCTFail("No notifications available - UI element not found or feature not implemented"); return
         }
 
         notificationPage.tapFirstNotification()
@@ -81,7 +81,7 @@ final class NotificationFlowTests: XCTestCase {
         let notificationPage = NotificationPage(app: app)
 
         guard notificationPage.markAllReadButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Mark all read feature not implemented yet")
+            XCTFail("Mark all read feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         let initialUnreadCount = notificationPage.unreadNotifications.count
@@ -103,7 +103,7 @@ final class NotificationFlowTests: XCTestCase {
         let notificationPage = NotificationPage(app: app)
 
         guard notificationPage.firstNotification.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No notifications available")
+            XCTFail("No notifications available - UI element not found or feature not implemented"); return
         }
 
         let initialCount = notificationPage.notificationsList.count
@@ -125,7 +125,7 @@ final class NotificationFlowTests: XCTestCase {
         let notificationPage = NotificationPage(app: app)
 
         guard notificationPage.clearAllButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Clear all feature not implemented yet")
+            XCTFail("Clear all feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         notificationPage.clearAllNotifications()
@@ -147,7 +147,7 @@ final class NotificationFlowTests: XCTestCase {
         let notificationPage = NotificationPage(app: app)
 
         guard notificationPage.filterButtons.count > 0 else {
-            throw XCTSkip("Notification filters not implemented yet")
+            XCTFail("Notification filters not implemented yet - UI element not found or feature not implemented"); return
         }
 
         notificationPage.filterByAll()
@@ -163,7 +163,7 @@ final class NotificationFlowTests: XCTestCase {
         let notificationPage = NotificationPage(app: app)
 
         guard notificationPage.unreadFilter.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Unread filter not implemented yet")
+            XCTFail("Unread filter not implemented yet - UI element not found or feature not implemented"); return
         }
 
         notificationPage.filterByUnread()
@@ -183,7 +183,7 @@ final class NotificationFlowTests: XCTestCase {
         let notificationPage = NotificationPage(app: app)
 
         guard notificationPage.ordersFilter.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Orders filter not implemented yet")
+            XCTFail("Orders filter not implemented yet - UI element not found or feature not implemented"); return
         }
 
         notificationPage.filterByOrders()
@@ -191,9 +191,8 @@ final class NotificationFlowTests: XCTestCase {
         sleep(1)
 
         // Should show order-related notifications
-        if notificationPage.firstNotification.exists {
-            notificationPage.assertOrderNotificationsExist()
-        }
+        XCTAssertTrue(notificationPage.firstNotification.waitForExistence(timeout: 2), "Notifications should be present")
+        notificationPage.assertNotificationsDisplayed()
     }
 
     // MARK: - Notification Types Tests (P1)
@@ -231,7 +230,7 @@ final class NotificationFlowTests: XCTestCase {
         let notificationPage = NotificationPage(app: app)
 
         guard notificationPage.settingsButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Notification settings not implemented yet")
+            XCTFail("Notification settings not implemented yet - UI element not found or feature not implemented"); return
         }
 
         notificationPage.tapSettings()
@@ -276,7 +275,7 @@ final class NotificationFlowTests: XCTestCase {
 
         // Find an order notification
         guard notificationPage.orderNotifications.count > 0 else {
-            throw XCTSkip("No order notifications available")
+            XCTFail("No order notifications available - UI element not found or feature not implemented"); return
         }
 
         let orderNotification = notificationPage.orderNotifications.firstMatch
@@ -286,9 +285,8 @@ final class NotificationFlowTests: XCTestCase {
 
         // Should navigate to order tracking or details
         let trackingPage = DeliveryTrackingPage(app: app)
-        if trackingPage.orderStatusLabel.waitForExistence(timeout: 2) {
-            trackingPage.assertScreenDisplayed()
-        }
+        XCTAssertTrue(trackingPage.orderStatusLabel.waitForExistence(timeout: 2), "Should navigate to order tracking")
+        trackingPage.assertScreenDisplayed()
     }
 
     @MainActor

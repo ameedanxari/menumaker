@@ -40,16 +40,16 @@ struct LoginView: View {
                     CustomTextField(
                         placeholder: "Email",
                         text: $email,
-                        keyboardType: .emailAddress
+                        keyboardType: .emailAddress,
+                        accessibilityId: "email-field"
                     )
-                    .accessibilityIdentifier("email-field")
 
                     CustomSecureField(
                         placeholder: "Password",
-                        text: $password
+                        text: $password,
+                        accessibilityId: "password-field"
                     )
                     .textContentType(.password)
-                    .accessibilityIdentifier("password-field")
 
                     if let errorMessage = authViewModel.errorMessage {
                         Text(errorMessage)

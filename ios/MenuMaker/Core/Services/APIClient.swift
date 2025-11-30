@@ -57,6 +57,42 @@ class APIClient {
     private let keychainManager = KeychainManager.shared
     private let isUITesting: Bool
 
+    // Mock data storage for UI testing
+    // Mock Data Storage
+    static var mockCoupons: [Coupon] = [
+        Coupon(
+            id: "default1",
+            businessId: "business1",
+            code: "WELCOME10",
+            discountType: "percentage",
+            discountValue: 10,
+            maxDiscountCents: nil,
+            minOrderValueCents: 100,
+            validUntil: nil,
+            usageLimitType: "unlimited",
+            totalUsageLimit: nil,
+            isActive: true,
+            createdAt: ISO8601DateFormatter().string(from: Date())
+        ),
+        Coupon(
+            id: "default2",
+            businessId: "business1",
+            code: "FLAT50",
+            discountType: "fixed",
+            discountValue: 5000,
+            maxDiscountCents: nil,
+            minOrderValueCents: 50000,
+            validUntil: nil,
+            usageLimitType: "unlimited",
+            totalUsageLimit: nil,
+            isActive: true,
+            createdAt: ISO8601DateFormatter().string(from: Date())
+        )
+    ]
+    
+    // Track user role for mock responses
+    var mockUserRole = "seller"
+
     private init() {
         self.baseURL = AppConstants.API.baseURL
         self.isUITesting = CommandLine.arguments.contains("UI-Testing")
@@ -67,6 +103,13 @@ class APIClient {
         configuration.waitsForConnectivity = true
 
         self.session = URLSession(configuration: configuration)
+    }
+    
+    // MARK: - Test Utilities
+    
+    /// Reset mock data storage (used in UI tests)
+    static func resetMockData() {
+        mockCoupons = []
     }
 
     // MARK: - Generic Request Methods
@@ -228,6 +271,11 @@ class APIClient {
                     throw APIError.serverError("Invalid credentials")
                 }
 
+                // Determine role based on email
+                let role = loginRequest.email.contains("seller") ? "seller" : "customer"
+                self.mockUserRole = role
+                let businessId = role == "seller" ? "business1" : nil
+
                 // Validate password
                 guard !loginRequest.password.isEmpty else {
                     throw APIError.serverError("Password is required")
@@ -244,11 +292,13 @@ class APIClient {
                     phone: "1234567890",
                     address: "123 Main St, City, State 12345",
                     photoUrl: nil,
-                    role: "seller",
+                    role: self.mockUserRole,
+                    businessId: self.mockUserRole == "seller" ? "business1" : nil,
                     createdAt: ISO8601DateFormatter().string(from: Date()),
                     updatedAt: nil
                 )
             )
+            
             let response = AuthResponse(success: true, data: authData)
             return response as! T
 
@@ -288,6 +338,7 @@ class APIClient {
                     address: nil,
                     photoUrl: nil,
                     role: "seller",
+                    businessId: "business1",
                     createdAt: ISO8601DateFormatter().string(from: Date()),
                     updatedAt: nil
                 )
@@ -329,7 +380,8 @@ class APIClient {
                     phone: "1234567890",
                     address: "123 Main St, City, State 12345",
                     photoUrl: nil,
-                    role: "seller",
+                    role: self.mockUserRole,
+                    businessId: self.mockUserRole == "seller" ? "business1" : nil,
                     createdAt: ISO8601DateFormatter().string(from: Date()),
                     updatedAt: nil
                 )
@@ -366,6 +418,7 @@ class APIClient {
                 address: (body as? UpdateProfileRequest)?.address,
                 photoUrl: nil,
                 role: "seller",
+                businessId: "business1",
                 createdAt: ISO8601DateFormatter().string(from: Date().addingTimeInterval(-86400 * 30)),
                 updatedAt: ISO8601DateFormatter().string(from: Date())
             )
@@ -431,40 +484,71 @@ class APIClient {
         try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
 
         // Handle different coupon endpoints
-        if endpoint == AppConstants.API.Endpoints.coupons {
+        // Check if endpoint starts with coupons path (to handle query parameters)
+        let couponsPath = AppConstants.API.Endpoints.coupons
+        if endpoint == couponsPath || endpoint.hasPrefix(couponsPath + "?") {
             // GET /coupons - list coupons
             if method == .get {
-                let coupons = [
-                    Coupon(
-                        id: "coupon1",
-                        businessId: "business1",
-                        code: "SAVE20",
-                        discountType: "percentage",
-                        discountValue: 20,
-                        maxDiscountCents: 50000,
-                        minOrderValueCents: 50000,
-                        validUntil: nil,
-                        usageLimitType: "unlimited",
-                        totalUsageLimit: nil,
-                        isActive: true,
-                        createdAt: ISO8601DateFormatter().string(from: Date())
-                    ),
-                    Coupon(
-                        id: "coupon2",
-                        businessId: "business1",
-                        code: "FLAT100",
-                        discountType: "fixed",
-                        discountValue: 10000,
-                        maxDiscountCents: nil,
-                        minOrderValueCents: 100000,
-                        validUntil: nil,
-                        usageLimitType: "unlimited",
-                        totalUsageLimit: nil,
-                        isActive: true,
-                        createdAt: ISO8601DateFormatter().string(from: Date())
-                    )
-                ]
-                let response = CouponListResponse(success: true, data: CouponListData(coupons: coupons))
+                // Check for business_id query parameter
+                var couponsToReturn = APIClient.mockCoupons
+                
+                if endpoint.contains("business_id=") {
+                    // Extract business ID from query
+                    if let businessId = endpoint.components(separatedBy: "business_id=").last?.components(separatedBy: "&").first {
+                        couponsToReturn = APIClient.mockCoupons.filter { $0.businessId == businessId }
+                        
+                        // If no coupons exist for this business, add some default ones
+                        if couponsToReturn.isEmpty {
+                            let defaultCoupons = [
+                                Coupon(
+                                    id: "default1",
+                                    businessId: businessId,
+                                    code: "WELCOME10",
+                                    discountType: "percentage",
+                                    discountValue: 10,
+                                    maxDiscountCents: nil,
+                                    minOrderValueCents: 100,
+                                    validUntil: nil,
+                                    usageLimitType: "unlimited",
+                                    totalUsageLimit: nil,
+                                    isActive: true,
+                                    createdAt: ISO8601DateFormatter().string(from: Date())
+                                ),
+                                Coupon(
+                                    id: "default2",
+                                    businessId: businessId,
+                                    code: "FLAT50",
+                                    discountType: "fixed",
+                                    discountValue: 5000,
+                                    maxDiscountCents: nil,
+                                    minOrderValueCents: 50000,
+                                    validUntil: nil,
+                                    usageLimitType: "unlimited",
+                                    totalUsageLimit: nil,
+                                    isActive: true,
+                                    createdAt: ISO8601DateFormatter().string(from: Date())
+                                ),
+                                Coupon(
+                                    id: "default3",
+                                    businessId: businessId,
+                                    code: "SAVE30",
+                                    discountType: "percentage",
+                                    discountValue: 30,
+                                    maxDiscountCents: 10000,
+                                    minOrderValueCents: 100000,
+                                    validUntil: nil,
+                                    usageLimitType: "unlimited",
+                                    totalUsageLimit: nil,
+                                    isActive: true,
+                                    createdAt: ISO8601DateFormatter().string(from: Date())
+                                )
+                            ]
+                            couponsToReturn = defaultCoupons
+                        }
+                    }
+                }
+                
+                let response = CouponListResponse(success: true, data: CouponListData(coupons: couponsToReturn))
                 return response as! T
             }
 
@@ -484,6 +568,8 @@ class APIClient {
                     isActive: true,
                     createdAt: ISO8601DateFormatter().string(from: Date())
                 )
+                // Add to static storage
+                APIClient.mockCoupons.append(coupon)
                 let response = CouponResponse(success: true, data: CouponData(coupon: coupon))
                 return response as! T
             }
@@ -493,19 +579,53 @@ class APIClient {
         if endpoint.contains("/coupons/") && endpoint.count > AppConstants.API.Endpoints.coupons.count {
             let couponId = endpoint.replacingOccurrences(of: AppConstants.API.Endpoints.coupons + "/", with: "")
 
-            // Handle validate endpoint
+            // Handle validate endpoint - /coupons/validate/:code?business_id=:id
             if endpoint.contains("/validate/") {
-                let code = endpoint.replacingOccurrences(of: AppConstants.API.Endpoints.coupons + "/validate/", with: "")
+                // Extract code and business_id
+                let pathComponents = endpoint.components(separatedBy: "/validate/")
+                guard pathComponents.count > 1 else {
+                    throw APIError.serverError("Invalid validate endpoint")
+                }
+                
+                let codeAndQuery = pathComponents[1]
+                let code = codeAndQuery.components(separatedBy: "?").first ?? codeAndQuery
+                let businessId = codeAndQuery.contains("business_id=") ? 
+                    codeAndQuery.components(separatedBy: "business_id=").last?.components(separatedBy: "&").first : nil
 
-                // Check for invalid/expired codes
-                if code == "INVALIDCODE999" || code == "EXPIRED" {
-                    throw APIError.serverError("Invalid or expired coupon")
+                // Check for explicitly invalid codes
+                if code == "INVALIDCODE999" || code == "INVALID" {
+                    throw APIError.serverError("Invalid coupon code")
+                }
+                
+                if code == "EXPIRED" {
+                    throw APIError.serverError("This coupon has expired")
+                }
+                
+                // Try to find coupon in mock storage first
+                if let foundCoupon = APIClient.mockCoupons.first(where: { $0.code.uppercased() == code.uppercased() }) {
+                    // Verify business_id matches if provided
+                    if let businessId = businessId, foundCoupon.businessId != businessId {
+                        throw APIError.serverError("This coupon is not valid for this business")
+                    }
+                    
+                    // Check if expired
+                    if foundCoupon.isExpired {
+                        throw APIError.serverError("This coupon has expired")
+                    }
+                    
+                    // Check if active
+                    if !foundCoupon.isActive {
+                        throw APIError.serverError("This coupon is not currently active")
+                    }
+                    
+                    let response = CouponResponse(success: true, data: CouponData(coupon: foundCoupon))
+                    return response as! T
                 }
 
-                // Return mock valid coupon
+                // Return a generic mock valid coupon if code not found but valid format
                 let coupon = Coupon(
-                    id: "valid_coupon",
-                    businessId: "business1",
+                    id: "validated_\(code)",
+                    businessId: businessId ?? "business1",
                     code: code,
                     discountType: "percentage",
                     discountValue: 20,
@@ -522,7 +642,29 @@ class APIClient {
             }
 
             // PATCH /coupons/:id - update coupon
-            if method == .patch {
+            if method == .patch, let updateRequest = body as? UpdateCouponRequest {
+                // Find and update coupon in storage
+                if let index = APIClient.mockCoupons.firstIndex(where: { $0.id == couponId }) {
+                    let existingCoupon = APIClient.mockCoupons[index]
+                    let updatedCoupon = Coupon(
+                        id: couponId,
+                        businessId: existingCoupon.businessId,
+                        code: existingCoupon.code,
+                        discountType: existingCoupon.discountType,
+                        discountValue: existingCoupon.discountValue,
+                        maxDiscountCents: existingCoupon.maxDiscountCents,
+                        minOrderValueCents: existingCoupon.minOrderValueCents,
+                        validUntil: existingCoupon.validUntil,
+                        usageLimitType: existingCoupon.usageLimitType,
+                        totalUsageLimit: existingCoupon.totalUsageLimit,
+                        isActive: updateRequest.isActive ?? existingCoupon.isActive,
+                        createdAt: existingCoupon.createdAt
+                    )
+                    APIClient.mockCoupons[index] = updatedCoupon
+                    let response = CouponResponse(success: true, data: CouponData(coupon: updatedCoupon))
+                    return response as! T
+                }
+                // If not found, return a mock response
                 let coupon = Coupon(
                     id: couponId,
                     businessId: "business1",
@@ -543,12 +685,19 @@ class APIClient {
 
             // DELETE /coupons/:id - delete coupon
             if method == .delete {
+                APIClient.mockCoupons.removeAll { $0.id == couponId }
                 let response = EmptyResponse(success: true)
                 return response as! T
             }
 
             // GET /coupons/:id - get single coupon
             if method == .get {
+                // Find coupon in storage
+                if let foundCoupon = APIClient.mockCoupons.first(where: { $0.id == couponId }) {
+                    let response = CouponResponse(success: true, data: CouponData(coupon: foundCoupon))
+                    return response as! T
+                }
+                // If not found, return a default mock
                 let coupon = Coupon(
                     id: couponId,
                     businessId: "business1",
@@ -905,8 +1054,10 @@ class APIClient {
             )
         ]
 
-        // Handle GET /marketplace - Get all sellers
-        if endpoint == AppConstants.API.Endpoints.marketplace || endpoint.starts(with: AppConstants.API.Endpoints.marketplace + "?") {
+        // Handle GET /marketplace or /marketplace/sellers - Get all sellers
+        if endpoint == AppConstants.API.Endpoints.marketplace || 
+           endpoint.starts(with: AppConstants.API.Endpoints.marketplace + "?") ||
+           endpoint.starts(with: AppConstants.API.Endpoints.marketplace + "/sellers") {
             let response = MarketplaceResponse(
                 success: true,
                 data: MarketplaceData(sellers: mockSellers, total: mockSellers.count)

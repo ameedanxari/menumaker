@@ -56,7 +56,7 @@ export class OrderService {
     return 0;
   }
 
-  async createOrder(data: OrderCreateInput): Promise<Order> {
+  async createOrder(data: OrderCreateInput, userId?: string): Promise<Order> {
     // Use transaction for atomicity
     const queryRunner = AppDataSource.createQueryRunner();
     await queryRunner.connect();
@@ -225,6 +225,7 @@ export class OrderService {
         order_status: 'pending',
         notes: data.notes,
         currency: settings.currency,
+        customer_id: userId,
       });
 
       await queryRunner.manager.save(order);

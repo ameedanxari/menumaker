@@ -13,7 +13,7 @@ struct SellerCouponPage {
     // MARK: - Elements
 
     var createCouponButton: XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'create' OR label CONTAINS[c] 'add coupon'")).firstMatch
+        app.buttons["add-coupon-button"]
     }
 
     var couponList: XCUIElementQuery {
@@ -118,6 +118,7 @@ struct SellerCouponPage {
 
     @discardableResult
     func enterDiscountValue(_ value: String) -> SellerCouponPage {
+        dismissKeyboardIfNeeded()  // Dismiss keyboard from previous field
         discountValueField.tap()
         discountValueField.typeText(value)
         return self
@@ -125,6 +126,7 @@ struct SellerCouponPage {
 
     @discardableResult
     func enterMinOrderAmount(_ amount: String) -> SellerCouponPage {
+        dismissKeyboardIfNeeded()  // Dismiss keyboard from previous field
         if minOrderAmountField.waitForExistence(timeout: 1) {
             minOrderAmountField.tap()
             minOrderAmountField.typeText(amount)
@@ -134,6 +136,7 @@ struct SellerCouponPage {
 
     @discardableResult
     func enterMaxDiscount(_ amount: String) -> SellerCouponPage {
+        dismissKeyboardIfNeeded()  // Dismiss keyboard from previous field
         if maxDiscountField.waitForExistence(timeout: 1) {
             maxDiscountField.tap()
             maxDiscountField.typeText(amount)
@@ -143,6 +146,7 @@ struct SellerCouponPage {
 
     @discardableResult
     func enterUsageLimit(_ limit: String) -> SellerCouponPage {
+        dismissKeyboardIfNeeded()  // Dismiss keyboard from previous field
         if usageLimitField.waitForExistence(timeout: 1) {
             usageLimitField.tap()
             usageLimitField.typeText(limit)
@@ -154,7 +158,6 @@ struct SellerCouponPage {
     func saveCoupon() -> SellerCouponPage {
         dismissKeyboardIfNeeded()
         saveCouponButton.tap()
-        sleep(1)
         return self
     }
 
@@ -240,7 +243,7 @@ struct SellerCouponPage {
 
     @discardableResult
     func assertCouponSaved() -> SellerCouponPage {
-        sleep(1)
+        sleep(2)  // Wait longer for async coupon creation and form dismissal
         XCTAssertFalse(couponCodeField.exists, "Coupon form should be dismissed after save")
         return self
     }
@@ -269,7 +272,26 @@ struct SellerCouponPage {
 
     private func dismissKeyboardIfNeeded() {
         if app.keyboards.count > 0 {
-            app.keyboards.buttons["Return"].tap()
+            // Try Done button first (from keyboard toolbar)
+            let doneButton = app.toolbars.buttons["Done"]
+            if doneButton.exists {
+                doneButton.tap()
+                return
+            }
+
+            // Try Return button for text keyboards
+            let returnButton = app.keyboards.buttons["Return"]
+            if returnButton.exists {
+                returnButton.tap()
+                return
+            }
+
+            // For numberPad/decimalPad without toolbar, tap outside to dismiss
+            // Tap the navigation bar area
+            let navBar = app.navigationBars.firstMatch
+            if navBar.exists {
+                navBar.tap()
+            }
         }
     }
 }

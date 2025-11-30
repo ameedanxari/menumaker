@@ -46,7 +46,7 @@ final class ReferralFlowTests: XCTestCase {
         let referralPage = ReferralPage(app: app)
 
         guard referralPage.referralCodeLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Referral feature not implemented yet")
+            XCTFail("Referral feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         referralPage
@@ -62,7 +62,7 @@ final class ReferralFlowTests: XCTestCase {
         let referralPage = ReferralPage(app: app)
 
         guard referralPage.copyCodeButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Copy code feature not implemented yet")
+            XCTFail("Copy code feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         referralPage
@@ -80,7 +80,7 @@ final class ReferralFlowTests: XCTestCase {
         let referralPage = ReferralPage(app: app)
 
         guard referralPage.shareButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Share feature not implemented yet")
+            XCTFail("Share feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         referralPage
@@ -101,7 +101,7 @@ final class ReferralFlowTests: XCTestCase {
 
         guard referralPage.totalReferralsLabel.waitForExistence(timeout: 2) ||
               referralPage.availableCreditsLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Referral stats not implemented yet")
+            XCTFail("Referral stats not implemented yet - UI element not found or feature not implemented"); return
         }
 
         // Verify stats are displayed
@@ -120,7 +120,7 @@ final class ReferralFlowTests: XCTestCase {
         let referralPage = ReferralPage(app: app)
 
         guard referralPage.availableCreditsLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Credits display not implemented yet")
+            XCTFail("Credits display not implemented yet - UI element not found or feature not implemented"); return
         }
 
         referralPage.assertAvailableCredits()
@@ -133,7 +133,7 @@ final class ReferralFlowTests: XCTestCase {
         let referralPage = ReferralPage(app: app)
 
         guard referralPage.referralCodeLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Referral feature not implemented yet")
+            XCTFail("Referral feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         referralPage.viewReferralHistory()
@@ -155,7 +155,7 @@ final class ReferralFlowTests: XCTestCase {
         let referralPage = ReferralPage(app: app)
 
         guard referralPage.enterReferralCodeField.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Apply referral code feature not implemented yet")
+            XCTFail("Apply referral code feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         referralPage
@@ -178,7 +178,7 @@ final class ReferralFlowTests: XCTestCase {
         let referralPage = ReferralPage(app: app)
 
         guard referralPage.enterReferralCodeField.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Apply referral code feature not implemented yet")
+            XCTFail("Apply referral code feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         referralPage
@@ -196,7 +196,7 @@ final class ReferralFlowTests: XCTestCase {
         let referralPage = ReferralPage(app: app)
 
         guard referralPage.enterReferralCodeField.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Apply referral code feature not implemented yet")
+            XCTFail("Apply referral code feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         referralPage.applyReferralCode()
@@ -215,7 +215,7 @@ final class ReferralFlowTests: XCTestCase {
 
         guard referralPage.referralCodeLabel.waitForExistence(timeout: 2) &&
               referralPage.enterReferralCodeField.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Referral code feature not fully implemented yet")
+            XCTFail("Referral code feature not fully implemented yet - UI element not found or feature not implemented"); return
         }
 
         // Get user's own code
@@ -239,7 +239,7 @@ final class ReferralFlowTests: XCTestCase {
         let referralPage = ReferralPage(app: app)
 
         guard referralPage.howItWorksButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("How it works feature not implemented yet")
+            XCTFail("How it works feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         referralPage.tapHowItWorks()
@@ -260,7 +260,7 @@ final class ReferralFlowTests: XCTestCase {
         let referralPage = ReferralPage(app: app)
 
         guard referralPage.termsAndConditionsButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Terms and conditions not implemented yet")
+            XCTFail("Terms and conditions not implemented yet - UI element not found or feature not implemented"); return
         }
 
         referralPage.termsAndConditionsButton.tap()
@@ -283,7 +283,7 @@ final class ReferralFlowTests: XCTestCase {
         let referralPage = ReferralPage(app: app)
 
         guard referralPage.pendingRewardsLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Pending rewards not implemented yet")
+            XCTFail("Pending rewards not implemented yet - UI element not found or feature not implemented"); return
         }
 
         // Verify pending rewards label contains currency symbol
@@ -298,7 +298,7 @@ final class ReferralFlowTests: XCTestCase {
         let referralPage = ReferralPage(app: app)
 
         guard referralPage.totalReferralsLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Total referrals count not implemented yet")
+            XCTFail("Total referrals count not implemented yet - UI element not found or feature not implemented"); return
         }
 
         referralPage.assertTotalReferralsDisplayed()
@@ -314,7 +314,7 @@ final class ReferralFlowTests: XCTestCase {
         let referralPage = ReferralPage(app: app)
 
         guard referralPage.availableCreditsLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Referral credits not implemented yet")
+            XCTFail("Referral credits not implemented yet - UI element not found or feature not implemented"); return
         }
 
         // Get available credits amount
@@ -327,7 +327,7 @@ final class ReferralFlowTests: XCTestCase {
         let marketplacePage = MarketplacePage(app: app)
 
         guard marketplacePage.firstSellerCard.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No sellers available for testing")
+            XCTFail("No sellers available for testing - UI element not found or feature not implemented"); return
         }
 
         let menuPage = marketplacePage.tapFirstSeller()
@@ -357,7 +357,7 @@ final class ReferralFlowTests: XCTestCase {
         let referralPage = ReferralPage(app: app)
 
         guard referralPage.shareButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Share feature not implemented yet")
+            XCTFail("Share feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         referralPage.shareButton.tap()

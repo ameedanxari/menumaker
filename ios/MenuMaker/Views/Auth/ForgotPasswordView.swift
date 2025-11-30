@@ -35,9 +35,9 @@ struct ForgotPasswordView: View {
                         CustomTextField(
                             placeholder: "Email",
                             text: $email,
-                            keyboardType: .emailAddress
+                            keyboardType: .emailAddress,
+                            accessibilityId: "email-field"
                         )
-                        .accessibilityIdentifier("email-field")
 
                         if let errorMessage = authViewModel.errorMessage {
                             Text(errorMessage)

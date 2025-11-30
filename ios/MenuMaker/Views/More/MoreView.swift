@@ -34,6 +34,7 @@ struct MoreView: View {
                 NavigationLink(destination: CouponsView()) {
                     Label("Coupons", systemImage: "ticket")
                 }
+                .accessibilityLabel("Coupons")
                 .accessibilityIdentifier("coupons-link")
 
                 NavigationLink(destination: Text("Reviews")) {
@@ -69,6 +70,7 @@ struct MoreView: View {
                         .foregroundColor(.theme.error)
                 }
                 .accessibilityIdentifier("logout-button")
+                .accessibilityLabel("Logout")
             }
         }
         .navigationTitle("More")

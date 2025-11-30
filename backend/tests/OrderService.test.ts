@@ -219,6 +219,75 @@ describe('OrderService', () => {
 
       await expect(orderService.createOrder(orderData)).rejects.toThrow();
     });
+
+    it('should create order successfully', async () => {
+      const orderData = {
+        business_id: 'business-id',
+        menu_id: 'menu-id',
+        customer_name: 'John Doe',
+        customer_phone: '+1234567890',
+        delivery_type: 'pickup' as const,
+        items: [{ dish_id: 'dish-1', quantity: 1 }],
+        payment_method: 'cash' as const,
+      };
+
+      const mockDish = {
+        id: 'dish-1',
+        price_cents: 1500,
+        is_available: true,
+        business_id: 'business-id',
+      };
+
+      const mockBusiness = { id: 'business-id', name: 'Test Restaurant', owner_id: 'owner-id' };
+      const mockSettings = { id: 'settings-id', business_id: 'business-id', pickup_enabled: true };
+
+      const mockMenu = {
+        id: 'menu-id',
+        business_id: 'business-id',
+        business: mockBusiness,
+        is_active: true,
+        status: 'published',
+      };
+
+      // Mock repository finds
+      mockBusinessRepository.findOne.mockResolvedValue(mockBusiness);
+      mockSettingsRepository.findOne.mockResolvedValue(mockSettings);
+      mockMenuRepository.findOne.mockResolvedValue(mockMenu);
+      mockDishRepository.findOne.mockResolvedValue(mockDish);
+
+      // Mock transaction manager finds
+      mockQueryRunner.manager.findOne.mockImplementation((entity: any) => {
+        if (entity === Business) return Promise.resolve(mockBusiness);
+        if (entity === BusinessSettings) return Promise.resolve(mockSettings);
+        if (entity === Menu) return Promise.resolve(mockMenu);
+        if (entity === Dish) return Promise.resolve(mockDish);
+        return Promise.resolve(null);
+      });
+
+      mockQueryRunner.manager.findByIds.mockResolvedValue([mockDish]);
+
+      // Mock save
+      const savedOrder = {
+        id: 'new-order-id',
+        ...orderData,
+        total_cents: 1500,
+        order_status: 'pending',
+        created_at: new Date(),
+      };
+
+      mockQueryRunner.manager.save.mockResolvedValue(savedOrder);
+      mockQueryRunner.manager.create.mockImplementation((entity: any, data: any) => data);
+
+      // Mock getOrderById call at the end of createOrder
+      mockOrderRepository.findOne.mockResolvedValue(savedOrder);
+
+      const result = await orderService.createOrder(orderData);
+
+      expect(result).toBeDefined();
+      expect(mockQueryRunner.startTransaction).toHaveBeenCalled();
+      expect(mockQueryRunner.commitTransaction).toHaveBeenCalled();
+      expect(mockQueryRunner.manager.save).toHaveBeenCalled();
+    });
   });
 
   describe('getOrdersByBusiness', () => {

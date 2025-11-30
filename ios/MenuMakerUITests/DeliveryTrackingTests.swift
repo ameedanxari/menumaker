@@ -46,7 +46,7 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.orderStatusLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Order tracking not implemented yet")
+            XCTFail("Order tracking not implemented yet - UI element not found or feature not implemented"); return
         }
 
         // Status should be one of the valid states
@@ -60,7 +60,7 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.orderStatusLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Order tracking not implemented yet")
+            XCTFail("Order tracking not implemented yet - UI element not found or feature not implemented"); return
         }
 
         trackingPage.assertTrackingStepsDisplayed()
@@ -73,7 +73,7 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.estimatedTimeLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Estimated time not implemented yet")
+            XCTFail("Estimated time not implemented yet - UI element not found or feature not implemented"); return
         }
 
         trackingPage.assertEstimatedTimeDisplayed()
@@ -86,7 +86,7 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.orderStatusLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Order tracking not implemented yet")
+            XCTFail("Order tracking not implemented yet - UI element not found or feature not implemented"); return
         }
 
         trackingPage
@@ -101,15 +101,14 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.orderStatusLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Order tracking not implemented yet")
+            XCTFail("Order tracking not implemented yet - UI element not found or feature not implemented"); return
         }
 
         trackingPage
             .scrollToOrderDetails()
 
-        if trackingPage.deliveryAddressLabel.waitForExistence(timeout: 2) {
-            trackingPage.assertDeliveryAddressDisplayed()
-        }
+        XCTAssertTrue(trackingPage.deliveryAddressLabel.waitForExistence(timeout: 2), "Delivery address should be displayed")
+        trackingPage.assertDeliveryAddressDisplayed()
     }
 
     // MARK: - Live Tracking Tests (P0)
@@ -121,11 +120,11 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.orderStatusLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Order tracking not implemented yet")
+            XCTFail("Order tracking not implemented yet - UI element not found or feature not implemented"); return
         }
 
         guard trackingPage.mapView.waitForExistence(timeout: 3) else {
-            throw XCTSkip("Map view not implemented yet")
+            XCTFail("Map view not implemented yet - UI element not found or feature not implemented"); return
         }
 
         trackingPage.assertMapDisplayed()
@@ -138,17 +137,15 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.orderStatusLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Order tracking not implemented yet")
+            XCTFail("Order tracking not implemented yet - UI element not found or feature not implemented"); return
         }
 
         // Live tracking should be active for out-for-delivery orders
         if trackingPage.outForDeliveryStep.exists ||
            trackingPage.orderStatusLabel.label.lowercased().contains("delivery") {
 
-            if trackingPage.mapView.waitForExistence(timeout: 2) ||
-               trackingPage.liveTrackingIndicator.waitForExistence(timeout: 2) {
-                trackingPage.assertLiveTrackingActive()
-            }
+            XCTAssertTrue(trackingPage.mapView.waitForExistence(timeout: 2) || trackingPage.liveTrackingIndicator.waitForExistence(timeout: 2), "Live tracking map or indicator should be visible")
+            trackingPage.assertLiveTrackingActive()
         }
     }
 
@@ -159,7 +156,7 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.mapView.waitForExistence(timeout: 3) else {
-            throw XCTSkip("Map view not implemented yet")
+            XCTFail("Map view not implemented yet - UI element not found or feature not implemented"); return
         }
 
         trackingPage.zoomInMap()
@@ -177,7 +174,7 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.orderStatusLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Order tracking not implemented yet")
+            XCTFail("Order tracking not implemented yet - UI element not found or feature not implemented"); return
         }
 
         // Delivery person info should be available when order is out for delivery
@@ -194,7 +191,7 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.deliveryPersonPhoneButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Delivery person contact not implemented yet")
+            XCTFail("Delivery person contact not implemented yet - UI element not found or feature not implemented"); return
         }
 
         trackingPage
@@ -211,7 +208,7 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.whatsappButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("WhatsApp integration not implemented yet")
+            XCTFail("WhatsApp integration not implemented yet - UI element not found or feature not implemented"); return
         }
 
         trackingPage
@@ -230,7 +227,7 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.orderStatusLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Order tracking not implemented yet")
+            XCTFail("Order tracking not implemented yet - UI element not found or feature not implemented"); return
         }
 
         let _ = trackingPage.orderStatusLabel.label
@@ -251,7 +248,7 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.orderStatusLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Order tracking not implemented yet")
+            XCTFail("Order tracking not implemented yet - UI element not found or feature not implemented"); return
         }
 
         // Check if order placed step exists
@@ -267,7 +264,7 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.orderStatusLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Order tracking not implemented yet")
+            XCTFail("Order tracking not implemented yet - UI element not found or feature not implemented"); return
         }
 
         // Check if confirmed step is visible
@@ -283,7 +280,7 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.orderStatusLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Order tracking not implemented yet")
+            XCTFail("Order tracking not implemented yet - UI element not found or feature not implemented"); return
         }
 
         // Check if preparing step is visible
@@ -299,7 +296,7 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.orderStatusLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Order tracking not implemented yet")
+            XCTFail("Order tracking not implemented yet - UI element not found or feature not implemented"); return
         }
 
         // Check if ready step is visible
@@ -315,7 +312,7 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.orderStatusLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Order tracking not implemented yet")
+            XCTFail("Order tracking not implemented yet - UI element not found or feature not implemented"); return
         }
 
         // Check if out for delivery step is visible
@@ -333,7 +330,7 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.cancelOrderButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Cancel order not implemented yet or order cannot be cancelled")
+            XCTFail("Cancel order not implemented yet or order cannot be cancelled - UI element not found or feature not implemented"); return
         }
 
         trackingPage
@@ -352,7 +349,7 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.rateOrderButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Rate order feature not implemented yet")
+            XCTFail("Rate order feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         trackingPage
@@ -375,7 +372,7 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.orderStatusLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Order tracking not implemented yet")
+            XCTFail("Order tracking not implemented yet - UI element not found or feature not implemented"); return
         }
 
         trackingPage.goBack()
@@ -427,7 +424,7 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.orderStatusLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Order tracking not implemented yet")
+            XCTFail("Order tracking not implemented yet - UI element not found or feature not implemented"); return
         }
 
         // Verify multiple steps are visible in progression
@@ -450,7 +447,7 @@ final class DeliveryTrackingTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.whatsappButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("WhatsApp integration not implemented yet")
+            XCTFail("WhatsApp integration not implemented yet - UI element not found or feature not implemented"); return
         }
 
         // WhatsApp button should be available for communication

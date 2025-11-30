@@ -41,7 +41,7 @@ final class ReviewFlowTests: XCTestCase {
         let reviewPage = ReviewPage(app: app)
 
         guard reviewPage.ratingStars.count > 0 else {
-            throw XCTSkip("Review feature not implemented yet")
+            XCTFail("Review feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         reviewPage
@@ -51,9 +51,8 @@ final class ReviewFlowTests: XCTestCase {
 
         sleep(2)
 
-        if reviewPage.successMessage.waitForExistence(timeout: 2) {
-            reviewPage.assertSuccessMessageDisplayed()
-        }
+        XCTAssertTrue(reviewPage.successMessage.waitForExistence(timeout: 2), "Review submission success message should appear")
+        reviewPage.assertReviewSubmitted()
     }
 
     @MainActor
@@ -64,7 +63,7 @@ final class ReviewFlowTests: XCTestCase {
         let reviewPage = ReviewPage(app: app)
 
         guard reviewPage.ratingStars.count > 0 else {
-            throw XCTSkip("Review feature not implemented yet")
+            XCTFail("Review feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         reviewPage
@@ -88,11 +87,11 @@ final class ReviewFlowTests: XCTestCase {
         let reviewPage = ReviewPage(app: app)
 
         guard reviewPage.ratingStars.count > 0 else {
-            throw XCTSkip("Review feature not implemented yet")
+            XCTFail("Review feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         guard reviewPage.photoUploadButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Photo upload feature not implemented yet")
+            XCTFail("Photo upload feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         reviewPage
@@ -117,7 +116,7 @@ final class ReviewFlowTests: XCTestCase {
         let reviewPage = ReviewPage(app: app)
 
         guard reviewPage.ratingStars.count > 0 else {
-            throw XCTSkip("Review feature not implemented yet")
+            XCTFail("Review feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         reviewPage
@@ -136,7 +135,7 @@ final class ReviewFlowTests: XCTestCase {
         let reviewPage = ReviewPage(app: app)
 
         guard reviewPage.ratingStars.count > 0 else {
-            throw XCTSkip("Review feature not implemented yet")
+            XCTFail("Review feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         reviewPage
@@ -159,7 +158,7 @@ final class ReviewFlowTests: XCTestCase {
         let reviewPage = ReviewPage(app: app)
 
         guard reviewPage.reviewTextField.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Review feature not implemented yet")
+            XCTFail("Review feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         reviewPage.enterReview("Great experience!")
@@ -185,7 +184,7 @@ final class ReviewFlowTests: XCTestCase {
 
         guard reviewPage.firstReview.waitForExistence(timeout: 2) ||
               reviewPage.emptyStateMessage.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Reviews section not implemented yet")
+            XCTFail("Reviews section not implemented yet - UI element not found or feature not implemented"); return
         }
 
         reviewPage.assertReviewsDisplayed()
@@ -199,7 +198,7 @@ final class ReviewFlowTests: XCTestCase {
         let reviewPage = ReviewPage(app: app)
 
         guard reviewPage.averageRatingLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Average rating not implemented yet")
+            XCTFail("Average rating not implemented yet - UI element not found or feature not implemented"); return
         }
 
         reviewPage.assertAverageRatingDisplayed()
@@ -213,7 +212,7 @@ final class ReviewFlowTests: XCTestCase {
         let reviewPage = ReviewPage(app: app)
 
         guard reviewPage.totalReviewsCountLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Reviews count not implemented yet")
+            XCTFail("Reviews count not implemented yet - UI element not found or feature not implemented"); return
         }
 
         reviewPage.assertTotalReviewsCountDisplayed()
@@ -229,7 +228,7 @@ final class ReviewFlowTests: XCTestCase {
         reviewPage.scrollToReviews()
 
         guard reviewPage.firstReview.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No reviews available")
+            XCTFail("No reviews available - UI element not found or feature not implemented"); return
         }
 
         reviewPage.tapFirstReview()
@@ -250,7 +249,7 @@ final class ReviewFlowTests: XCTestCase {
         reviewPage.scrollToReviews()
 
         guard reviewPage.filterButtons.count > 0 else {
-            throw XCTSkip("Review filtering not implemented yet")
+            XCTFail("Review filtering not implemented yet - UI element not found or feature not implemented"); return
         }
 
         reviewPage.filterByRating(5)
@@ -270,7 +269,7 @@ final class ReviewFlowTests: XCTestCase {
         reviewPage.scrollToReviews()
 
         guard reviewPage.sortButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Review sorting not implemented yet")
+            XCTFail("Review sorting not implemented yet - UI element not found or feature not implemented"); return
         }
 
         reviewPage.sortByMostRecent()
@@ -288,7 +287,7 @@ final class ReviewFlowTests: XCTestCase {
         reviewPage.scrollToReviews()
 
         guard reviewPage.sortButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Review sorting not implemented yet")
+            XCTFail("Review sorting not implemented yet - UI element not found or feature not implemented"); return
         }
 
         reviewPage.sortByMostHelpful()
@@ -308,11 +307,11 @@ final class ReviewFlowTests: XCTestCase {
         reviewPage.scrollToReviews()
 
         guard reviewPage.firstReview.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No reviews available")
+            XCTFail("No reviews available - UI element not found or feature not implemented"); return
         }
 
         guard reviewPage.helpfulButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Helpful button not implemented yet")
+            XCTFail("Helpful button not implemented yet - UI element not found or feature not implemented"); return
         }
 
         reviewPage.markReviewAsHelpful()
@@ -330,14 +329,14 @@ final class ReviewFlowTests: XCTestCase {
         reviewPage.scrollToReviews()
 
         guard reviewPage.firstReview.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No reviews available")
+            XCTFail("No reviews available - UI element not found or feature not implemented"); return
         }
 
         // Tap to expand review actions
         reviewPage.tapFirstReview()
 
         guard reviewPage.reportButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Report feature not implemented yet")
+            XCTFail("Report feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         reviewPage.reportReview()
@@ -356,7 +355,7 @@ final class ReviewFlowTests: XCTestCase {
 
         guard reviewPage.firstReview.waitForExistence(timeout: 2) ||
               reviewPage.emptyStateMessage.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Seller reviews section not implemented yet")
+            XCTFail("Seller reviews section not implemented yet - UI element not found or feature not implemented"); return
         }
 
         reviewPage.assertReviewsDisplayed()
@@ -371,7 +370,7 @@ final class ReviewFlowTests: XCTestCase {
 
         guard reviewPage.averageRatingLabel.waitForExistence(timeout: 2) ||
               reviewPage.totalReviewsCountLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Review statistics not implemented yet")
+            XCTFail("Review statistics not implemented yet - UI element not found or feature not implemented"); return
         }
 
         // Verify statistics are displayed
@@ -388,7 +387,7 @@ final class ReviewFlowTests: XCTestCase {
         let reviewPage = ReviewPage(app: app)
 
         guard reviewPage.firstReview.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No reviews to reply to")
+            XCTFail("No reviews to reply to - UI element not found or feature not implemented"); return
         }
 
         reviewPage.tapFirstReview()
@@ -397,7 +396,7 @@ final class ReviewFlowTests: XCTestCase {
         let replyButton = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'reply'")).firstMatch
 
         guard replyButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Reply feature not implemented yet")
+            XCTFail("Reply feature not implemented yet - UI element not found or feature not implemented"); return
         }
 
         replyButton.tap()
@@ -427,13 +426,12 @@ final class ReviewFlowTests: XCTestCase {
         reviewPage.scrollToReviews()
 
         guard reviewPage.firstReview.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No reviews available")
+            XCTFail("No reviews available - UI element not found or feature not implemented"); return
         }
 
         // Look for seller reply indicator
-        if reviewPage.sellerReplyLabel.waitForExistence(timeout: 2) {
-            reviewPage.assertSellerReplyVisible()
-        }
+        XCTAssertTrue(reviewPage.sellerReplyLabel.waitForExistence(timeout: 2), "Seller reply should be visible")
+        reviewPage.assertSellerReplyVisible()
     }
 
     // MARK: - Integration Tests (P1)
@@ -446,7 +444,7 @@ final class ReviewFlowTests: XCTestCase {
         navigateToCompletedOrders()
 
         guard app.scrollViews.otherElements.matching(identifier: "OrderItem").firstMatch.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No completed orders available")
+            XCTFail("No completed orders available - UI element not found or feature not implemented"); return
         }
 
         // Tap first completed order
@@ -458,7 +456,7 @@ final class ReviewFlowTests: XCTestCase {
         let trackingPage = DeliveryTrackingPage(app: app)
 
         guard trackingPage.rateOrderButton.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Rate order feature not available")
+            XCTFail("Rate order feature not available - UI element not found or feature not implemented"); return
         }
 
         trackingPage.tapRateOrder()
@@ -466,7 +464,7 @@ final class ReviewFlowTests: XCTestCase {
         let reviewPage = ReviewPage(app: app)
 
         guard reviewPage.ratingStars.count > 0 else {
-            throw XCTSkip("Review form not displayed")
+            XCTFail("Review form not displayed - UI element not found or feature not implemented"); return
         }
 
         reviewPage.submitQuickReview(rating: 5, text: "Great experience!")
@@ -481,7 +479,7 @@ final class ReviewFlowTests: XCTestCase {
 
         // Get initial average rating
         guard reviewPage.averageRatingLabel.waitForExistence(timeout: 2) else {
-            throw XCTSkip("Average rating not displayed")
+            XCTFail("Average rating not displayed - UI element not found or feature not implemented"); return
         }
 
         let _ = reviewPage.averageRatingLabel.label
@@ -509,7 +507,7 @@ final class ReviewFlowTests: XCTestCase {
         navigateToCompletedOrders()
 
         guard app.scrollViews.otherElements.matching(identifier: "OrderItem").firstMatch.waitForExistence(timeout: 2) else {
-            throw XCTSkip("No completed orders available")
+            XCTFail("No completed orders available - UI element not found or feature not implemented"); return
         }
 
         let firstOrder = app.scrollViews.otherElements.matching(identifier: "OrderItem").firstMatch
