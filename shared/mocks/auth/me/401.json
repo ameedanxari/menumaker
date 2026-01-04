@@ -1,0 +1,6 @@
+{
+  "success": false,
+  "status": 401,
+  "code": "UNAUTHORIZED",
+  "message": "Authentication required."
+}

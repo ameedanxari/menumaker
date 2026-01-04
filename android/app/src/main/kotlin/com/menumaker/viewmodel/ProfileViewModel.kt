@@ -49,21 +49,21 @@ class ProfileViewModel @Inject constructor(
             phone?.let { updates["phone"] = it }
             address?.let { updates["address"] = it }
 
-            // TODO: Use a ProfileRepository when created
-            // For now, use AuthRepository's updateProfile method if available
-            // Or create API call directly
-
-            try {
-                // Simulated for now - implement actual API call
-                kotlinx.coroutines.delay(1000)
-                _successMessage.value = "Profile updated successfully"
-                analyticsService.track("profile_updated", emptyMap())
-                onSuccess()
-            } catch (e: Exception) {
-                _errorMessage.value = e.message ?: "Failed to update profile"
+            authRepository.updateProfile(updates).collect { result ->
+                when (result) {
+                    is Resource.Loading -> _isLoading.value = true
+                    is Resource.Success -> {
+                        _isLoading.value = false
+                        _successMessage.value = "Profile updated successfully"
+                        analyticsService.track("profile_updated", emptyMap())
+                        onSuccess()
+                    }
+                    is Resource.Error -> {
+                        _isLoading.value = false
+                        _errorMessage.value = result.message
+                    }
+                }
             }
-
-            _isLoading.value = false
         }
     }
 
@@ -105,17 +105,21 @@ class ProfileViewModel @Inject constructor(
                 }
             }
 
-            try {
-                // TODO: Implement actual password change API call
-                kotlinx.coroutines.delay(1000)
-                _successMessage.value = "Password changed successfully"
-                analyticsService.track("password_changed", emptyMap())
-                onSuccess()
-            } catch (e: Exception) {
-                _errorMessage.value = e.message ?: "Failed to change password"
+            authRepository.changePassword(currentPassword, newPassword).collect { result ->
+                when (result) {
+                    is Resource.Loading -> _isLoading.value = true
+                    is Resource.Success -> {
+                        _isLoading.value = false
+                        _successMessage.value = "Password changed successfully"
+                        analyticsService.track("password_changed", emptyMap())
+                        onSuccess()
+                    }
+                    is Resource.Error -> {
+                        _isLoading.value = false
+                        _errorMessage.value = result.message
+                    }
+                }
             }
-
-            _isLoading.value = false
         }
     }
 

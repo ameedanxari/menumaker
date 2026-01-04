@@ -16,6 +16,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.menumaker.BuildConfig
+import com.menumaker.data.remote.api.ApiConfig
 import com.menumaker.viewmodel.AuthViewModel
 
 /**
@@ -45,6 +47,9 @@ fun SettingsScreen(
     var selectedLanguage by remember { mutableStateOf("en") }
     var showClearCacheDialog by remember { mutableStateOf(false) }
     var showClearCartDialog by remember { mutableStateOf(false) }
+    var showDebugDialog by remember { mutableStateOf(false) }
+    val baseUrl by ApiConfig.baseUrl.collectAsState()
+    var debugBaseUrl by remember(baseUrl) { mutableStateOf(baseUrl) }
 
     // App version info
     val appVersion = try {
@@ -267,8 +272,55 @@ fun SettingsScreen(
                 SettingsInfoItem(label = "Developer", value = "MenuMaker Inc.")
             }
 
+            if (BuildConfig.DEBUG) {
+                HorizontalDivider()
+                SettingsSection(title = "Developer") {
+                    SettingsNavigationItem(
+                        title = "API Base URL",
+                        trailing = { Text(baseUrl, style = MaterialTheme.typography.bodySmall) },
+                        onClick = { showDebugDialog = true }
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+
+    if (showDebugDialog) {
+        AlertDialog(
+            onDismissRequest = { showDebugDialog = false },
+            title = { Text("API Base URL") },
+            text = {
+                Column {
+                    Text("Point the app to the fake backend or another environment.")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = debugBaseUrl,
+                        onValueChange = { debugBaseUrl = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    ApiConfig.overrideBaseUrl(debugBaseUrl.trim())
+                    showDebugDialog = false
+                }) {
+                    Text("Apply")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    ApiConfig.overrideBaseUrl(BuildConfig.API_BASE_URL_DEFAULT)
+                    debugBaseUrl = BuildConfig.API_BASE_URL_DEFAULT
+                    showDebugDialog = false
+                }) {
+                    Text("Reset")
+                }
+            }
+        )
     }
 }
 

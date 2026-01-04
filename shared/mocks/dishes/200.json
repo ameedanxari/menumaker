@@ -1,0 +1,33 @@
+{
+  "success": true,
+  "data": {
+    "dishes": [
+      {
+        "id": "dish-1",
+        "business_id": "business-1",
+        "name": "Margherita",
+        "description": "Classic margherita pizza",
+        "price_cents": 1299,
+        "image_url": null,
+        "category": "Pizza",
+        "is_vegetarian": true,
+        "is_available": true,
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z"
+      },
+      {
+        "id": "dish-2",
+        "business_id": "business-1",
+        "name": "Spicy Arrabbiata",
+        "description": "Penne with a spicy tomato sauce",
+        "price_cents": 1099,
+        "image_url": null,
+        "category": "Pasta",
+        "is_vegetarian": false,
+        "is_available": true,
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z"
+      }
+    ]
+  }
+}

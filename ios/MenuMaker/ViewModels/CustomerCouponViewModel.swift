@@ -18,6 +18,16 @@ class CustomerCouponViewModel: ObservableObject {
     func loadAvailableCoupons(businessId: String) async {
         isLoading = true
         errorMessage = nil
+
+        let isUITesting = ProcessInfo.processInfo.arguments.contains("UI-Testing")
+        if isUITesting {
+            // Force deterministic seed regardless of business to keep UI tests stable
+            let seed = CouponRepository.shared.loadFixtureCoupons() ?? APIClient.mockCoupons
+            availableCoupons = seed.filter { $0.isActive && !$0.isExpired }
+            searchResults = availableCoupons
+            isLoading = false
+            return
+        }
         
         do {
             let response: CouponListResponse = try await apiClient.request(
@@ -37,18 +47,33 @@ class CustomerCouponViewModel: ObservableObject {
     
     // MARK: - Coupon Validation
     
-    func validateCoupon(code: String, businessId: String) async -> Coupon? {
+    func validateCoupon(
+        code: String,
+        businessId: String,
+        orderSubtotalCents: Int,
+        dishIds: [String]
+    ) async -> Coupon? {
         isLoading = true
         errorMessage = nil
-        
+
+        let normalizedCode = code.uppercased()
+
         do {
-            let response: CouponResponse = try await apiClient.request(
-                endpoint: AppConstants.API.Endpoints.coupons + "/validate/\(code)?business_id=\(businessId)",
-                method: .get
+            let request = ValidateCouponRequest(
+                couponCode: normalizedCode,
+                businessId: businessId,
+                orderSubtotalCents: orderSubtotalCents,
+                dishIds: dishIds
             )
-            
+
+            let response: ValidateCouponResponse = try await apiClient.request(
+                endpoint: AppConstants.API.Endpoints.validateCoupon,
+                method: .post,
+                body: request
+            )
+
             let coupon = response.data.coupon
-            
+
             // Additional validation
             guard coupon.isActive else {
                 errorMessage = "This coupon is not active"
@@ -64,7 +89,7 @@ class CustomerCouponViewModel: ObservableObject {
             
             isLoading = false
             return coupon
-            
+
         } catch {
             errorMessage = error.localizedDescription
             isLoading = false

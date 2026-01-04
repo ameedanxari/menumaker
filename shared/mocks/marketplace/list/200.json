@@ -1,0 +1,34 @@
+{
+  "success": true,
+  "data": {
+    "sellers": [
+      {
+        "id": "business-1",
+        "name": "Test Restaurant",
+        "slug": "test-restaurant",
+        "description": "A great test restaurant",
+        "logo_url": null,
+        "cuisine_type": "Italian",
+        "rating": 4.7,
+        "review_count": 120,
+        "latitude": 37.7749,
+        "longitude": -122.4194,
+        "distance_km": 1.2
+      },
+      {
+        "id": "business-2",
+        "name": "Another Restaurant",
+        "slug": "another-restaurant",
+        "description": "Another great restaurant",
+        "logo_url": null,
+        "cuisine_type": "Indian",
+        "rating": 4.3,
+        "review_count": 80,
+        "latitude": 37.7849,
+        "longitude": -122.4094,
+        "distance_km": 2.0
+      }
+    ],
+    "total": 2
+  }
+}

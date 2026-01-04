@@ -6,6 +6,7 @@ import com.menumaker.data.remote.api.ApiService
 import com.menumaker.data.remote.models.AuthData
 import com.menumaker.data.remote.models.LoginRequest
 import com.menumaker.data.remote.models.SignupRequest
+import com.menumaker.data.remote.models.UserDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
@@ -16,6 +17,9 @@ interface AuthRepository {
     fun logout(): Flow<Resource<Unit>>
     fun isAuthenticated(): Flow<Boolean>
     fun sendPasswordReset(email: String): Flow<Resource<Unit>>
+    fun updateProfile(updates: Map<String, Any>): Flow<Resource<AuthData>>
+    fun changePassword(current: String, new: String): Flow<Resource<Unit>>
+    fun getCurrentUser(): Flow<Resource<UserDto>>
 }
 
 class AuthRepositoryImpl @Inject constructor(
@@ -86,6 +90,56 @@ class AuthRepositoryImpl @Inject constructor(
                 emit(Resource.Success(Unit))
             } else {
                 emit(Resource.Error(response.message() ?: "Failed to send password reset email"))
+            }
+        } catch (e: Exception) {
+            emit(Resource.Error(e.message ?: "An error occurred", e))
+        }
+    }
+
+    override fun updateProfile(updates: Map<String, Any>): Flow<Resource<AuthData>> = flow {
+        emit(Resource.Loading)
+        try {
+            val response = apiService.updateUserProfile(updates)
+            if (response.isSuccessful && response.body() != null) {
+                val authData = response.body()!!.data
+                tokenDataStore.saveTokens(authData.accessToken, authData.refreshToken)
+                tokenDataStore.saveUserId(authData.user.id)
+                tokenDataStore.saveUserEmail(authData.user.email)
+                emit(Resource.Success(authData))
+            } else {
+                emit(Resource.Error(response.message() ?: "Failed to update profile"))
+            }
+        } catch (e: Exception) {
+            emit(Resource.Error(e.message ?: "An error occurred", e))
+        }
+    }
+
+    override fun changePassword(current: String, new: String): Flow<Resource<Unit>> = flow {
+        emit(Resource.Loading)
+        try {
+            val request = mapOf("current_password" to current, "new_password" to new)
+            val response = apiService.changePassword(request)
+            if (response.isSuccessful) {
+                emit(Resource.Success(Unit))
+            } else {
+                emit(Resource.Error(response.message() ?: "Failed to change password"))
+            }
+        } catch (e: Exception) {
+            emit(Resource.Error(e.message ?: "An error occurred", e))
+        }
+    }
+
+    override fun getCurrentUser(): Flow<Resource<UserDto>> = flow {
+        emit(Resource.Loading)
+        try {
+            val response = apiService.getCurrentUser()
+            if (response.isSuccessful && response.body() != null) {
+                val user = response.body()!!.data.user
+                tokenDataStore.saveUserId(user.id)
+                tokenDataStore.saveUserEmail(user.email)
+                emit(Resource.Success(user))
+            } else {
+                emit(Resource.Error(response.message() ?: "Failed to load user"))
             }
         } catch (e: Exception) {
             emit(Resource.Error(e.message ?: "An error occurred", e))

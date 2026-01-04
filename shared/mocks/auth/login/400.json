@@ -1,0 +1,6 @@
+{
+  "success": false,
+  "status": 400,
+  "code": "INVALID_CREDENTIALS",
+  "message": "Email or password is incorrect."
+}

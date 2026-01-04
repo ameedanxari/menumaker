@@ -97,9 +97,11 @@ struct SettingsView: View {
     @AppStorage("darkModeEnabled") private var darkModeEnabled = false
     @AppStorage("preferredLanguage") private var preferredLanguage = "en"
     @AppStorage("biometricAuthEnabled") private var biometricAuthEnabled = false
+    @AppStorage(AppConstants.UserDefaultsKeys.apiBaseUrlOverride) private var apiBaseUrlOverride: String = ""
 
     @State private var showLanguageSheet = false
     @State private var showClearCacheConfirmation = false
+    @State private var apiBaseUrl: String = AppConstants.API.baseURL
 
     var body: some View {
         Form {
@@ -201,6 +203,32 @@ struct SettingsView: View {
                 }
                 .accessibilityIdentifier("clear-cart-button")
             }
+
+            #if DEBUG
+            Section("Developer") {
+                TextField("API Base URL", text: $apiBaseUrl)
+                    .textContentType(.URL)
+                    .keyboardType(.URL)
+                    .autocapitalization(.none)
+                    .accessibilityIdentifier("api-base-url-field")
+
+                HStack {
+                    Button("Apply") {
+                        let trimmed = apiBaseUrl.trimmingCharacters(in: .whitespacesAndNewlines)
+                        apiBaseUrlOverride = trimmed
+                    }
+                    .accessibilityIdentifier("api-base-url-apply")
+
+                    Spacer()
+
+                    Button("Reset") {
+                        apiBaseUrlOverride = ""
+                        apiBaseUrl = AppConstants.API.baseURL
+                    }
+                    .accessibilityIdentifier("api-base-url-reset")
+                }
+            }
+            #endif
 
             // About Section
             Section {

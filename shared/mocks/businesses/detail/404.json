@@ -1,0 +1,6 @@
+{
+  "success": false,
+  "status": 404,
+  "code": "BUSINESS_NOT_FOUND",
+  "message": "Business not found."
+}

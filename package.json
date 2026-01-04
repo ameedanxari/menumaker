@@ -19,6 +19,11 @@
     "test:backend": "npm run test --workspace=backend",
     "test:frontend": "npm run test --workspace=frontend",
     "lint": "npm run lint --workspaces",
+    "fake-backend:start": "node shared/fake-backend/server.js",
+    "fake-backend:run": "node shared/fake-backend/run-with-server.js",
+    "test:android:fake": "API_BASE_URL=http://10.0.2.2:4000/api/v1/ npm run fake-backend:run -- \"cd android && GRADLE_USER_HOME=../.gradle ./gradlew connectedAndroidTest\"",
+    "test:ios:fake": "API_BASE_URL=http://localhost:4000/api/v1/ npm run fake-backend:run -- \"cd ios && xcodebuild test -scheme MenuMaker -destination 'platform=iOS Simulator,name=iPhone 17 Pro'\"",
+    "test:frontend:fake": "API_BASE_URL=http://localhost:4000/api/v1/ npm run fake-backend:run -- \"cd frontend && npm test\"",
     "migrate": "npm run migrate --workspace=backend",
     "migrate:create": "npm run migrate:create --workspace=backend"
   },

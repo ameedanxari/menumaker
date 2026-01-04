@@ -1,0 +1,15 @@
+{
+  "success": true,
+  "data": {
+    "menu": {
+      "id": "menu-1",
+      "business_id": "business-1",
+      "name": "Main Menu",
+      "description": "Our main menu with all dishes",
+      "is_active": true,
+      "display_order": 1,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-02-01T00:00:00Z"
+    }
+  }
+}

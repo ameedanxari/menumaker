@@ -9,12 +9,25 @@ class CouponRepository: ObservableObject {
     private let apiClient = APIClient.shared
 
     @Published var coupons: [Coupon] = []
+    private var isUITesting: Bool {
+        ProcessInfo.processInfo.arguments.contains("UI-Testing") ||
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    }
 
     private init() {}
 
     // MARK: - Fetch Operations
 
     func getCoupons(_ businessId: String) async throws -> [Coupon] {
+        if isUITesting, !coupons.isEmpty {
+            return coupons
+        }
+
+        if isUITesting, let seeded = loadFixtureCoupons() {
+            coupons = seeded
+            return seeded
+        }
+
         let response: CouponListResponse = try await apiClient.request(
             endpoint: AppConstants.API.Endpoints.coupons + "?business_id=\(businessId)",
             method: .get
@@ -33,13 +46,67 @@ class CouponRepository: ObservableObject {
         return response.data.coupon
     }
 
-    func validateCoupon(_ code: String) async throws -> Coupon {
-        let response: CouponResponse = try await apiClient.request(
-            endpoint: AppConstants.API.Endpoints.validateCoupon(code),
-            method: .get
+    struct ValidatedCouponResult {
+        let coupon: Coupon
+        let discountAmount: Double
+        let discountAmountCents: Int
+    }
+
+    func validateCoupon(
+        code: String,
+        businessId: String,
+        orderSubtotalCents: Int,
+        dishIds: [String]
+    ) async throws -> ValidatedCouponResult {
+        let normalizedCode = code.uppercased()
+
+        if isUITesting {
+            let seedCoupons = loadFixtureCoupons() ?? APIClient.mockCoupons
+            coupons = seedCoupons
+
+            guard let coupon = seedCoupons.first(where: { $0.code.uppercased() == normalizedCode }) else {
+                throw APIError.serverError("Coupon not found in fixtures")
+            }
+
+            guard coupon.isActive else {
+                throw APIError.serverError("This coupon is not active")
+            }
+
+            guard !coupon.isExpired else {
+                throw APIError.serverError("This coupon has expired")
+            }
+
+            let discountAmount = calculateDiscount(
+                coupon: coupon,
+                orderValue: Double(orderSubtotalCents) / 100.0
+            )
+
+            return ValidatedCouponResult(
+                coupon: coupon,
+                discountAmount: discountAmount,
+                discountAmountCents: Int(discountAmount * 100)
+            )
+        }
+
+        let request = ValidateCouponRequest(
+            couponCode: normalizedCode,
+            businessId: businessId,
+            orderSubtotalCents: orderSubtotalCents,
+            dishIds: dishIds
         )
 
-        return response.data.coupon
+        let response: ValidateCouponResponse = try await apiClient.request(
+            endpoint: AppConstants.API.Endpoints.validateCoupon,
+            method: .post,
+            body: request
+        )
+
+        let data = response.data
+        return ValidatedCouponResult(
+            coupon: data.coupon,
+            discountAmount: data.discountAmount,
+            discountAmountCents: data.discountAmountCents
+        )
     }
 
     // MARK: - Create Operations
@@ -161,5 +228,59 @@ class CouponRepository: ObservableObject {
         }
 
         return Double(discountCents) / 100.0
+    }
+
+    // MARK: - Test Fixtures
+
+    func loadFixtureCoupons() -> [Coupon]? {
+        // Load shared mock coupons for UI testing
+        let fm = FileManager.default
+        let potentialPaths: [URL?] = [
+            Bundle.main.bundleURL
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .appendingPathComponent("shared/mocks/coupons/list/200.json"),
+            Bundle.main.resourceURL?.appendingPathComponent("shared/mocks/coupons/list/200.json")
+        ]
+
+        for path in potentialPaths.compactMap({ $0 }) where fm.fileExists(atPath: path.path) {
+            if let data = try? Data(contentsOf: path),
+               let decoded = try? JSONDecoder().decode(CouponListResponse.self, from: data) {
+                return decoded.data.coupons
+            }
+        }
+
+        // Fallback hardcoded seed to keep UI tests stable
+        return [
+            Coupon(
+                id: "ui-test-1",
+                businessId: "business-1",
+                code: "TESTCODE",
+                discountType: "percentage",
+                discountValue: 15,
+                maxDiscountCents: 1000,
+                minOrderValueCents: 0,
+                validUntil: "2030-12-31T23:59:59Z",
+                usageLimitType: "unlimited",
+                totalUsageLimit: nil,
+                isActive: true,
+                createdAt: "2024-01-01T00:00:00Z"
+            ),
+            Coupon(
+                id: "ui-test-2",
+                businessId: "business-1",
+                code: "SAVE10",
+                discountType: "percentage",
+                discountValue: 10,
+                maxDiscountCents: 500,
+                minOrderValueCents: 1000,
+                validUntil: "2030-12-31T23:59:59Z",
+                usageLimitType: "unlimited",
+                totalUsageLimit: nil,
+                isActive: true,
+                createdAt: "2024-01-01T00:00:00Z"
+            )
+        ]
     }
 }

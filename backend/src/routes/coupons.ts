@@ -228,11 +228,25 @@ export const couponRoutes: FastifyPluginAsync = async (fastify) => {
             valid: true,
             discount_amount_cents: result.discount_amount_cents,
             discount_amount: (result.discount_amount_cents || 0) / 100,
-            coupon: {
-              code: result.coupon?.code,
-              name: result.coupon?.name,
-              description: result.coupon?.description,
-            },
+            coupon: result.coupon
+              ? {
+                  id: result.coupon.id,
+                  business_id: result.coupon.business_id,
+                  code: result.coupon.code,
+                  name: result.coupon.name,
+                  description: result.coupon.description,
+                  discount_type: result.coupon.discount_type,
+                  discount_value: result.coupon.discount_value,
+                  max_discount_cents: result.coupon.max_discount_cents,
+                  min_order_value_cents: result.coupon.min_order_value_cents,
+                  valid_until: result.coupon.valid_until,
+                  usage_limit_type: result.coupon.usage_limit_type,
+                  total_usage_limit: result.coupon.total_usage_limit,
+                  status: result.coupon.status,
+                  is_active: result.coupon.status === 'active',
+                  created_at: result.coupon.created_at,
+                }
+              : undefined,
           },
           message: 'Coupon is valid',
         };

@@ -3,8 +3,9 @@ package com.menumaker.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.menumaker.services.AnalyticsService
+import com.menumaker.data.repository.PaymentRepository
+import com.menumaker.data.remote.models.MockChargeRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,7 +35,8 @@ data class SavedCard(
  */
 @HiltViewModel
 class CustomerPaymentViewModel @Inject constructor(
-    private val analyticsService: AnalyticsService
+    private val analyticsService: AnalyticsService,
+    private val paymentRepository: PaymentRepository
 ) : ViewModel() {
 
     // Payment method selection
@@ -245,15 +247,13 @@ class CustomerPaymentViewModel @Inject constructor(
             _errorMessage.value = null
 
             try {
-                // Simulate payment processing
-                delay(2000)
-
                 val orderId = "ORD-${(10000..99999).random()}"
+                val amountCents = (amount * 100).toInt()
 
                 when (_selectedPaymentMethod.value) {
-                    PaymentMethodType.CARD -> processCardPayment(amount, orderId)
+                    PaymentMethodType.CARD -> processCardPayment(amountCents, orderId)
                     PaymentMethodType.CASH -> processCashPayment(amount, orderId)
-                    PaymentMethodType.UPI -> processUPIPayment(amount, orderId)
+                    PaymentMethodType.UPI -> processUPIPayment(amountCents, orderId)
                 }
 
                 _completedOrderId.value = orderId
@@ -269,10 +269,17 @@ class CustomerPaymentViewModel @Inject constructor(
         }
     }
 
-    private fun processCardPayment(amount: Double, orderId: String) {
-        // TODO: Integrate with payment gateway
+    private suspend fun processCardPayment(amountCents: Int, orderId: String) {
+        paymentRepository.mockCharge(
+            MockChargeRequest(
+                amountCents = amountCents,
+                method = "card",
+                reference = orderId
+            )
+        )
+
         analyticsService.track("card_payment_processed", mapOf(
-            "amount" to amount,
+            "amount_cents" to amountCents,
             "order_id" to orderId
         ))
     }
@@ -284,10 +291,17 @@ class CustomerPaymentViewModel @Inject constructor(
         ))
     }
 
-    private fun processUPIPayment(amount: Double, orderId: String) {
-        // TODO: Integrate with UPI payment gateway
+    private suspend fun processUPIPayment(amountCents: Int, orderId: String) {
+        paymentRepository.mockCharge(
+            MockChargeRequest(
+                amountCents = amountCents,
+                method = "upi",
+                reference = orderId
+            )
+        )
+
         analyticsService.track("upi_payment_processed", mapOf(
-            "amount" to amount,
+            "amount_cents" to amountCents,
             "order_id" to orderId,
             "upi_id" to _upiId.value
         ))

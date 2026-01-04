@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { authenticate } from '../middleware/auth.js';
 import { AppDataSource } from '../config/database.js';
 import { Notification } from '../models/Notification.js';
+import { NotificationDevice } from '../models/NotificationDevice.js';
 
 /**
  * Notification Routes
@@ -10,6 +11,7 @@ import { Notification } from '../models/Notification.js';
  */
 export async function notificationRoutes(fastify: FastifyInstance): Promise<void> {
   const notificationRepo = AppDataSource.getRepository(Notification);
+  const deviceRepo = AppDataSource.getRepository(NotificationDevice);
 
   /**
    * GET /notifications
@@ -155,6 +157,70 @@ export async function notificationRoutes(fastify: FastifyInstance): Promise<void
     reply.send({
       success: true,
       data: { count },
+    });
+  });
+
+  /**
+   * POST /notifications/devices
+   * Register or update a device token for push notifications
+   */
+  fastify.post('/devices', {
+    preHandler: authenticate,
+  }, async (request, reply) => {
+    const { device_token, platform, locale, app_version, device_model } = request.body as {
+      device_token: string;
+      platform: 'ios' | 'android' | 'web';
+      locale?: string;
+      app_version?: string;
+      device_model?: string;
+    };
+
+    if (!device_token || !platform) {
+      return reply.status(400).send({
+        success: false,
+        error: {
+          code: 'INVALID_DEVICE',
+          message: 'device_token and platform are required',
+        },
+      });
+    }
+
+    const existing = await deviceRepo.findOne({
+      where: { device_token },
+    });
+
+    if (existing) {
+      existing.user_id = request.user!.userId;
+      existing.platform = platform;
+      existing.locale = locale;
+      existing.app_version = app_version;
+      existing.device_model = device_model;
+      existing.last_seen_at = new Date();
+      await deviceRepo.save(existing);
+
+      return reply.send({
+        success: true,
+        data: { device: existing },
+        message: 'Device updated',
+      });
+    }
+
+    const device = deviceRepo.create({
+      user_id: request.user!.userId,
+      device_token,
+      platform,
+      locale,
+      app_version,
+      device_model,
+      last_seen_at: new Date(),
+    });
+
+    await deviceRepo.save(device);
+
+    reply.send({
+      success: true,
+      data: { device },
+      message: 'Device registered',
     });
   });
 }

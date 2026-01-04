@@ -88,7 +88,18 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             authRepository.isAuthenticated().collect { isAuth ->
                 _isAuthenticated.value = isAuth
-                // TODO: Load current user from local storage if authenticated
+                if (isAuth) {
+                    authRepository.getCurrentUser().collect { resource: Resource<UserDto> ->
+                        if (resource is Resource.Success) {
+                            _currentUser.value = resource.data
+                        } else if (resource is Resource.Error) {
+                            // Keep authenticated state but surface no user; could add retry logic
+                            _currentUser.value = null
+                        }
+                    }
+                } else {
+                    _currentUser.value = null
+                }
             }
         }
     }

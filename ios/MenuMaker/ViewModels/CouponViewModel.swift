@@ -196,9 +196,19 @@ class CouponViewModel: ObservableObject {
 
     // MARK: - Validation
 
-    func validateCoupon(_ code: String) async -> Coupon? {
+    func validateCoupon(
+        _ code: String,
+        businessId: String,
+        subtotalCents: Int,
+        dishIds: [String]
+    ) async -> CouponRepository.ValidatedCouponResult? {
         do {
-            return try await repository.validateCoupon(code)
+            return try await repository.validateCoupon(
+                code: code,
+                businessId: businessId,
+                orderSubtotalCents: subtotalCents,
+                dishIds: dishIds
+            )
         } catch {
             errorMessage = error.localizedDescription
             return nil

@@ -319,6 +319,17 @@ struct ReviewPage {
     }
 
     @discardableResult
+    func assertReviewSubmitted(timeout: TimeInterval = 3) -> ReviewPage {
+        // Accept either an explicit success message or the presence of the new review item
+        if successMessage.waitForExistence(timeout: timeout) {
+            XCTAssertTrue(successMessage.exists, "Submission success message should appear")
+        } else {
+            XCTAssertTrue(firstReview.waitForExistence(timeout: timeout), "Submitted review should appear in the list")
+        }
+        return self
+    }
+
+    @discardableResult
     func assertReviewsDisplayed() -> ReviewPage {
         XCTAssertTrue(firstReview.exists || emptyStateMessage.exists,
                      "Reviews or empty state should be displayed")

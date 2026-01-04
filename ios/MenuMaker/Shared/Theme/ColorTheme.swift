@@ -6,9 +6,9 @@ extension Color {
 
 struct ColorTheme {
     // Primary Colors
-    let primary = Color("Primary", bundle: nil)
+    let primary = Color("BrandPrimary", bundle: nil)
     let primaryVariant = Color("PrimaryVariant", bundle: nil)
-    let secondary = Color("Secondary", bundle: nil)
+    let secondary = Color("BrandSecondary", bundle: nil)
     let secondaryVariant = Color("SecondaryVariant", bundle: nil)
 
     // Background & Surface

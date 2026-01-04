@@ -1,0 +1,309 @@
+# Implementation Plan
+
+- [x] 1. Set up test infrastructure and utilities
+  - [x] 1.1 Add property-based testing library to build.gradle.kts
+    - Add Kotest property testing dependency: `testImplementation("io.kotest:kotest-property:5.8.0")`
+    - Add Truth assertion library: `testImplementation("com.google.truth:truth:1.1.5")`
+    - _Requirements: 1.4, 2.4_
+  - [x] 1.2 Create TestDispatcherRule for coroutine testing
+    - Create `android/app/src/test/kotlin/com/menumaker/testutils/TestDispatcherRule.kt`
+    - Implement JUnit TestWatcher that sets/resets Main dispatcher
+    - _Requirements: 2.4_
+  - [x] 1.3 Create TestDataFactory for consistent test data
+    - Create `android/app/src/test/kotlin/com/menumaker/testutils/TestDataFactory.kt`
+    - Add factory methods for UserDto, OrderDto, DishDto, CartEntity, etc.
+    - _Requirements: 1.4_
+  - [x] 1.4 Create FakeApiService for mocked network responses
+    - Create `android/app/src/test/kotlin/com/menumaker/testutils/FakeApiService.kt`
+    - Implement ApiService interface with configurable responses
+    - _Requirements: 1.4, 6.4_
+  - [x] 1.5 Create FakeTokenDataStore for in-memory token storage
+    - Create `android/app/src/test/kotlin/com/menumaker/testutils/FakeTokenDataStore.kt`
+    - Implement TokenDataStore interface with in-memory storage
+    - _Requirements: 1.4_
+
+- [x] 2. Implement Repository unit tests
+  - [x] 2.1 Create AuthRepositoryTest
+    - Test login success/error flows
+    - Test signup success/error flows
+    - Test logout clears tokens
+    - Test password reset flow
+    - _Requirements: 5.1, 5.2, 5.4, 5.5_
+  - [x]* 2.2 Write property test for auth token storage round-trip
+    - **Property 13: Authentication Token Storage**
+    - **Validates: Requirements 5.1**
+  - [x]* 2.3 Write property test for logout token clearing
+    - **Property 15: Logout Token Clearing**
+    - **Validates: Requirements 5.4**
+  - [x] 2.4 Create OrderRepositoryTest
+    - Test getOrdersByBusiness success/error
+    - Test getCustomerOrders success/error
+    - Test createOrder success/error
+    - Test updateOrderStatus success/error
+    - _Requirements: 3.2, 4.5_
+  - [x]* 2.5 Write property test for repository success response handling
+    - **Property 1: Repository Success Response Handling**
+    - **Validates: Requirements 1.1, 1.3**
+  - [x]* 2.6 Write property test for repository error response handling
+    - **Property 2: Repository Error Response Handling**
+    - **Validates: Requirements 1.2, 1.3**
+  - [x] 2.7 Create CartRepositoryTest
+    - Test getCartItems returns correct items
+    - Test addToCart inserts item
+    - Test updateCartItem updates quantity
+    - Test removeFromCart deletes item
+    - Test clearCart removes all items
+    - Test getCartTotal calculates correctly
+    - _Requirements: 4.3, 8.1, 8.2_
+  - [x]* 2.8 Write property test for cart total calculation
+    - **Property 9: Cart Total Calculation**
+    - **Validates: Requirements 4.3, 8.1**
+  - [x] 2.9 Create DishRepositoryTest
+    - Test getDishes success/error
+    - Test createDish success/error
+    - Test updateDish success/error
+    - Test deleteDish success/error
+    - _Requirements: 3.3_
+  - [x]* 2.10 Write property test for menu item CRUD operations
+    - **Property 7: Menu Item CRUD Operations**
+    - **Validates: Requirements 3.3**
+  - [x] 2.11 Create MarketplaceRepositoryTest
+    - Test getBusinesses success/error
+    - Test searchBusinesses filters correctly
+    - _Requirements: 4.1_
+  - [x]* 2.12 Write property test for marketplace search filtering
+    - **Property 8: Marketplace Search Filtering**
+    - **Validates: Requirements 4.1**
+  - [x] 2.13 Create FavoriteRepositoryTest
+    - Test getFavorites success/error
+    - Test addFavorite success/error
+    - Test removeFavorite success/error
+    - _Requirements: 4.6_
+  - [x]* 2.14 Write property test for favorites toggle
+    - **Property 12: Favorites Toggle**
+    - **Validates: Requirements 4.6**
+  - [x] 2.15 Create CouponRepositoryTest
+    - Test getCoupons success/error
+    - Test createCoupon success/error
+    - Test validateCoupon success/error
+    - _Requirements: 3.4, 8.3_
+  - [x]* 2.16 Write property test for coupon discount application
+    - **Property 20: Coupon Discount Application**
+    - **Validates: Requirements 8.3**
+  - [x] 2.17 Create NotificationRepositoryTest
+    - Test getNotifications success/error
+    - Test markAsRead updates status
+    - _Requirements: 9.1, 9.2_
+  - [x]* 2.18 Write property test for notification count update
+    - **Property 22: Notification Count Update**
+    - **Validates: Requirements 9.1, 9.2**
+  - [x] 2.19 Create ReviewRepositoryTest
+    - Test getReviews success/error
+    - Test createReview success/error
+    - _Requirements: 4.7_
+  - [x] 2.20 Create ReferralRepositoryTest
+    - Test getReferralStats success/error
+    - Test applyReferralCode success/error
+    - _Requirements: 11.1, 11.2_
+  - [x]* 2.21 Write property test for referral code validation
+    - **Property 24: Referral Code Validation**
+    - **Validates: Requirements 11.2**
+  - [x] 2.22 Create PaymentRepositoryTest
+    - Test getPaymentProcessors success/error
+    - Test connectProcessor success/error
+    - _Requirements: 3.5, 10.3_
+  - [x] 2.23 Create IntegrationRepositoryTest
+    - Test getIntegrations success/error
+    - Test connectIntegration success/error
+    - _Requirements: 12.1, 12.2_
+
+- [x] 3. Checkpoint - Ensure all repository tests pass
+  - All 23 repository test classes pass (12 unit test classes + 11 property test classes)
+
+- [x] 4. Enhance ViewModel unit tests
+  - [x] 4.1 Enhance AuthViewModelTest with edge cases
+    - Add concurrent login/signup handling test (DONE - exists in AuthViewModelTest.kt)
+    - Add token persistence verification (DONE)
+    - Add input validation tests for email/password (DONE)
+    - _Requirements: 2.1, 2.2, 2.3, 5.3_
+  - [x]* 4.2 Write property test for ViewModel input validation
+    - **Property 5: ViewModel Input Validation**
+    - **Validates: Requirements 2.3, 5.3**
+  - [x]* 4.3 Write property test for authentication error handling
+    - **Property 14: Authentication Error Handling**
+    - **Validates: Requirements 5.2**
+  - [x] 4.4 Enhance OrderViewModelTest with edge cases
+    - Add order status transition tests
+    - Add error state preservation test
+    - _Requirements: 2.1, 3.2_
+  - [x]* 4.5 Write property test for order status transitions
+    - **Property 6: Order Status Transitions**
+    - **Validates: Requirements 3.2**
+  - [x]* 4.6 Write property test for ViewModel error state preservation
+    - **Property 4: ViewModel Error State Preservation**
+    - **Validates: Requirements 2.1**
+  - [x] 4.7 Enhance CartViewModelTest with edge cases
+    - Add quantity update to zero removes item test
+    - Add total recalculation on quantity change test
+    - _Requirements: 8.2_
+  - [x]* 4.8 Write property test for cart quantity update
+    - **Property 10: Cart Quantity Update**
+    - **Validates: Requirements 8.2**
+  - [x] 4.9 Enhance MarketplaceViewModelTest with search tests
+    - Add search query filtering test
+    - Add empty results handling test
+    - _Requirements: 4.1_
+  - [x] 4.10 Enhance CouponViewModelTest with validation tests
+    - Add coupon validation tests
+    - Add discount calculation tests
+    - _Requirements: 3.4, 8.3_
+  - [x] 4.11 Enhance NotificationViewModelTest
+    - Add mark all as read test
+    - Add unread count update test
+    - _Requirements: 9.1, 9.2_
+  - [x] 4.12 Enhance CustomerPaymentViewModelTest
+    - Add payment validation tests for card number, expiry, CVV
+    - _Requirements: 10.2_
+  - [x]* 4.13 Write property test for payment validation
+    - **Property 23: Payment Validation**
+    - **Validates: Requirements 10.2**
+  - [x] 4.14 Enhance ProfileViewModelTest
+    - Add profile update validation tests
+    - Add password change validation tests
+    - _Requirements: 5.3_
+
+- [x] 5. Checkpoint - Ensure all ViewModel tests pass
+  - All ViewModel tests pass successfully
+
+- [x] 6. Set up UI test infrastructure with mocked dependencies
+  - [x] 6.1 Create custom HiltTestRunner
+    - Create `android/app/src/androidTest/kotlin/com/menumaker/HiltTestRunner.kt`
+    - Configure test instrumentation runner for Hilt
+    - Update build.gradle.kts to use custom runner
+    - _Requirements: 7.1_
+  - [x] 6.2 Create FakeAuthRepository for UI tests
+    - Create `android/app/src/androidTest/kotlin/com/menumaker/fakes/FakeAuthRepository.kt`
+    - Implement AuthRepository with configurable responses
+    - _Requirements: 7.1_
+  - [x] 6.3 Create FakeOrderRepository for UI tests
+    - Create `android/app/src/androidTest/kotlin/com/menumaker/fakes/FakeOrderRepository.kt`
+    - Implement OrderRepository with configurable responses
+    - _Requirements: 7.1_
+  - [x] 6.4 Create FakeCartRepository for UI tests
+    - Create `android/app/src/androidTest/kotlin/com/menumaker/fakes/FakeCartRepository.kt`
+    - Implement CartRepository with in-memory storage
+    - _Requirements: 7.1_
+  - [x] 6.5 Create FakeMarketplaceRepository for UI tests
+    - Create `android/app/src/androidTest/kotlin/com/menumaker/fakes/FakeMarketplaceRepository.kt`
+    - Implement MarketplaceRepository with configurable responses
+    - _Requirements: 7.1_
+  - [x] 6.6 Create remaining fake repositories
+    - FakeDishRepository, FakeCouponRepository, FakeFavoriteRepository
+    - FakeNotificationRepository, FakeReviewRepository, FakeReferralRepository
+    - FakePaymentRepository, FakeIntegrationRepository
+    - _Requirements: 7.1_
+  - [x] 6.7 Create FakeRepositoryModule for Hilt test injection
+    - Create `android/app/src/androidTest/kotlin/com/menumaker/di/FakeRepositoryModule.kt`
+    - Replace real repositories with fakes in tests
+    - _Requirements: 7.1_
+
+- [x] 7. Update UI tests for authentication flows with mocked dependencies
+  - [x] 7.1 Update AuthenticationFlowTest with mocked dependencies
+    - Refactor to use FakeAuthRepository via Hilt test module
+    - Add deterministic login success/failure tests
+    - Add signup validation tests
+    - _Requirements: 5.1, 5.2, 5.3, 7.2, 7.3_
+  - [x]* 7.2 Write property test for form validation feedback
+    - **Property 19: Form Validation Feedback**
+    - **Validates: Requirements 7.3**
+
+- [x] 8. Update UI tests for customer flows with mocked dependencies
+  - [x] 8.1 Update OrderFlowTest with mocked dependencies
+    - Refactor to use fake repositories via Hilt test module
+    - Add deterministic cart operations tests
+    - Add checkout flow tests
+    - _Requirements: 4.3, 4.4, 8.1, 8.4_
+  - [x]* 8.2 Write property test for checkout validation
+    - **Property 21: Checkout Validation**
+    - **Validates: Requirements 8.4**
+  - [x] 8.3 Update MarketplaceFlowTests with mocked dependencies
+    - Refactor to use FakeMarketplaceRepository
+    - Add search and filter tests
+    - _Requirements: 4.1, 4.2_
+  - [x] 8.4 Update FavoritesAndHistoryTest with mocked dependencies
+    - Refactor to use FakeFavoriteRepository
+    - Add add/remove favorite tests
+    - _Requirements: 4.6_
+  - [x] 8.5 Update ReviewFlowTest with mocked dependencies
+    - Refactor to use FakeReviewRepository
+    - Add review submission tests
+    - _Requirements: 4.7_
+  - [x] 8.6 Update PaymentFlowTest with mocked dependencies
+    - Refactor to use FakePaymentRepository
+    - Add payment validation tests
+    - _Requirements: 10.1, 10.2_
+  - [x] 8.7 Update NotificationFlowTest with mocked dependencies
+    - Refactor to use FakeNotificationRepository
+    - Add mark as read tests
+    - _Requirements: 9.1, 9.2_
+  - [x] 8.8 Update ReferralFlowTest with mocked dependencies
+    - Refactor to use FakeReferralRepository
+    - Add referral code application tests
+    - _Requirements: 11.1, 11.2_
+
+- [x] 9. Update UI tests for seller flows with mocked dependencies
+  - [x] 9.1 Update SellerFlowTest with mocked dependencies
+    - Refactor to use fake repositories
+    - Add dashboard analytics display tests
+    - Add order management tests
+    - _Requirements: 3.1, 3.2_
+  - [x]* 9.2 Write property test for order status display
+    - **Property 11: Order Status Display**
+    - **Validates: Requirements 4.5**
+  - [x] 9.3 Update SellerAnalyticsTest with mocked dependencies
+    - Refactor to use FakeBusinessRepository
+    - Add analytics data display tests
+    - _Requirements: 3.1_
+  - [x] 9.4 Create SellerMenuManagementTest
+    - Test menu item creation
+    - Test menu item editing
+    - Test menu item deletion
+    - _Requirements: 3.3_
+  - [x] 9.5 Update CouponFlowTest with mocked dependencies
+    - Refactor to use FakeCouponRepository
+    - Add coupon creation tests
+    - Add coupon validation tests
+    - _Requirements: 3.4_
+
+- [-] 10. Implement offline-first data handling tests
+  - [x] 10.1 Create OfflineDataTest for repository caching
+    - Test cached data is returned when network fails
+    - Test cache-first loading pattern
+    - _Requirements: 6.1, 6.3_
+  - [ ]* 10.2 Write property test for offline cache serving
+    - **Property 16: Offline Cache Serving**
+    - **Validates: Requirements 6.1**
+  - [ ]* 10.3 Write property test for cache-first data loading
+    - **Property 17: Cache-First Data Loading**
+    - **Validates: Requirements 6.3**
+  - [ ]* 10.4 Write property test for repository cache round-trip
+    - **Property 3: Repository Cache Round-Trip**
+    - **Validates: Requirements 1.5**
+
+- [x] 11. Implement navigation tests
+  - [x] 11.1 Create NavigationTest for customer app
+    - Test navigation from marketplace to menu
+    - Test navigation from cart to checkout
+    - Test navigation from order to tracking
+    - _Requirements: 7.2_
+  - [x] 11.2 Create NavigationTest for seller app
+    - Test navigation from dashboard to orders
+    - Test navigation from orders to order detail
+    - Test navigation to menu editor
+    - _Requirements: 7.2_
+  - [ ]* 11.3 Write property test for navigation correctness
+    - **Property 18: Navigation Correctness**
+    - **Validates: Requirements 7.2**
+
+- [x] 12. Final Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.

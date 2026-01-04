@@ -5,15 +5,26 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.menumaker.ui.screens.auth.LoginScreen
 import com.menumaker.ui.screens.auth.SignupScreen
 import com.menumaker.ui.screens.auth.ForgotPasswordScreen
-import com.menumaker.ui.screens.customer.MarketplaceScreen
 import com.menumaker.ui.screens.customer.CartScreen
+import com.menumaker.ui.screens.customer.FavoritesScreen
+import com.menumaker.ui.screens.customer.MarketplaceScreen
 import com.menumaker.ui.screens.customer.MyOrdersScreen
+import com.menumaker.ui.screens.customer.OrderTrackingScreen
+import com.menumaker.ui.screens.customer.PaymentScreen
+import com.menumaker.ui.screens.customer.ReviewsScreen
+import com.menumaker.ui.screens.customer.SellerMenuScreen
+import com.menumaker.ui.screens.NotificationsScreen
+import com.menumaker.ui.screens.ProfileScreen
+import com.menumaker.ui.screens.ReferralsScreen
+import com.menumaker.ui.screens.SettingsScreen
 import com.menumaker.viewmodel.AuthViewModel
 
 @Composable
@@ -23,12 +34,6 @@ fun NavGraph(
 ) {
     val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
 
-    // For Customer app, we might allow browsing without login, but for now let's stick to login first
-    // or maybe Marketplace is the start and Login is required for Checkout?
-    // Let's assume Login first for parity with Seller app structure for now, 
-    // but typically Customer apps allow browsing.
-    // Given the current AuthViewModel, let's start with Login if not authenticated.
-    
     val startDestination = if (isAuthenticated) {
         Destination.Marketplace.route
     } else {
@@ -85,16 +90,48 @@ fun NavGraph(
                 }
             )
         }
+
+        composable(
+            route = Destination.SellerMenu.route,
+            arguments = listOf(navArgument("sellerId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val sellerId = backStackEntry.arguments?.getString("sellerId") ?: ""
+            SellerMenuScreen(
+                businessId = sellerId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
         
         composable(Destination.Cart.route) {
-            // TODO: Get businessId from cart items or pass via navigation args
             CartScreen(
-                businessId = "", // Placeholder - should be from navigation args or cart state
+                businessId = "", // Will be retrieved from cart state
                 onNavigateBack = {
                     navController.popBackStack()
                 },
                 onNavigateToCheckout = {
-                    navController.navigate(Destination.Checkout.route)
+                    // Navigate to payment with a default total - actual total comes from cart
+                    navController.navigate(Destination.Payment.createRoute(0.0))
+                }
+            )
+        }
+
+        composable(
+            route = Destination.Payment.route,
+            arguments = listOf(navArgument("total") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val totalStr = backStackEntry.arguments?.getString("total") ?: "0.0"
+            val total = totalStr.toDoubleOrNull() ?: 0.0
+            PaymentScreen(
+                orderTotal = total,
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onPaymentSuccess = { orderId ->
+                    navController.navigate(Destination.OrderTracking.createRoute(orderId)) {
+                        popUpTo(Destination.Marketplace.route)
+                    }
                 }
             )
         }
@@ -106,6 +143,92 @@ fun NavGraph(
                 },
                 onNavigateToOrderDetail = { orderId ->
                     navController.navigate(Destination.OrderTracking.createRoute(orderId))
+                }
+            )
+        }
+
+        composable(
+            route = Destination.OrderTracking.route,
+            arguments = listOf(navArgument("orderId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
+            OrderTrackingScreen(
+                orderId = orderId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Destination.Favorites.route) {
+            FavoritesScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onNavigateToSellerMenu = { sellerId ->
+                    navController.navigate(Destination.SellerMenu.createRoute(sellerId))
+                },
+                onNavigateToMarketplace = {
+                    navController.navigate(Destination.Marketplace.route)
+                }
+            )
+        }
+
+        composable(
+            route = Destination.CustomerReviews.route,
+            arguments = listOf(navArgument("businessId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val businessId = backStackEntry.arguments?.getString("businessId") ?: ""
+            ReviewsScreen(
+                businessId = businessId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Shared routes
+        composable(Destination.Profile.route) {
+            ProfileScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onNavigateToOrders = {
+                    navController.navigate(Destination.MyOrders.route)
+                },
+                onNavigateToFavorites = {
+                    navController.navigate(Destination.Favorites.route)
+                },
+                onNavigateToSettings = {
+                    navController.navigate(Destination.Settings.route)
+                },
+                onNavigateToReferrals = {
+                    navController.navigate(Destination.Referrals.route)
+                }
+            )
+        }
+
+        composable(Destination.Settings.route) {
+            SettingsScreen(
+                authViewModel = authViewModel,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Destination.Notifications.route) {
+            NotificationsScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Destination.Referrals.route) {
+            ReferralsScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }

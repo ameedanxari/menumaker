@@ -1,0 +1,32 @@
+{
+  "success": true,
+  "data": {
+    "notifications": [
+      {
+        "id": "notif-1",
+        "user_id": "user-1",
+        "type": "order_placed",
+        "title": "New Order",
+        "message": "You have a new order #order-1",
+        "data": {
+          "order_id": "order-1"
+        },
+        "is_read": false,
+        "created_at": "2024-02-01T10:00:00Z"
+      },
+      {
+        "id": "notif-2",
+        "user_id": "user-1",
+        "type": "promotion",
+        "title": "Special Offer",
+        "message": "Get 20% off on your next order!",
+        "data": null,
+        "is_read": true,
+        "created_at": "2024-02-01T09:00:00Z"
+      }
+    ],
+    "total": 2,
+    "limit": 20,
+    "offset": 0
+  }
+}

@@ -54,11 +54,13 @@ struct ProfileView: View {
                     }
                     .foregroundColor(.theme.error)
                 }
+                .accessibilityIdentifier("logout-button")
                 .buttonStyle(ProfileMenuButtonStyle())
             }
             .padding()
         }
         .background(Color.theme.background)
+        .accessibilityIdentifier("more-screen")
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showEditProfile) {

@@ -1,0 +1,39 @@
+{
+  "success": true,
+  "data": {
+    "processors": [
+      {
+        "id": "processor-1",
+        "processor_type": "stripe",
+        "status": "active",
+        "is_active": true,
+        "priority": 1,
+        "settlement_schedule": "daily",
+        "min_payout_threshold_cents": 10000,
+        "fee_percentage": 2.9,
+        "fixed_fee_cents": 30,
+        "last_transaction_at": "2024-02-01T10:00:00Z",
+        "verified_at": "2024-02-01T00:00:00Z",
+        "connection_error": null,
+        "metadata": null,
+        "created_at": "2024-01-01T00:00:00Z"
+      },
+      {
+        "id": "processor-2",
+        "processor_type": "razorpay",
+        "status": "inactive",
+        "is_active": false,
+        "priority": 2,
+        "settlement_schedule": "weekly",
+        "min_payout_threshold_cents": 50000,
+        "fee_percentage": 2.0,
+        "fixed_fee_cents": 0,
+        "last_transaction_at": null,
+        "verified_at": null,
+        "connection_error": null,
+        "metadata": null,
+        "created_at": "2024-01-02T00:00:00Z"
+      }
+    ]
+  }
+}

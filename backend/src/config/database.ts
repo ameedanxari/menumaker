@@ -47,6 +47,7 @@ import {
   MarketplaceAnalytics,
   CustomerFavorite
 } from '../models/Marketplace.js';
+import { NotificationDevice } from '../models/NotificationDevice.js';
 
 // POS Integration entities
 import { POSIntegration, POSSyncLog } from '../models/POSIntegration.js';
@@ -125,6 +126,8 @@ export const AppDataSource = new DataSource({
     MarketplaceSettings,
     MarketplaceAnalytics,
     CustomerFavorite,
+    // Notifications
+    NotificationDevice,
     // POS Integration
     POSIntegration,
     POSSyncLog,

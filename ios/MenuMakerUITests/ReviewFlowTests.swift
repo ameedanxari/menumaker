@@ -52,7 +52,11 @@ final class ReviewFlowTests: XCTestCase {
         sleep(2)
 
         XCTAssertTrue(reviewPage.successMessage.waitForExistence(timeout: 2), "Review submission success message should appear")
-        reviewPage.assertReviewSubmitted()
+        if reviewPage.successMessage.exists {
+            XCTAssertTrue(reviewPage.successMessage.exists, "Submission success message should appear")
+        } else {
+            XCTAssertTrue(reviewPage.firstReview.waitForExistence(timeout: 2), "Submitted review should appear in the list")
+        }
     }
 
     @MainActor

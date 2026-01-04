@@ -1,0 +1,77 @@
+{
+  "success": true,
+  "data": {
+    "coupons": [
+      {
+        "id": "coupon-1",
+        "business_id": "business-1",
+        "code": "SAVE10",
+        "discount_type": "percentage",
+        "discount_value": 10,
+        "max_discount_cents": 500,
+        "min_order_value_cents": 1000,
+        "valid_until": "2024-12-31T23:59:59Z",
+        "usage_limit_type": "unlimited",
+        "total_usage_limit": null,
+        "is_active": true,
+        "created_at": "2024-01-01T00:00:00Z"
+      },
+      {
+        "id": "coupon-2",
+        "business_id": "business-1",
+        "code": "FLAT50",
+        "discount_type": "fixed",
+        "discount_value": 50,
+        "max_discount_cents": null,
+        "min_order_value_cents": 500,
+        "valid_until": "2024-12-31T23:59:59Z",
+        "usage_limit_type": "per_user",
+        "total_usage_limit": 1,
+        "is_active": true,
+        "created_at": "2024-01-01T00:00:00Z"
+      },
+      {
+        "id": "coupon-3",
+        "business_id": "business-1",
+        "code": "TESTCODE",
+        "discount_type": "percentage",
+        "discount_value": 15,
+        "max_discount_cents": 1000,
+        "min_order_value_cents": 0,
+        "valid_until": "2030-12-31T23:59:59Z",
+        "usage_limit_type": "unlimited",
+        "total_usage_limit": null,
+        "is_active": true,
+        "created_at": "2024-06-01T00:00:00Z"
+      },
+      {
+        "id": "coupon-4",
+        "business_id": "business-1",
+        "code": "SAVE50",
+        "discount_type": "percentage",
+        "discount_value": 50,
+        "max_discount_cents": 2000,
+        "min_order_value_cents": 50000,
+        "valid_until": "2030-01-01T00:00:00Z",
+        "usage_limit_type": "unlimited",
+        "total_usage_limit": null,
+        "is_active": true,
+        "created_at": "2024-06-01T00:00:00Z"
+      },
+      {
+        "id": "coupon-5",
+        "business_id": "business-1",
+        "code": "EXPIRED",
+        "discount_type": "fixed",
+        "discount_value": 2000,
+        "max_discount_cents": null,
+        "min_order_value_cents": 0,
+        "valid_until": "2023-01-01T00:00:00Z",
+        "usage_limit_type": "unlimited",
+        "total_usage_limit": null,
+        "is_active": false,
+        "created_at": "2022-01-01T00:00:00Z"
+      }
+    ]
+  }
+}

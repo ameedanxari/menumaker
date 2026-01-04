@@ -2,60 +2,37 @@ package com.menumaker.data.remote.models
 
 import com.google.gson.annotations.SerializedName
 
-/**
- * Notification type enumeration
- */
-enum class NotificationType(val value: String) {
-    @SerializedName("order_update")
-    ORDER_UPDATE("order_update"),
-
-    @SerializedName("promotion")
-    PROMOTION("promotion"),
-
-    @SerializedName("review")
-    REVIEW("review"),
-
-    @SerializedName("system")
-    SYSTEM("system");
-
-    companion object {
-        fun fromString(value: String): NotificationType {
-            return values().find { it.value == value } ?: SYSTEM
-        }
-    }
-}
-
-/**
- * Data Transfer Object for Notification
- * Represents a user notification
- */
-data class NotificationDto(
-    @SerializedName("id") val id: String,
-    @SerializedName("user_id") val userId: String,
-    @SerializedName("type") val type: NotificationType,
-    @SerializedName("title") val title: String,
-    @SerializedName("message") val message: String,
-    @SerializedName("is_read") val isRead: Boolean,
-    @SerializedName("created_at") val createdAt: String,
-    @SerializedName("data") val data: Map<String, String>?
+data class DeviceRegistrationRequest(
+    @SerializedName("device_token") val deviceToken: String,
+    @SerializedName("platform") val platform: String,
+    @SerializedName("locale") val locale: String? = null,
+    @SerializedName("app_version") val appVersion: String? = null,
+    @SerializedName("device_model") val deviceModel: String? = null
 )
 
-/**
- * API Response for notification list
- */
+data class DeviceRegistrationResponse(
+    @SerializedName("success") val success: Boolean
+)
+
+// Notification List Response
 data class NotificationListResponse(
+    @SerializedName("success") val success: Boolean,
     @SerializedName("data") val data: NotificationListData
 )
 
 data class NotificationListData(
     @SerializedName("notifications") val notifications: List<NotificationDto>,
-    @SerializedName("unread_count") val unreadCount: Int
-)
+    @SerializedName("total") val total: Int,
+    @SerializedName("limit") val limit: Int,
+    @SerializedName("offset") val offset: Int
+) {
+    val unreadCount: Int
+        get() = notifications.count { !it.isRead }
+}
 
-/**
- * API Response for a single notification
- */
+// Single Notification Response
 data class NotificationResponse(
+    @SerializedName("success") val success: Boolean,
     @SerializedName("data") val data: NotificationData
 )
 
@@ -63,16 +40,40 @@ data class NotificationData(
     @SerializedName("notification") val notification: NotificationDto
 )
 
-/**
- * Request to mark notification as read
- */
-data class MarkNotificationReadRequest(
-    @SerializedName("notification_id") val notificationId: String
+data class NotificationDto(
+    @SerializedName("id") val id: String,
+    @SerializedName("user_id") val userId: String,
+    @SerializedName("type") val type: NotificationType,
+    @SerializedName("title") val title: String,
+    @SerializedName("message") val message: String,
+    @SerializedName("data") val data: Map<String, Any>?,
+    @SerializedName("is_read") val isRead: Boolean,
+    @SerializedName("created_at") val createdAt: String
 )
 
-/**
- * Request to mark all notifications as read
- */
-data class MarkAllNotificationsReadRequest(
-    @SerializedName("user_id") val userId: String
-)
+enum class NotificationType {
+    @SerializedName("order_placed")
+    ORDER_PLACED,
+    @SerializedName("order_confirmed")
+    ORDER_CONFIRMED,
+    @SerializedName("order_ready")
+    ORDER_READY,
+    @SerializedName("order_delivered")
+    ORDER_DELIVERED,
+    @SerializedName("order_cancelled")
+    ORDER_CANCELLED,
+    @SerializedName("order_update")
+    ORDER_UPDATE,
+    @SerializedName("payment_received")
+    PAYMENT_RECEIVED,
+    @SerializedName("payout_completed")
+    PAYOUT_COMPLETED,
+    @SerializedName("review_received")
+    REVIEW_RECEIVED,
+    @SerializedName("review")
+    REVIEW,
+    @SerializedName("promotion")
+    PROMOTION,
+    @SerializedName("system")
+    SYSTEM
+}

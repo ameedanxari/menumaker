@@ -1,0 +1,21 @@
+{
+  "success": true,
+  "data": {
+    "referrals": [
+      {
+        "id": "referral-1",
+        "referred_user_name": "Alice",
+        "referred_at": "2024-02-01T10:00:00Z",
+        "status": "completed",
+        "reward_cents": 500
+      },
+      {
+        "id": "referral-2",
+        "referred_user_name": "Bob",
+        "referred_at": "2024-02-03T12:00:00Z",
+        "status": "pending",
+        "reward_cents": 0
+      }
+    ]
+  }
+}

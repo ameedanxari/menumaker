@@ -52,23 +52,28 @@ struct APIResponse<T: Decodable>: Decodable {
 class APIClient {
     static let shared = APIClient()
 
-    private let baseURL: String
     private let session: URLSession
     private let keychainManager = KeychainManager.shared
     private let isUITesting: Bool
+
+    // Lightweight helper for referral code validation mock responses
+    private struct ReferralValidationResponse: Decodable {
+        let success: Bool
+        let valid: Bool
+    }
 
     // Mock data storage for UI testing
     // Mock Data Storage
     static var mockCoupons: [Coupon] = [
         Coupon(
             id: "default1",
-            businessId: "business1",
-            code: "WELCOME10",
+            businessId: "business-1",
+            code: "TESTCODE",
             discountType: "percentage",
-            discountValue: 10,
-            maxDiscountCents: nil,
-            minOrderValueCents: 100,
-            validUntil: nil,
+            discountValue: 15,
+            maxDiscountCents: 1000,
+            minOrderValueCents: 0,
+            validUntil: "2030-12-31T23:59:59Z",
             usageLimitType: "unlimited",
             totalUsageLimit: nil,
             isActive: true,
@@ -76,13 +81,27 @@ class APIClient {
         ),
         Coupon(
             id: "default2",
-            businessId: "business1",
-            code: "FLAT50",
+            businessId: "business-1",
+            code: "SAVE10",
             discountType: "fixed",
-            discountValue: 5000,
-            maxDiscountCents: nil,
+            discountValue: 1000,
+            maxDiscountCents: 1000,
+            minOrderValueCents: 1000,
+            validUntil: "2030-12-31T23:59:59Z",
+            usageLimitType: "unlimited",
+            totalUsageLimit: nil,
+            isActive: true,
+            createdAt: ISO8601DateFormatter().string(from: Date())
+        ),
+        Coupon(
+            id: "default3",
+            businessId: "business-1",
+            code: "SAVE50",
+            discountType: "percentage",
+            discountValue: 50,
+            maxDiscountCents: 2000,
             minOrderValueCents: 50000,
-            validUntil: nil,
+            validUntil: "2030-12-31T23:59:59Z",
             usageLimitType: "unlimited",
             totalUsageLimit: nil,
             isActive: true,
@@ -94,8 +113,8 @@ class APIClient {
     var mockUserRole = "seller"
 
     private init() {
-        self.baseURL = AppConstants.API.baseURL
-        self.isUITesting = CommandLine.arguments.contains("UI-Testing")
+        let isRunningTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+        self.isUITesting = CommandLine.arguments.contains("UI-Testing") || isRunningTests
 
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = AppConstants.API.timeout
@@ -109,7 +128,50 @@ class APIClient {
     
     /// Reset mock data storage (used in UI tests)
     static func resetMockData() {
-        mockCoupons = []
+        mockCoupons = [
+            Coupon(
+                id: "default1",
+                businessId: "business-1",
+                code: "TESTCODE",
+                discountType: "percentage",
+                discountValue: 15,
+                maxDiscountCents: 1000,
+                minOrderValueCents: 0,
+                validUntil: "2030-12-31T23:59:59Z",
+                usageLimitType: "unlimited",
+                totalUsageLimit: nil,
+                isActive: true,
+                createdAt: ISO8601DateFormatter().string(from: Date())
+            ),
+            Coupon(
+                id: "default2",
+                businessId: "business-1",
+                code: "SAVE10",
+                discountType: "fixed",
+                discountValue: 1000,
+                maxDiscountCents: 1000,
+                minOrderValueCents: 1000,
+                validUntil: "2030-12-31T23:59:59Z",
+                usageLimitType: "unlimited",
+                totalUsageLimit: nil,
+                isActive: true,
+                createdAt: ISO8601DateFormatter().string(from: Date())
+            ),
+            Coupon(
+                id: "default3",
+                businessId: "business-1",
+                code: "SAVE50",
+                discountType: "percentage",
+                discountValue: 50,
+                maxDiscountCents: 2000,
+                minOrderValueCents: 50000,
+                validUntil: "2030-12-31T23:59:59Z",
+                usageLimitType: "unlimited",
+                totalUsageLimit: nil,
+                isActive: true,
+                createdAt: ISO8601DateFormatter().string(from: Date())
+            )
+        ]
     }
 
     // MARK: - Generic Request Methods
@@ -126,6 +188,7 @@ class APIClient {
             return try await mockResponse(endpoint: endpoint, method: method, body: body)
         }
 
+        let baseURL = AppConstants.API.baseURL
         guard let url = URL(string: baseURL + endpoint) else {
             throw APIError.invalidURL
         }
@@ -151,7 +214,9 @@ class APIClient {
 
         // Add body
         if let body = body {
-            request.httpBody = try JSONEncoder().encode(body)
+            let encoder = JSONEncoder()
+            encoder.keyEncodingStrategy = .convertToSnakeCase
+            request.httpBody = try encoder.encode(body)
         }
 
         // Perform request
@@ -471,6 +536,15 @@ class APIClient {
         case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.reviews) || endpoint.contains("/reviews"):
             return try await mockReviewResponse(endpoint: endpoint, method: method, body: body)
 
+        case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.payments):
+            return try await mockPaymentResponse(endpoint: endpoint, method: method, body: body)
+
+        case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.paymentProcessors):
+            return try await mockPaymentProcessorResponse(endpoint: endpoint, method: method, body: body)
+
+        case _ where endpoint.hasPrefix(AppConstants.API.Endpoints.referrals):
+            return try await mockReferralResponse(endpoint: endpoint, method: method, body: body)
+
         default:
             // For any other endpoint, return a generic success response
             throw APIError.serverError("Endpoint not mocked: \(endpoint)")
@@ -485,6 +559,127 @@ class APIClient {
 
         // Handle different coupon endpoints
         // Check if endpoint starts with coupons path (to handle query parameters)
+        // Handle coupon validation endpoint
+        if endpoint == AppConstants.API.Endpoints.validateCoupon {
+            if method == .post, let validateRequest = body as? ValidateCouponRequest {
+                let code = validateRequest.couponCode.uppercased()
+
+                if code == "INVALID" || code == "INVALIDCODE999" {
+                    throw APIError.serverError("Invalid coupon code")
+                }
+
+                if code == "EXPIRED" {
+                    throw APIError.serverError("This coupon has expired")
+                }
+
+                var coupon = APIClient.mockCoupons.first { $0.code.uppercased() == code }
+
+                if coupon == nil {
+                    switch code {
+                    case "SAVE50":
+                        coupon = Coupon(
+                            id: UUID().uuidString,
+                            businessId: validateRequest.businessId.isEmpty ? "business1" : validateRequest.businessId,
+                            code: code,
+                            discountType: "percentage",
+                            discountValue: 50,
+                            maxDiscountCents: 20000,
+                            minOrderValueCents: 100000,
+                            validUntil: ISO8601DateFormatter().string(from: Date().addingTimeInterval(86400 * 7)),
+                            usageLimitType: "unlimited",
+                            totalUsageLimit: nil,
+                            isActive: true,
+                            createdAt: ISO8601DateFormatter().string(from: Date())
+                        )
+                    case "TESTCODE":
+                        coupon = Coupon(
+                            id: UUID().uuidString,
+                            businessId: validateRequest.businessId.isEmpty ? "business1" : validateRequest.businessId,
+                            code: code,
+                            discountType: "percentage",
+                            discountValue: 15,
+                            maxDiscountCents: 10000,
+                            minOrderValueCents: 0,
+                            validUntil: ISO8601DateFormatter().string(from: Date().addingTimeInterval(86400 * 30)),
+                            usageLimitType: "unlimited",
+                            totalUsageLimit: nil,
+                            isActive: true,
+                            createdAt: ISO8601DateFormatter().string(from: Date())
+                        )
+                    default:
+                        coupon = Coupon(
+                            id: UUID().uuidString,
+                            businessId: validateRequest.businessId.isEmpty ? "business1" : validateRequest.businessId,
+                            code: code,
+                            discountType: "percentage",
+                            discountValue: 20,
+                            maxDiscountCents: 10000,
+                            minOrderValueCents: 0,
+                            validUntil: ISO8601DateFormatter().string(from: Date().addingTimeInterval(86400 * 30)),
+                            usageLimitType: "unlimited",
+                            totalUsageLimit: nil,
+                            isActive: true,
+                            createdAt: ISO8601DateFormatter().string(from: Date())
+                        )
+                    }
+                }
+
+                guard let coupon else {
+                    throw APIError.serverError("Invalid coupon code")
+                }
+
+                // Business check
+                if !validateRequest.businessId.isEmpty && coupon.businessId != validateRequest.businessId {
+                    throw APIError.serverError("This coupon is not valid for this business")
+                }
+
+                // Expiry/active checks
+                if coupon.isExpired {
+                    throw APIError.serverError("This coupon has expired")
+                }
+                if !coupon.isActive {
+                    throw APIError.serverError("This coupon is not currently active")
+                }
+
+                // Minimum order check
+                if validateRequest.orderSubtotalCents < coupon.minOrderValueCents {
+                    let required = Double(coupon.minOrderValueCents) / 100.0
+                    throw APIError.serverError(String(format: "Minimum order value of ₹%.2f required", required))
+                }
+
+                // Calculate discount
+                var discountCents: Int
+                switch coupon.discountTypeEnum {
+                case .percentage:
+                    discountCents = (validateRequest.orderSubtotalCents * coupon.discountValue) / 100
+                    if let maxCap = coupon.maxDiscountCents {
+                        discountCents = min(discountCents, maxCap)
+                    }
+                case .fixed:
+                    discountCents = coupon.discountValue
+                }
+
+                let response = ValidateCouponResponse(
+                    success: true,
+                    data: ValidatedCouponData(
+                        valid: true,
+                        discountAmountCents: discountCents,
+                        discountAmount: Double(discountCents) / 100.0,
+                        coupon: coupon
+                    )
+                )
+                return response as! T
+            }
+
+            throw APIError.serverError("Invalid coupon validation request")
+        }
+
+        // Handle notification device registration (no-op in UI tests)
+        if endpoint == AppConstants.API.Endpoints.notificationDevices {
+            let response = EmptyResponse(success: true)
+            return response as! T
+        }
+
         let couponsPath = AppConstants.API.Endpoints.coupons
         if endpoint == couponsPath || endpoint.hasPrefix(couponsPath + "?") {
             // GET /coupons - list coupons
@@ -507,7 +702,7 @@ class APIClient {
                                     discountType: "percentage",
                                     discountValue: 10,
                                     maxDiscountCents: nil,
-                                    minOrderValueCents: 100,
+                                    minOrderValueCents: 0,
                                     validUntil: nil,
                                     usageLimitType: "unlimited",
                                     totalUsageLimit: nil,
@@ -521,7 +716,7 @@ class APIClient {
                                     discountType: "fixed",
                                     discountValue: 5000,
                                     maxDiscountCents: nil,
-                                    minOrderValueCents: 50000,
+                                    minOrderValueCents: 0,
                                     validUntil: nil,
                                     usageLimitType: "unlimited",
                                     totalUsageLimit: nil,
@@ -535,7 +730,7 @@ class APIClient {
                                     discountType: "percentage",
                                     discountValue: 30,
                                     maxDiscountCents: 10000,
-                                    minOrderValueCents: 100000,
+                                    minOrderValueCents: 0,
                                     validUntil: nil,
                                     usageLimitType: "unlimited",
                                     totalUsageLimit: nil,
@@ -579,68 +774,6 @@ class APIClient {
         if endpoint.contains("/coupons/") && endpoint.count > AppConstants.API.Endpoints.coupons.count {
             let couponId = endpoint.replacingOccurrences(of: AppConstants.API.Endpoints.coupons + "/", with: "")
 
-            // Handle validate endpoint - /coupons/validate/:code?business_id=:id
-            if endpoint.contains("/validate/") {
-                // Extract code and business_id
-                let pathComponents = endpoint.components(separatedBy: "/validate/")
-                guard pathComponents.count > 1 else {
-                    throw APIError.serverError("Invalid validate endpoint")
-                }
-                
-                let codeAndQuery = pathComponents[1]
-                let code = codeAndQuery.components(separatedBy: "?").first ?? codeAndQuery
-                let businessId = codeAndQuery.contains("business_id=") ? 
-                    codeAndQuery.components(separatedBy: "business_id=").last?.components(separatedBy: "&").first : nil
-
-                // Check for explicitly invalid codes
-                if code == "INVALIDCODE999" || code == "INVALID" {
-                    throw APIError.serverError("Invalid coupon code")
-                }
-                
-                if code == "EXPIRED" {
-                    throw APIError.serverError("This coupon has expired")
-                }
-                
-                // Try to find coupon in mock storage first
-                if let foundCoupon = APIClient.mockCoupons.first(where: { $0.code.uppercased() == code.uppercased() }) {
-                    // Verify business_id matches if provided
-                    if let businessId = businessId, foundCoupon.businessId != businessId {
-                        throw APIError.serverError("This coupon is not valid for this business")
-                    }
-                    
-                    // Check if expired
-                    if foundCoupon.isExpired {
-                        throw APIError.serverError("This coupon has expired")
-                    }
-                    
-                    // Check if active
-                    if !foundCoupon.isActive {
-                        throw APIError.serverError("This coupon is not currently active")
-                    }
-                    
-                    let response = CouponResponse(success: true, data: CouponData(coupon: foundCoupon))
-                    return response as! T
-                }
-
-                // Return a generic mock valid coupon if code not found but valid format
-                let coupon = Coupon(
-                    id: "validated_\(code)",
-                    businessId: businessId ?? "business1",
-                    code: code,
-                    discountType: "percentage",
-                    discountValue: 20,
-                    maxDiscountCents: nil,
-                    minOrderValueCents: 50000,
-                    validUntil: nil,
-                    usageLimitType: "unlimited",
-                    totalUsageLimit: nil,
-                    isActive: true,
-                    createdAt: ISO8601DateFormatter().string(from: Date())
-                )
-                let response = CouponResponse(success: true, data: CouponData(coupon: coupon))
-                return response as! T
-            }
-
             // PATCH /coupons/:id - update coupon
             if method == .patch, let updateRequest = body as? UpdateCouponRequest {
                 // Find and update coupon in storage
@@ -672,7 +805,7 @@ class APIClient {
                     discountType: "percentage",
                     discountValue: 25,
                     maxDiscountCents: nil,
-                    minOrderValueCents: 50000,
+                    minOrderValueCents: 0,
                     validUntil: nil,
                     usageLimitType: "unlimited",
                     totalUsageLimit: nil,
@@ -705,7 +838,7 @@ class APIClient {
                     discountType: "percentage",
                     discountValue: 20,
                     maxDiscountCents: nil,
-                    minOrderValueCents: 50000,
+                    minOrderValueCents: 0,
                     validUntil: nil,
                     usageLimitType: "unlimited",
                     totalUsageLimit: nil,
@@ -1416,6 +1549,108 @@ class APIClient {
         throw APIError.serverError("Review endpoint not fully mocked: \(endpoint)")
     }
 
+    // MARK: - Payment Processor & Payments Mock Responses
+
+    private func mockPaymentProcessorResponse<T: Decodable>(endpoint: String, method: HTTPMethod, body: Encodable?) async throws -> T {
+        try await Task.sleep(nanoseconds: 150_000_000)
+
+        if endpoint.hasPrefix(AppConstants.API.Endpoints.paymentProcessors) && method == .get {
+            let processors = [
+                PaymentProcessor(id: "pp1", businessId: "business1", provider: "razorpay", isActive: true, accountId: "acc_razor_123", createdAt: ISO8601DateFormatter().string(from: Date().addingTimeInterval(-86400))),
+                PaymentProcessor(id: "pp2", businessId: "business1", provider: "stripe", isActive: false, accountId: "acc_stripe_456", createdAt: ISO8601DateFormatter().string(from: Date().addingTimeInterval(-86400 * 2)))
+            ]
+            let response = PaymentProcessorListResponse(success: true, data: PaymentProcessorListData(processors: processors))
+            return response as! T
+        }
+
+        if endpoint.contains("/connect") && method == .post {
+            let processor = PaymentProcessor(id: UUID().uuidString, businessId: "business1", provider: "razorpay", isActive: true, accountId: "acc_new", createdAt: ISO8601DateFormatter().string(from: Date()))
+            let response = PaymentProcessorResponse(success: true, data: PaymentProcessorData(processor: processor, authorizationUrl: "https://example.com/auth"))
+            return response as! T
+        }
+
+        if method == .delete {
+            let response = EmptyResponse(success: true)
+            return response as! T
+        }
+
+        throw APIError.serverError("Payment processor endpoint not mocked: \(endpoint)")
+    }
+
+    private func mockPaymentResponse<T: Decodable>(endpoint: String, method: HTTPMethod, body: Encodable?) async throws -> T {
+        try await Task.sleep(nanoseconds: 150_000_000)
+
+        if endpoint.contains("/payouts") && method == .get {
+            let payouts = [
+                Payout(id: "payout1", businessId: "business1", amountCents: 250000, status: "completed", scheduledFor: nil, processedAt: ISO8601DateFormatter().string(from: Date().addingTimeInterval(-86400)), createdAt: ISO8601DateFormatter().string(from: Date().addingTimeInterval(-86400 * 2))),
+                Payout(id: "payout2", businessId: "business1", amountCents: 125000, status: "pending", scheduledFor: ISO8601DateFormatter().string(from: Date().addingTimeInterval(86400 * 3)), processedAt: nil, createdAt: ISO8601DateFormatter().string(from: Date()))
+            ]
+            let schedule = PayoutSchedule(id: "schedule1", businessId: "business1", frequency: "weekly", minimumThresholdCents: 50000, autoPayoutEnabled: true)
+            let response = PayoutListResponse(success: true, data: PayoutListData(payouts: payouts, schedule: schedule))
+            return response as! T
+        }
+
+        if endpoint.contains("/payouts/schedule") && method == .post {
+            let schedule = PayoutSchedule(id: "schedule1", businessId: "business1", frequency: "weekly", minimumThresholdCents: 50000, autoPayoutEnabled: true)
+            let response = PayoutListResponse(success: true, data: PayoutListData(payouts: [], schedule: schedule))
+            return response as! T
+        }
+
+        let response = EmptyResponse(success: true)
+        return response as! T
+    }
+
+    // MARK: - Referral Mock Responses
+
+    private func mockReferralResponse<T: Decodable>(endpoint: String, method: HTTPMethod, body: Encodable?) async throws -> T {
+        try await Task.sleep(nanoseconds: 120_000_000)
+
+        if endpoint.contains("/stats") && method == .get {
+            let stats = ReferralStats(
+                totalReferrals: 12,
+                successfulReferrals: 8,
+                pendingReferrals: 3,
+                monthlyReferrals: 4,
+                totalEarningsCents: 42000,
+                availableCreditsCents: 15000,
+                pendingRewardsCents: 5000,
+                referralCode: "REF123",
+                leaderboardPosition: 5
+            )
+            let leaderboard = [
+                ReferralLeaderboard(rank: 1, userName: "Alice", referralCount: 25, earningsCents: 120000),
+                ReferralLeaderboard(rank: 2, userName: "Bob", referralCount: 18, earningsCents: 90000),
+                ReferralLeaderboard(rank: 5, userName: "You", referralCount: 12, earningsCents: 42000)
+            ]
+            let response = ReferralStatsResponse(success: true, data: ReferralStatsData(stats: stats, leaderboard: leaderboard))
+            return response as! T
+        }
+
+        if endpoint.contains("/history") && method == .get {
+            let now = Date()
+            let referrals = [
+                ReferralHistory(id: "ref1", referredUserName: "Charlie", referredAt: now.addingTimeInterval(-86400 * 2), status: .completed, rewardCents: 5000),
+                ReferralHistory(id: "ref2", referredUserName: "Dana", referredAt: now.addingTimeInterval(-86400 * 5), status: .pending, rewardCents: 3000),
+                ReferralHistory(id: "ref3", referredUserName: "Eve", referredAt: now.addingTimeInterval(-86400 * 10), status: .expired, rewardCents: 0)
+            ]
+            let response = ReferralHistoryResponse(success: true, data: ReferralHistoryData(referrals: referrals))
+            return response as! T
+        }
+
+        if endpoint.contains("/apply") && method == .post {
+            let response = ApplyReferralResponse(success: true, message: "Referral code applied")
+            return response as! T
+        }
+
+        if endpoint.contains("/code/") && method == .get {
+            let response = ReferralValidationResponse(success: true, valid: true)
+            return response as! T
+        }
+
+        let response = EmptyResponse(success: true)
+        return response as! T
+    }
+
     // MARK: - Upload Methods
 
     func uploadImage(
@@ -1425,6 +1660,7 @@ class APIClient {
         mimeType: String = "image/jpeg",
         additionalFields: [String: String]? = nil
     ) async throws -> Data {
+        let baseURL = AppConstants.API.baseURL
         guard let url = URL(string: baseURL + endpoint) else {
             throw APIError.invalidURL
         }

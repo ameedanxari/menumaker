@@ -1,0 +1,37 @@
+{
+  "configurations" : [
+    {
+      "id" : "7F719083-60AD-4FD9-B2BA-C1C998668527",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:MenuMaker.xcodeproj",
+      "identifier" : "E2804F872EC9DD6B00A24630",
+      "name" : "MenuMaker"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : false,
+      "target" : {
+        "containerPath" : "container:MenuMaker.xcodeproj",
+        "identifier" : "E2804F942EC9DD6D00A24630",
+        "name" : "MenuMakerTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:MenuMaker.xcodeproj",
+        "identifier" : "E2804F9E2EC9DD6D00A24630",
+        "name" : "MenuMakerUITests"
+      }
+    }
+  ],
+  "version" : 1
+}

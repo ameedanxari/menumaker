@@ -13,7 +13,7 @@ struct CustomerCouponPage {
     // MARK: - Elements
 
     var availableCouponsList: XCUIElementQuery {
-        app.scrollViews.otherElements.matching(identifier: "AvailableCoupon")
+        app.descendants(matching: .any).matching(identifier: "AvailableCoupon")
     }
 
     var firstAvailableCoupon: XCUIElement {
@@ -21,7 +21,9 @@ struct CustomerCouponPage {
     }
 
     var viewAllCouponsButton: XCUIElement {
-        app.buttons["view-all-coupons-button"]
+        let idMatch = app.buttons["view-all-coupons-button"]
+        if idMatch.exists { return idMatch }
+        return app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'view all coupon'")).firstMatch
     }
 
     var applyCouponButton: XCUIElement {
@@ -53,7 +55,11 @@ struct CustomerCouponPage {
     }
 
     var searchCouponField: XCUIElement {
-        app.searchFields.firstMatch
+        let searchField = app.searchFields.matching(identifier: "search-coupon-field").firstMatch
+        if searchField.exists {
+            return searchField
+        }
+        return app.textFields.matching(identifier: "search-coupon-field").firstMatch
     }
 
     var filterButtons: XCUIElementQuery {
@@ -77,14 +83,19 @@ struct CustomerCouponPage {
 
     @discardableResult
     func tapViewAllCoupons() -> CustomerCouponPage {
-        viewAllCouponsButton.tap()
+        dismissKeyboardIfPresent()
+        if !viewAllCouponsButton.exists {
+            scrollToCoupons()
+        }
+        viewAllCouponsButton.forceTap()
         sleep(1)
         return self
     }
 
     @discardableResult
     func tapFirstCoupon() -> CustomerCouponPage {
-        firstAvailableCoupon.tap()
+        firstAvailableCoupon.scrollToElement()
+        firstAvailableCoupon.forceTap()
         sleep(1)
         return self
     }
@@ -159,8 +170,43 @@ struct CustomerCouponPage {
         let scrollView = app.scrollViews.firstMatch
         if scrollView.exists {
             scrollView.swipeUp()
+            scrollView.swipeUp()
         }
         return self
+    }
+
+    @discardableResult
+    func ensureViewAllVisible(timeout: TimeInterval = 5) -> Bool {
+        dismissKeyboardIfPresent()
+        if firstAvailableCoupon.exists {
+            return true
+        }
+        if viewAllCouponsButton.waitForExistence(timeout: timeout) {
+            return true
+        }
+        // Try multiple scrolls to surface the coupon section
+        for _ in 0..<3 {
+            scrollToCoupons()
+            if viewAllCouponsButton.waitForExistence(timeout: 2) {
+                return true
+            }
+        }
+        return false
+    }
+
+    func dismissKeyboardIfPresent() {
+        guard app.keyboards.count > 0 else { return }
+        let done = app.keyboards.buttons["Done"]
+        if done.exists {
+            done.tap()
+            return
+        }
+        let returnKey = app.keyboards.buttons["Return"]
+        if returnKey.exists {
+            returnKey.tap()
+            return
+        }
+        app.tap() // fallback tap outside
     }
 
     // MARK: - Assertions

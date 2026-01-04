@@ -31,6 +31,15 @@ data class AuthData(
     @SerializedName("user") val user: UserDto
 )
 
+data class MeResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: MeData
+)
+
+data class MeData(
+    @SerializedName("user") val user: UserDto
+)
+
 data class UserDto(
     @SerializedName("id") val id: String,
     @SerializedName("email") val email: String,

@@ -68,31 +68,38 @@ class CartViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
 
+        guard let currentCart = cart, !currentCart.items.isEmpty else {
+            errorMessage = "Add items to cart before applying a coupon"
+            isLoading = false
+            return
+        }
+
         do {
-            let coupon = try await couponRepository.validateCoupon(code)
+            let normalizedCode = code.uppercased()
+            let validation = try await couponRepository.validateCoupon(
+                code: normalizedCode,
+                businessId: currentCart.businessId,
+                orderSubtotalCents: currentCart.totalCents,
+                dishIds: currentCart.items.map { $0.dishId }
+            )
 
-            guard coupon.isActive && !coupon.isExpired else {
-                errorMessage = "Coupon is not valid or has expired"
-                isLoading = false
-                return
-            }
+            // Update discount and applied coupon from validated response
+            discount = validation.discountAmount
+            appliedCoupon = validation.coupon
 
-            let subtotal = getSubtotal()
-            discount = couponRepository.calculateDiscount(coupon: coupon, orderValue: subtotal)
+            analyticsService.track(.couponRedeemed, parameters: [
+                "coupon_code": normalizedCode,
+                "discount": validation.discountAmount
+            ])
 
-            if discount > 0 {
-                appliedCoupon = coupon
-
-                analyticsService.track(.couponRedeemed, parameters: [
-                    "coupon_code": code,
-                    "discount": discount
-                ])
-            } else {
-                errorMessage = "Coupon cannot be applied to this order"
-            }
-
+        } catch let apiError as APIError {
+            appliedCoupon = nil
+            discount = 0.0
+            errorMessage = apiError.localizedDescription
         } catch {
-            errorMessage = "Invalid coupon code"
+            appliedCoupon = nil
+            discount = 0.0
+            errorMessage = error.localizedDescription
         }
 
         isLoading = false
@@ -101,6 +108,7 @@ class CartViewModel: ObservableObject {
     func removeCoupon() {
         appliedCoupon = nil
         discount = 0.0
+        errorMessage = nil
     }
 
     // MARK: - Checkout

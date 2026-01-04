@@ -368,4 +368,278 @@ class AuthViewModelTest {
         // Then - Signup should complete successfully
         assertTrue(viewModel.signupState.value is Resource.Success)
     }
+
+    // MARK: - Enhanced Edge Cases for Requirements 2.1, 2.2, 2.3, 5.3
+
+    @Test
+    fun `login with malformed email format does not succeed`() = runTest {
+        // Given - malformed email
+        val email = "invalid-email"
+        val password = "password123"
+        val errorFlow = flow {
+            emit(Resource.Error("Invalid email format"))
+        }
+
+        `when`(authRepository.login(email, password)).thenReturn(errorFlow)
+
+        // When
+        viewModel.login(email, password)
+
+        // Then
+        val loginState = viewModel.loginState.value
+        assertTrue(loginState is Resource.Error)
+        assertFalse(viewModel.isAuthenticated.value)
+    }
+
+    @Test
+    fun `login with empty password does not succeed`() = runTest {
+        // Given
+        val email = "test@example.com"
+        val password = ""
+        val errorFlow = flow {
+            emit(Resource.Error("Password cannot be empty"))
+        }
+
+        `when`(authRepository.login(email, password)).thenReturn(errorFlow)
+
+        // When
+        viewModel.login(email, password)
+
+        // Then
+        val loginState = viewModel.loginState.value
+        assertTrue(loginState is Resource.Error)
+        assertFalse(viewModel.isAuthenticated.value)
+    }
+
+    @Test
+    fun `signup with password too short emits error`() = runTest {
+        // Given - password less than minimum length
+        val email = "test@example.com"
+        val password = "12345" // Less than 6 characters
+        val name = "Test User"
+        val errorFlow = flow {
+            emit(Resource.Error("Password must be at least 6 characters"))
+        }
+
+        `when`(authRepository.signup(email, password, name)).thenReturn(errorFlow)
+
+        // When
+        viewModel.signup(email, password, name)
+
+        // Then
+        val signupState = viewModel.signupState.value
+        assertTrue(signupState is Resource.Error)
+        assertEquals("Password must be at least 6 characters", (signupState as Resource.Error).message)
+        assertFalse(viewModel.isAuthenticated.value)
+    }
+
+    @Test
+    fun `signup with empty name emits error`() = runTest {
+        // Given
+        val email = "test@example.com"
+        val password = "password123"
+        val name = ""
+        val errorFlow = flow {
+            emit(Resource.Error("Name cannot be empty"))
+        }
+
+        `when`(authRepository.signup(email, password, name)).thenReturn(errorFlow)
+
+        // When
+        viewModel.signup(email, password, name)
+
+        // Then
+        val signupState = viewModel.signupState.value
+        assertTrue(signupState is Resource.Error)
+        assertFalse(viewModel.isAuthenticated.value)
+    }
+
+    @Test
+    fun `successful login stores user data correctly`() = runTest {
+        // Given
+        val email = "test@example.com"
+        val password = "password123"
+        val successFlow = flow {
+            emit(Resource.Loading)
+            emit(Resource.Success(mockAuthData))
+        }
+
+        `when`(authRepository.login(email, password)).thenReturn(successFlow)
+
+        // When
+        viewModel.login(email, password)
+
+        // Then - Verify user data is stored
+        assertTrue(viewModel.isAuthenticated.value)
+        assertNotNull(viewModel.currentUser.value)
+        assertEquals(mockUser.email, viewModel.currentUser.value?.email)
+        assertEquals(mockUser.name, viewModel.currentUser.value?.name)
+    }
+
+    @Test
+    fun `successful signup stores user data correctly`() = runTest {
+        // Given
+        val email = "newuser@example.com"
+        val password = "SecurePass123!"
+        val name = "New User"
+        val successFlow = flow {
+            emit(Resource.Loading)
+            emit(Resource.Success(mockAuthData))
+        }
+
+        `when`(authRepository.signup(email, password, name)).thenReturn(successFlow)
+
+        // When
+        viewModel.signup(email, password, name)
+
+        // Then - Verify user data is stored
+        assertTrue(viewModel.isAuthenticated.value)
+        assertNotNull(viewModel.currentUser.value)
+    }
+
+    @Test
+    fun `logout clears user data completely`() = runTest {
+        // Given - User is logged in
+        val successFlow = flow {
+            emit(Resource.Success(mockAuthData))
+        }
+        `when`(authRepository.login("test@example.com", "password123")).thenReturn(successFlow)
+        viewModel.login("test@example.com", "password123")
+
+        // Verify user is authenticated and has data
+        assertTrue(viewModel.isAuthenticated.value)
+        assertNotNull(viewModel.currentUser.value)
+
+        // Mock logout flow
+        val logoutFlow = flow {
+            emit(Resource.Success(Unit))
+        }
+        `when`(authRepository.logout()).thenReturn(logoutFlow)
+
+        // When
+        viewModel.logout()
+
+        // Then - All user data should be cleared
+        assertFalse(viewModel.isAuthenticated.value)
+        assertEquals(null, viewModel.currentUser.value)
+        assertEquals(null, viewModel.loginState.value)
+        assertEquals(null, viewModel.signupState.value)
+    }
+
+    @Test
+    fun `password reset with valid email emits success`() = runTest {
+        // Given
+        val email = "test@example.com"
+        val successFlow = flow {
+            emit(Resource.Loading)
+            emit(Resource.Success(Unit))
+        }
+
+        `when`(authRepository.sendPasswordReset(email)).thenReturn(successFlow)
+
+        // When
+        viewModel.sendPasswordReset(email)
+
+        // Then
+        val resetState = viewModel.passwordResetState.value
+        assertTrue(resetState is Resource.Success)
+    }
+
+    @Test
+    fun `password reset with invalid email emits error`() = runTest {
+        // Given
+        val email = "invalid-email"
+        val errorFlow = flow {
+            emit(Resource.Error("Invalid email format"))
+        }
+
+        `when`(authRepository.sendPasswordReset(email)).thenReturn(errorFlow)
+
+        // When
+        viewModel.sendPasswordReset(email)
+
+        // Then
+        val resetState = viewModel.passwordResetState.value
+        assertTrue(resetState is Resource.Error)
+    }
+
+    @Test
+    fun `clearPasswordResetState resets state to null`() = runTest {
+        // Given - Set a password reset state
+        val successFlow = flow {
+            emit(Resource.Success(Unit))
+        }
+        `when`(authRepository.sendPasswordReset("test@example.com")).thenReturn(successFlow)
+        viewModel.sendPasswordReset("test@example.com")
+        assertNotNull(viewModel.passwordResetState.value)
+
+        // When
+        viewModel.clearPasswordResetState()
+
+        // Then
+        assertEquals(null, viewModel.passwordResetState.value)
+    }
+
+    @Test
+    fun `login error does not affect previous successful user data`() = runTest {
+        // Given - First login succeeds
+        val successFlow = flow {
+            emit(Resource.Success(mockAuthData))
+        }
+        `when`(authRepository.login("test@example.com", "correct")).thenReturn(successFlow)
+        viewModel.login("test@example.com", "correct")
+        
+        assertTrue(viewModel.isAuthenticated.value)
+        val originalUser = viewModel.currentUser.value
+
+        // When - Second login fails (simulating re-login attempt)
+        val errorFlow = flow {
+            emit(Resource.Error("Invalid credentials"))
+        }
+        `when`(authRepository.login("test@example.com", "wrong")).thenReturn(errorFlow)
+        viewModel.login("test@example.com", "wrong")
+
+        // Then - Error state is set but user remains authenticated from first login
+        assertTrue(viewModel.loginState.value is Resource.Error)
+        // Note: In current implementation, failed login doesn't clear existing auth
+        // This tests the actual behavior
+    }
+
+    @Test
+    fun `signup with whitespace-only name emits error`() = runTest {
+        // Given
+        val email = "test@example.com"
+        val password = "password123"
+        val name = "   " // Whitespace only
+        val errorFlow = flow {
+            emit(Resource.Error("Name cannot be empty"))
+        }
+
+        `when`(authRepository.signup(email, password, name)).thenReturn(errorFlow)
+
+        // When
+        viewModel.signup(email, password, name)
+
+        // Then
+        val signupState = viewModel.signupState.value
+        assertTrue(signupState is Resource.Error)
+    }
+
+    @Test
+    fun `login with email containing leading and trailing spaces`() = runTest {
+        // Given - email with spaces (should be trimmed by repository)
+        val email = "  test@example.com  "
+        val password = "password123"
+        val successFlow = flow {
+            emit(Resource.Success(mockAuthData))
+        }
+
+        `when`(authRepository.login(email, password)).thenReturn(successFlow)
+
+        // When
+        viewModel.login(email, password)
+
+        // Then - Should succeed if repository handles trimming
+        assertTrue(viewModel.loginState.value is Resource.Success)
+    }
 }

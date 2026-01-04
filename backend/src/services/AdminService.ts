@@ -6,6 +6,7 @@ import { Menu } from '../models/Menu.js';
 import { AdminUser } from '../models/AdminUser.js';
 import { AuditLog } from '../models/AuditLog.js';
 import bcrypt from 'bcrypt';
+import { EmailService } from './EmailService.js';
 
 /**
  * AdminService - User Management & Administrative Operations
@@ -186,8 +187,11 @@ export class AdminService {
       ip_address,
     });
 
-    // TODO: Send email notification to user
-    // await EmailService.sendSuspensionNotification(user.email, reason, suspended_until);
+    await EmailService.sendAdminNotification(
+      user.email,
+      'Your MenuMaker account has been suspended',
+      `Reason: ${reason}. ${duration_days >= 999999 ? 'This is a permanent suspension.' : `Suspended until ${suspended_until.toISOString()}.`}`
+    );
 
     return { success: true, suspended_until };
   }
@@ -231,7 +235,11 @@ export class AdminService {
     });
 
     // TODO: Send email notification to user
-    // await EmailService.sendUnsuspensionNotification(user.email);
+    await EmailService.sendAdminNotification(
+      user.email,
+      'Your MenuMaker account is reinstated',
+      'Your account suspension has been lifted. You can sign in again.'
+    );
 
     return { success: true };
   }
@@ -278,8 +286,11 @@ export class AdminService {
       ip_address,
     });
 
-    // TODO: Send email notification to user
-    // await EmailService.sendBanNotification(user.email, reason);
+    await EmailService.sendAdminNotification(
+      user.email,
+      'Your MenuMaker account has been banned',
+      `Reason: ${reason}. This action is permanent unless reviewed by support.`
+    );
 
     return { success: true };
   }
@@ -320,8 +331,11 @@ export class AdminService {
       ip_address,
     });
 
-    // TODO: Send email notification to user
-    // await EmailService.sendPasswordResetNotification(user.email);
+    await EmailService.sendAdminNotification(
+      user.email,
+      'Your password has been reset by an administrator',
+      'If you did not request this, please contact support immediately.'
+    );
 
     return { success: true };
   }

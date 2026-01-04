@@ -4,6 +4,7 @@ import android.content.Context
 import com.menumaker.BuildConfig
 import com.menumaker.data.local.datastore.TokenDataStore
 import com.menumaker.data.remote.api.ApiService
+import com.menumaker.data.remote.api.ApiConfig
 import com.menumaker.utils.Constants
 import dagger.Module
 import dagger.Provides
@@ -76,8 +77,10 @@ object NetworkModule {
     fun provideRetrofit(
         okHttpClient: OkHttpClient
     ): Retrofit {
+        // Use runtime override if provided, otherwise fall back to build-time default.
+        val baseUrl = ApiConfig.baseUrl.value
         return Retrofit.Builder()
-            .baseUrl(Constants.BASE_URL as String)
+            .baseUrl(baseUrl)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

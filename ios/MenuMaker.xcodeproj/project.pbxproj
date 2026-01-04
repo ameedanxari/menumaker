@@ -24,6 +24,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		E25246A22F00D30300FC6183 /* MenuMaker.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = MenuMaker.xctestplan; sourceTree = "<group>"; };
 		E2804F882EC9DD6B00A24630 /* MenuMaker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MenuMaker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2804F952EC9DD6D00A24630 /* MenuMakerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MenuMakerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2804F9F2EC9DD6D00A24630 /* MenuMakerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MenuMakerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -88,6 +89,7 @@
 		E2804F7F2EC9DD6B00A24630 = {
 			isa = PBXGroup;
 			children = (
+				E25246A22F00D30300FC6183 /* MenuMaker.xctestplan */,
 				E2804F8A2EC9DD6B00A24630 /* MenuMaker */,
 				E2804F982EC9DD6D00A24630 /* MenuMakerTests */,
 				E2804FA22EC9DD6D00A24630 /* MenuMakerUITests */,

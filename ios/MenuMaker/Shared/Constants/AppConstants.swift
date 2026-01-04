@@ -4,7 +4,13 @@ import SwiftUI
 enum AppConstants {
     // MARK: - API Configuration
     enum API {
-        static let baseURL = ProcessInfo.processInfo.environment["API_BASE_URL"] ?? "http://localhost:3001/api/v1"
+        static var baseURL: String {
+            if let override = UserDefaults.standard.string(forKey: UserDefaultsKeys.apiBaseUrlOverride),
+               !override.trimmingCharacters(in: .whitespaces).isEmpty {
+                return override
+            }
+            return ProcessInfo.processInfo.environment["API_BASE_URL"] ?? "http://localhost:3001/api/v1"
+        }
         static let timeout: TimeInterval = 30
 
         // Endpoints
@@ -47,7 +53,7 @@ enum AppConstants {
             // Coupons
             static let coupons = "/coupons"
             static func coupon(_ id: String) -> String { "/coupons/\(id)" }
-            static func validateCoupon(_ code: String) -> String { "/coupons/validate/\(code)" }
+            static let validateCoupon = "/coupons/validate"
 
             // Marketplace
             static let marketplace = "/marketplace"
@@ -63,6 +69,7 @@ enum AppConstants {
 
             // Notifications
             static let notifications = "/notifications"
+            static let notificationDevices = "/notifications/devices"
 
             // Favorites
             static let favorites = "/favorites"
@@ -101,6 +108,7 @@ enum AppConstants {
         static let notificationsEnabled = "notificationsEnabled"
         static let biometricAuthEnabled = "biometricAuthEnabled"
         static let colorScheme = "colorScheme"
+        static let apiBaseUrlOverride = "apiBaseUrlOverride"
     }
 
     // MARK: - Validation

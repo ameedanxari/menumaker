@@ -6,7 +6,8 @@ export default {
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
-    '!src/main.ts'
+    '!src/main.ts',
+    '!src/models/**' // entity definitions are declarative and not meaningful for coverage
   ],
   coverageThreshold: {
     global: {

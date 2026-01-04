@@ -21,4 +21,16 @@ extension XCUIElement {
             attempts += 1
         }
     }
+
+    /// Taps the element even when it is offscreen or not hittable by falling back to coordinate tapping.
+    func forceTap(timeout: TimeInterval = 2) {
+        if waitForExistence(timeout: timeout) {
+            if isHittable {
+                tap()
+            } else {
+                let center = coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+                center.tap()
+            }
+        }
+    }
 }

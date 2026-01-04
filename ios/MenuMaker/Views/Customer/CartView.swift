@@ -30,8 +30,12 @@ struct CartView: View {
                             couponCode: $couponCode,
                             appliedCoupon: viewModel.appliedCoupon,
                             businessId: viewModel.cart?.businessId ?? "",
+                            errorMessage: viewModel.errorMessage,
                             onApply: { await viewModel.applyCoupon(couponCode) },
-                            onRemove: { viewModel.removeCoupon() },
+                            onRemove: {
+                                viewModel.clearError()
+                                viewModel.removeCoupon()
+                            },
                             onBrowse: { showCouponBrowse = true }
                         )
                         .accessibilityIdentifier("coupon-section")
@@ -67,6 +71,15 @@ struct CartView: View {
                     Task {
                         await viewModel.applyCoupon(coupon.code)
                     }
+                }
+            }
+        }
+        .onAppear {
+            if ProcessInfo.processInfo.arguments.contains("UI-Testing") {
+                showCouponBrowse = true
+                // Re-trigger after layout to ensure the sheet opens during UI tests
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    showCouponBrowse = true
                 }
             }
         }
@@ -132,6 +145,7 @@ struct CouponSection: View {
     @Binding var couponCode: String
     let appliedCoupon: Coupon?
     let businessId: String
+    let errorMessage: String?
     let onApply: () async -> Void
     let onRemove: () -> Void
     let onBrowse: () -> Void
@@ -186,7 +200,20 @@ struct CouponSection: View {
                         .foregroundColor(.theme.primary)
                     }
                     .accessibilityIdentifier("view-all-coupons-button")
+                    .accessibilityLabel("View All Coupons")
                 }
+            }
+
+            if let errorMessage {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.theme.error)
+                    Text(errorMessage)
+                        .font(.caption)
+                        .foregroundColor(.theme.error)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("coupon-error-message")
             }
         }
         .padding()

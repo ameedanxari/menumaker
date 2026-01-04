@@ -1,0 +1,6 @@
+{
+  "success": false,
+  "status": 404,
+  "code": "MENU_NOT_FOUND",
+  "message": "Menu not found."
+}

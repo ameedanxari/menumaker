@@ -121,8 +121,7 @@ class NotificationViewModel @Inject constructor(
                         if (currentState is Resource.Success) {
                             _notificationsState.value = Resource.Success(
                                 currentState.data.copy(
-                                    notifications = _notifications.value,
-                                    unreadCount = _unreadCount.value
+                                    notifications = _notifications.value
                                 )
                             )
                         }
@@ -158,8 +157,7 @@ class NotificationViewModel @Inject constructor(
                         if (currentState is Resource.Success) {
                             _notificationsState.value = Resource.Success(
                                 currentState.data.copy(
-                                    notifications = _notifications.value,
-                                    unreadCount = 0
+                                    notifications = _notifications.value
                                 )
                             )
                         }

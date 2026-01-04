@@ -1,0 +1,6 @@
+{
+  "success": false,
+  "status": 500,
+  "code": "SERVER_ERROR",
+  "message": "An unexpected error occurred."
+}

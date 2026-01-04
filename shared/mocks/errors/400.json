@@ -1,0 +1,6 @@
+{
+  "success": false,
+  "status": 400,
+  "code": "BAD_REQUEST",
+  "message": "The request could not be processed."
+}

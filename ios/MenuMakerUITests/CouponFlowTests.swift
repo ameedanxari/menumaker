@@ -19,6 +19,12 @@ final class CouponFlowTests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
+        if let app {
+            let attachment = XCTAttachment(screenshot: app.screenshot())
+            attachment.name = "Screenshot-\(name)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
         app = nil
     }
 
@@ -256,7 +262,9 @@ final class CouponFlowTests: XCTestCase {
 
         let customerCouponPage = CustomerCouponPage(app: app)
 
-        guard customerCouponPage.viewAllCouponsButton.waitForExistence(timeout: 10) ||
+        customerCouponPage.dismissKeyboardIfPresent()
+
+        guard customerCouponPage.ensureViewAllVisible(timeout: 10) ||
               customerCouponPage.firstAvailableCoupon.waitForExistence(timeout: 10) else {
             XCTFail("FEATURE NOT IMPLEMENTED: Coupon browsing UI missing - 'viewAllCouponsButton' or 'firstAvailableCoupon' not found in checkout/cart view")
             return
@@ -281,11 +289,14 @@ final class CouponFlowTests: XCTestCase {
             return
         }
 
-        cartPage
-            .applyCoupon("TESTCODE")
+        cartPage.applyCoupon("TESTCODE")
 
-        sleep(2)
-        // Coupon should be applied or show error
+        let customerCouponPage = CustomerCouponPage(app: app)
+        if customerCouponPage.couponErrorMessage.waitForExistence(timeout: 5) {
+            customerCouponPage.assertCouponError()
+        } else {
+            customerCouponPage.assertCouponApplied()
+        }
     }
 
     @MainActor
@@ -295,14 +306,17 @@ final class CouponFlowTests: XCTestCase {
 
         let customerCouponPage = CustomerCouponPage(app: app)
 
+        customerCouponPage.dismissKeyboardIfPresent()
+        if customerCouponPage.ensureViewAllVisible(timeout: 5) {
+            customerCouponPage.tapViewAllCoupons()
+        }
+
         guard customerCouponPage.firstAvailableCoupon.waitForExistence(timeout: 10) else {
-            XCTFail("TEST DATA ISSUE: No coupons available - create test coupons in setUp or verify mock data")
+            XCTFail("TEST DATA ISSUE: No coupons available - shared fixtures should seed at least one coupon")
             return
         }
 
-        customerCouponPage
-            .applyFirstAvailableCoupon()
-            .assertCouponApplied()
+        customerCouponPage.applyFirstAvailableCoupon().assertCouponApplied()
     }
 
     @MainActor
@@ -312,8 +326,13 @@ final class CouponFlowTests: XCTestCase {
 
         let customerCouponPage = CustomerCouponPage(app: app)
 
+        customerCouponPage.dismissKeyboardIfPresent()
+        if customerCouponPage.ensureViewAllVisible(timeout: 5) {
+            customerCouponPage.tapViewAllCoupons()
+        }
+
         guard customerCouponPage.firstAvailableCoupon.waitForExistence(timeout: 10) else {
-            XCTFail("TEST DATA ISSUE: No coupons available - create test coupons in setUp or verify mock data")
+            XCTFail("TEST DATA ISSUE: No coupons available - shared fixtures should seed at least one coupon")
             return
         }
 
@@ -391,7 +410,9 @@ final class CouponFlowTests: XCTestCase {
 
         let customerCouponPage = CustomerCouponPage(app: app)
 
-        guard customerCouponPage.viewAllCouponsButton.waitForExistence(timeout: 10) else {
+        customerCouponPage.dismissKeyboardIfPresent()
+
+        guard customerCouponPage.ensureViewAllVisible(timeout: 10) else {
             XCTFail("FEATURE NOT IMPLEMENTED: Coupon browsing UI missing - 'viewAllCouponsButton' not found")
             return
         }
@@ -405,8 +426,8 @@ final class CouponFlowTests: XCTestCase {
         }
 
         customerCouponPage.searchCoupon("SAVE")
-
-        sleep(1)
+        XCTAssertTrue(customerCouponPage.firstAvailableCoupon.waitForExistence(timeout: 5),
+                      "Search should return at least one coupon")
     }
 
     @MainActor
@@ -416,7 +437,9 @@ final class CouponFlowTests: XCTestCase {
 
         let customerCouponPage = CustomerCouponPage(app: app)
 
-        guard customerCouponPage.viewAllCouponsButton.waitForExistence(timeout: 10) else {
+        customerCouponPage.dismissKeyboardIfPresent()
+
+        guard customerCouponPage.ensureViewAllVisible(timeout: 10) else {
             XCTFail("FEATURE NOT IMPLEMENTED: Coupon browsing UI missing - 'viewAllCouponsButton' not found")
             return
         }
@@ -431,8 +454,8 @@ final class CouponFlowTests: XCTestCase {
 
         customerCouponPage
             .filterCoupons(by: .active)
-
-        sleep(1)
+        XCTAssertTrue(customerCouponPage.firstAvailableCoupon.waitForExistence(timeout: 5),
+                      "Active filter should show active coupons")
     }
 
     @MainActor
@@ -457,10 +480,19 @@ final class CouponFlowTests: XCTestCase {
         // Get new total after discount
         let newTotalLabel = cartPage.totalPrice.label
 
+        func parseAmount(_ label: String) -> Double? {
+            let cleaned = label.replacingOccurrences(of: "₹", with: "").replacingOccurrences(of: ",", with: "").trimmingCharacters(in: .whitespaces)
+            return Double(cleaned)
+        }
+
         // If coupon was applied successfully, total should change
         if !CustomerCouponPage(app: app).couponErrorMessage.exists {
-            XCTAssertNotEqual(originalTotalLabel, newTotalLabel,
-                            "Total should change after applying valid coupon")
+            if let original = parseAmount(originalTotalLabel), let updated = parseAmount(newTotalLabel) {
+                XCTAssertLessThan(updated, original, "Total should decrease after applying valid coupon")
+            } else {
+                XCTAssertNotEqual(originalTotalLabel, newTotalLabel,
+                                  "Total should change after applying valid coupon")
+            }
         }
     }
 
@@ -471,7 +503,9 @@ final class CouponFlowTests: XCTestCase {
 
         let customerCouponPage = CustomerCouponPage(app: app)
 
-        guard customerCouponPage.viewAllCouponsButton.waitForExistence(timeout: 10) else {
+        customerCouponPage.dismissKeyboardIfPresent()
+
+        guard customerCouponPage.ensureViewAllVisible(timeout: 10) else {
             XCTFail("FEATURE NOT IMPLEMENTED: Coupon browsing UI missing - 'viewAllCouponsButton' not found")
             return
         }

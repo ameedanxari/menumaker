@@ -18,7 +18,7 @@ android {
         versionCode = 1
         versionName = "1.0.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.menumaker.HiltTestRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -53,6 +53,10 @@ android {
         }
         debug {
             isMinifyEnabled = false
+            buildConfigField("String", "API_BASE_URL_DEFAULT", "\"http://10.0.2.2:4000/api/v1/\"")
+        }
+        release {
+            buildConfigField("String", "API_BASE_URL_DEFAULT", "\"${System.getenv("API_BASE_URL") ?: "http://10.0.2.2:3001/api/v1/"}\"")
         }
     }
 
@@ -77,6 +81,17 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+
+    sourceSets {
+        getByName("test") {
+            resources.srcDir("../shared/mocks")
+            java.srcDir("src/sharedTest/kotlin")
+        }
+        getByName("androidTest") {
+            assets.srcDir("../shared/mocks")
+            java.srcDir("src/sharedTest/kotlin")
         }
     }
 }
@@ -165,6 +180,9 @@ dependencies {
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("androidx.arch.core:core-testing:2.2.0")
+    testImplementation("com.google.truth:truth:1.1.5")
+    testImplementation("io.kotest:kotest-property:5.8.0")
+    testImplementation("androidx.test:core:1.5.0")
 
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")

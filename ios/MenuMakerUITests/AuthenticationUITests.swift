@@ -215,9 +215,10 @@ final class AuthenticationUITests: XCTestCase {
         XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 5),
                      "Should navigate to home after login")
 
-        // Navigate to More tab
-        let moreTab = app.tabBars.buttons["More"]
-        XCTAssertTrue(moreTab.waitForExistence(timeout: 3), "More tab should exist")
+        // Navigate to More/Profile/settings tab (robust selector)
+        let tabBar = app.tabBars.firstMatch
+        let moreTab = tabBar.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'more' OR label CONTAINS[c] 'profile' OR label CONTAINS[c] 'settings'")).firstMatch
+        XCTAssertTrue(moreTab.waitForExistence(timeout: 5), "More/Profile tab should exist")
         moreTab.tap()
 
         // Use More page object

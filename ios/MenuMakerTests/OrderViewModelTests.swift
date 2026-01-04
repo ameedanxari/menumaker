@@ -40,18 +40,8 @@ struct OrderViewModelTests {
     @Test("Pending orders filter correctly")
     func testPendingOrders() async {
         let viewModel = OrderViewModel()
-        let pendingOrder = Order(
-            id: "order-1",
-            businessId: "business-1",
-            customerName: "John Doe",
-            customerPhone: nil,
-            customerEmail: nil,
-            items: [],
-            total: 25.00,
-            status: "pending",
-            createdAt: ISO8601DateFormatter().string(from: Date()),
-            updatedAt: ISO8601DateFormatter().string(from: Date())
-        )
+        let orders = loadOrdersFixture()
+        let pendingOrder = orders.first!
         
         viewModel.orders = [pendingOrder]
         
@@ -62,30 +52,9 @@ struct OrderViewModelTests {
     @Test("Active orders filter correctly")
     func testActiveOrders() async {
         let viewModel = OrderViewModel()
-        let confirmedOrder = Order(
-            id: "order-1",
-            businessId: "business-1",
-            customerName: "John Doe",
-            customerPhone: nil,
-            customerEmail: nil,
-            items: [],
-            total: 25.00,
-            status: "confirmed",
-            createdAt: ISO8601DateFormatter().string(from: Date()),
-            updatedAt: ISO8601DateFormatter().string(from: Date())
-        )
-        let preparingOrder = Order(
-            id: "order-2",
-            businessId: "business-1",
-            customerName: "Jane Doe",
-            customerPhone: nil,
-            customerEmail: nil,
-            items: [],
-            total: 30.00,
-            status: "preparing",
-            createdAt: ISO8601DateFormatter().string(from: Date()),
-            updatedAt: ISO8601DateFormatter().string(from: Date())
-        )
+        let orders = loadOrdersFixture()
+        let confirmedOrder = orders.first!.withStatus("confirmed")
+        let preparingOrder = orders.last!.withStatus("preparing")
         
         viewModel.orders = [confirmedOrder, preparingOrder]
         
@@ -95,18 +64,8 @@ struct OrderViewModelTests {
     @Test("Completed orders filter correctly")
     func testCompletedOrders() async {
         let viewModel = OrderViewModel()
-        let deliveredOrder = Order(
-            id: "order-1",
-            businessId: "business-1",
-            customerName: "John Doe",
-            customerPhone: nil,
-            customerEmail: nil,
-            items: [],
-            total: 25.00,
-            status: "delivered",
-            createdAt: ISO8601DateFormatter().string(from: Date()),
-            updatedAt: ISO8601DateFormatter().string(from: Date())
-        )
+        let deliveredOrder = loadOrdersFixture().first!
+            .withStatus("delivered")
         
         viewModel.orders = [deliveredOrder]
         
@@ -117,18 +76,8 @@ struct OrderViewModelTests {
     @Test("Cancelled orders filter correctly")
     func testCancelledOrders() async {
         let viewModel = OrderViewModel()
-        let cancelledOrder = Order(
-            id: "order-1",
-            businessId: "business-1",
-            customerName: "John Doe",
-            customerPhone: nil,
-            customerEmail: nil,
-            items: [],
-            total: 25.00,
-            status: "cancelled",
-            createdAt: ISO8601DateFormatter().string(from: Date()),
-            updatedAt: ISO8601DateFormatter().string(from: Date())
-        )
+        let cancelledOrder = loadOrdersFixture().first!
+            .withStatus("cancelled")
         
         viewModel.orders = [cancelledOrder]
         
@@ -141,30 +90,9 @@ struct OrderViewModelTests {
     @Test("Get orders count for status returns correct count")
     func testGetOrdersCount() async {
         let viewModel = OrderViewModel()
-        let pendingOrder1 = Order(
-            id: "order-1",
-            businessId: "business-1",
-            customerName: "John Doe",
-            customerPhone: nil,
-            customerEmail: nil,
-            items: [],
-            total: 25.00,
-            status: "pending",
-            createdAt: ISO8601DateFormatter().string(from: Date()),
-            updatedAt: ISO8601DateFormatter().string(from: Date())
-        )
-        let pendingOrder2 = Order(
-            id: "order-2",
-            businessId: "business-1",
-            customerName: "Jane Doe",
-            customerPhone: nil,
-            customerEmail: nil,
-            items: [],
-            total: 30.00,
-            status: "pending",
-            createdAt: ISO8601DateFormatter().string(from: Date()),
-            updatedAt: ISO8601DateFormatter().string(from: Date())
-        )
+        let orders = loadOrdersFixture()
+        let pendingOrder1 = orders.first!
+        let pendingOrder2 = orders.last!.copy(id: "order-2", totalCents: 3000, status: "pending")
         
         viewModel.orders = [pendingOrder1, pendingOrder2]
         
@@ -174,52 +102,21 @@ struct OrderViewModelTests {
     @Test("Total revenue is calculated correctly")
     func testTotalRevenue() async {
         let viewModel = OrderViewModel()
-        let order1 = Order(
-            id: "order-1",
-            businessId: "business-1",
-            customerName: "John Doe",
-            customerPhone: nil,
-            customerEmail: nil,
-            items: [],
-            total: 25.00,
-            status: "delivered",
-            createdAt: ISO8601DateFormatter().string(from: Date()),
-            updatedAt: ISO8601DateFormatter().string(from: Date())
-        )
-        let order2 = Order(
-            id: "order-2",
-            businessId: "business-1",
-            customerName: "Jane Doe",
-            customerPhone: nil,
-            customerEmail: nil,
-            items: [],
-            total: 30.00,
-            status: "delivered",
-            createdAt: ISO8601DateFormatter().string(from: Date()),
-            updatedAt: ISO8601DateFormatter().string(from: Date())
-        )
+        let orders = loadOrdersFixture()
+        let order1 = orders.first!.withStatus("delivered")
+        let order2 = orders.last!.copy(id: "order-2", totalCents: 3000, status: "delivered")
         
         viewModel.orders = [order1, order2]
         
-        let expectedRevenue = 25.00 + 30.00
+        let expectedRevenue = order1.total + order2.total
         #expect(abs(viewModel.getTotalRevenue() - expectedRevenue) < 0.01)
     }
     
     @Test("Today orders filter correctly")
     func testTodayOrders() async {
         let viewModel = OrderViewModel()
-        let todayOrder = Order(
-            id: "order-1",
-            businessId: "business-1",
-            customerName: "John Doe",
-            customerPhone: nil,
-            customerEmail: nil,
-            items: [],
-            total: 25.00,
-            status: "pending",
-            createdAt: ISO8601DateFormatter().string(from: Date()),
-            updatedAt: ISO8601DateFormatter().string(from: Date())
-        )
+        var todayOrder = loadOrdersFixture().first!
+        todayOrder = todayOrder.copy(createdAt: ISO8601DateFormatter().string(from: Date()))
         
         viewModel.orders = [todayOrder]
         
@@ -248,5 +145,55 @@ struct OrderViewModelTests {
         #expect(viewModel.searchQuery == "")
         #expect(viewModel.isLoading == false)
         #expect(viewModel.errorMessage == nil)
+    }
+}
+
+// MARK: - Helper
+
+private func loadOrdersFixture() -> [Order] {
+    try! TestFixtureLoader
+        .load(["orders", "200.json"], as: OrderListResponse.self)
+        .data.orders
+}
+
+private extension Order {
+    func withStatus(_ newStatus: String) -> Order {
+        copy(status: newStatus)
+    }
+
+    func copy(
+        id: String? = nil,
+        businessId: String? = nil,
+        customerName: String? = nil,
+        customerPhone: String?? = nil,
+        customerEmail: String?? = nil,
+        totalCents: Int? = nil,
+        status: String? = nil,
+        items: [OrderItem]? = nil,
+        createdAt: String? = nil,
+        updatedAt: String? = nil,
+        deliveryAddress: String?? = nil,
+        estimatedDeliveryTime: String?? = nil,
+        deliveryPersonName: String?? = nil,
+        deliveryPersonPhone: String?? = nil,
+        deliveryFeeCents: Int?? = nil
+    ) -> Order {
+        Order(
+            id: id ?? self.id,
+            businessId: businessId ?? self.businessId,
+            customerName: customerName ?? self.customerName,
+            customerPhone: customerPhone ?? self.customerPhone,
+            customerEmail: customerEmail ?? self.customerEmail,
+            totalCents: totalCents ?? self.totalCents,
+            status: status ?? self.status,
+            items: items ?? self.items,
+            createdAt: createdAt ?? self.createdAt,
+            updatedAt: updatedAt ?? self.updatedAt,
+            deliveryAddress: deliveryAddress ?? self.deliveryAddress,
+            estimatedDeliveryTime: estimatedDeliveryTime ?? self.estimatedDeliveryTime,
+            deliveryPersonName: deliveryPersonName ?? self.deliveryPersonName,
+            deliveryPersonPhone: deliveryPersonPhone ?? self.deliveryPersonPhone,
+            deliveryFeeCents: deliveryFeeCents ?? self.deliveryFeeCents
+        )
     }
 }

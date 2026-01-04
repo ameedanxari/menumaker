@@ -161,9 +161,19 @@ MenuMaker enables sellers to create discount coupons, seasonal promotions, and a
     "discount_amount_cents": 3000,
     "discount_amount": 30,
     "coupon": {
+      "id": "coupon-uuid",
+      "business_id": "business-uuid",
       "code": "FEST10",
       "name": "Festival Sale 10% Off",
-      "description": "Celebrate with 10% off on all orders!"
+      "description": "Celebrate with 10% off on all orders!",
+      "discount_type": "percentage",
+      "discount_value": 10,
+      "max_discount_cents": 10000,
+      "min_order_value_cents": 20000,
+      "valid_until": "2025-10-31T23:59:59Z",
+      "usage_limit_type": "per_customer",
+      "total_usage_limit": null,
+      "is_active": true
     }
   },
   "message": "Coupon is valid"

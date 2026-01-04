@@ -8,11 +8,28 @@ import { Business } from '../src/models/Business';
 import { BusinessSettings } from '../src/models/BusinessSettings';
 import { Dish } from '../src/models/Dish';
 import { Menu } from '../src/models/Menu';
+import { SharedFixtures } from './utils/sharedFixtures';
 
 // Mock dependencies
 jest.mock('../src/config/database');
 
 describe('OrderService', () => {
+  const sharedDishes = SharedFixtures.dishes.data.dishes;
+  const sharedOrders = SharedFixtures.orders.data.orders;
+
+  const baseOrderData = {
+    business_id: sharedOrders[0].business_id,
+    menu_id: 'menu-id',
+    customer_name: sharedOrders[0].customer_name,
+    customer_phone: sharedOrders[0].customer_phone ?? '+1234567890',
+    delivery_type: 'pickup' as const,
+    items: sharedOrders[0].items.map((item: any) => ({
+      dish_id: item.dish_id,
+      quantity: item.quantity
+    })),
+    payment_method: 'cash' as const,
+  };
+
   let orderService: OrderService;
   let mockOrderRepository: any;
   let mockOrderItemRepository: any;
@@ -90,17 +107,9 @@ describe('OrderService', () => {
         }),
         // @ts-ignore
         findByIds: jest.fn().mockImplementation(async (entity: any, ids: string[]) => {
-          // Return mock dishes based on IDs
           if (entity === Dish && ids) {
-            const dishes = [];
-            for (const id of ids) {
-              if (id === 'dish-1') {
-                dishes.push({ id: 'dish-1', name: 'Pizza', price_cents: 1500, is_available: true });
-              } else if (id === 'dish-2') {
-                dishes.push({ id: 'dish-2', name: 'Salad', price_cents: 800, is_available: true });
-              }
-            }
-            return dishes;
+            const dishMap = new Map(sharedDishes.map((dish: any) => [dish.id, dish]));
+            return ids.map((id) => dishMap.get(id)).filter(Boolean);
           }
           return [];
         }),
@@ -154,25 +163,20 @@ describe('OrderService', () => {
 
     it('should throw error if dish is not available', async () => {
       const orderData = {
-        business_id: 'business-id',
-        menu_id: 'menu-id',
-        customer_name: 'John Doe',
-        customer_phone: '+1234567890',
-        delivery_type: 'pickup' as const,
-        items: [{ dish_id: 'dish-1', quantity: 1 }],
-        payment_method: 'cash' as const,
+        ...baseOrderData,
+        items: [{ dish_id: sharedDishes[0].id, quantity: 1 }],
       };
 
       const mockDish = {
-        id: 'dish-1',
+        id: sharedDishes[0].id,
         is_available: false,
       };
 
-      const mockBusiness = { id: 'business-id', name: 'Test Restaurant' };
+      const mockBusiness = { id: orderData.business_id, name: 'Test Restaurant' };
 
       const mockMenu = {
-        id: 'menu-id',
-        business_id: 'business-id',
+        id: orderData.menu_id,
+        business_id: orderData.business_id,
         business: mockBusiness,
         is_active: true,
         status: 'published',
@@ -188,14 +192,9 @@ describe('OrderService', () => {
 
     it('should throw error if delivery is not enabled', async () => {
       const orderData = {
-        business_id: 'business-id',
-        menu_id: 'menu-id',
-        customer_name: 'John Doe',
-        customer_phone: '+1234567890',
+        ...baseOrderData,
         delivery_type: 'delivery' as const,
         delivery_address: '123 Main St',
-        items: [{ dish_id: 'dish-1', quantity: 1 }],
-        payment_method: 'cash' as const,
       };
 
       const mockSettings = {
@@ -203,11 +202,11 @@ describe('OrderService', () => {
         pickup_enabled: true,
       };
 
-      const mockBusiness = { id: 'business-id', name: 'Test Restaurant' };
+      const mockBusiness = { id: orderData.business_id, name: 'Test Restaurant' };
 
       const mockMenu = {
-        id: 'menu-id',
-        business_id: 'business-id',
+        id: orderData.menu_id,
+        business_id: orderData.business_id,
         business: mockBusiness,
         is_active: true,
         status: 'published',
@@ -221,29 +220,19 @@ describe('OrderService', () => {
     });
 
     it('should create order successfully', async () => {
-      const orderData = {
-        business_id: 'business-id',
-        menu_id: 'menu-id',
-        customer_name: 'John Doe',
-        customer_phone: '+1234567890',
-        delivery_type: 'pickup' as const,
-        items: [{ dish_id: 'dish-1', quantity: 1 }],
-        payment_method: 'cash' as const,
-      };
+      const orderData = baseOrderData;
 
       const mockDish = {
-        id: 'dish-1',
-        price_cents: 1500,
+        ...sharedDishes[0],
         is_available: true,
-        business_id: 'business-id',
       };
 
-      const mockBusiness = { id: 'business-id', name: 'Test Restaurant', owner_id: 'owner-id' };
-      const mockSettings = { id: 'settings-id', business_id: 'business-id', pickup_enabled: true };
+      const mockBusiness = { id: orderData.business_id, name: 'Test Restaurant', owner_id: 'owner-id' };
+      const mockSettings = { id: 'settings-id', business_id: orderData.business_id, pickup_enabled: true };
 
       const mockMenu = {
-        id: 'menu-id',
-        business_id: 'business-id',
+        id: orderData.menu_id,
+        business_id: orderData.business_id,
         business: mockBusiness,
         is_active: true,
         status: 'published',
@@ -270,7 +259,7 @@ describe('OrderService', () => {
       const savedOrder = {
         id: 'new-order-id',
         ...orderData,
-        total_cents: 1500,
+        total_cents: mockDish.price_cents,
         order_status: 'pending',
         created_at: new Date(),
       };

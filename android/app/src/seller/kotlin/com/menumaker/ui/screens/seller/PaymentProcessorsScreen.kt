@@ -65,7 +65,7 @@ fun PaymentProcessorsScreen(
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(availableProcessors) { (id, name) ->
                     val isConnected = (processorsState as? Resource.Success)?.data
-                        ?.any { it.provider == id && it.isActive } ?: false
+                        ?.any { it.processorType == id && it.isActive } ?: false
 
                     ProcessorCard(
                         name = name,
@@ -73,7 +73,7 @@ fun PaymentProcessorsScreen(
                         onConnect = { viewModel.connectProcessor(id) },
                         onDisconnect = {
                             val processor = (processorsState as? Resource.Success)?.data
-                                ?.find { it.provider == id }
+                                ?.find { it.processorType == id }
                             processor?.let { viewModel.disconnectProcessor(it.id, businessId) }
                         }
                     )

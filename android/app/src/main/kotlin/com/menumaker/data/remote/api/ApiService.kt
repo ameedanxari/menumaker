@@ -13,6 +13,9 @@ interface ApiService {
     @POST("auth/login")
     suspend fun login(@Body request: LoginRequest): Response<AuthResponse>
 
+    @GET("auth/me")
+    suspend fun getCurrentUser(): Response<MeResponse>
+
     @POST("auth/refresh")
     suspend fun refreshToken(@Body request: RefreshTokenRequest): Response<AuthResponse>
 
@@ -21,6 +24,9 @@ interface ApiService {
 
     @POST("auth/forgot-password")
     suspend fun sendPasswordReset(@Body request: Map<String, String>): Response<Unit>
+
+    @POST("auth/change-password")
+    suspend fun changePassword(@Body request: Map<String, String>): Response<Unit>
 
     // Businesses
     @GET("businesses")
@@ -199,6 +205,9 @@ interface ApiService {
     suspend fun removeFavoriteByBusinessId(@Path("businessId") businessId: String): Response<Unit>
 
     // Notifications
+    @POST("notifications/devices")
+    suspend fun registerDevice(@Body request: DeviceRegistrationRequest): Response<DeviceRegistrationResponse>
+
     @GET("notifications")
     suspend fun getNotifications(): Response<NotificationListResponse>
 
@@ -207,6 +216,10 @@ interface ApiService {
 
     @POST("notifications/read-all")
     suspend fun markAllNotificationsAsRead(): Response<Unit>
+
+    // Payments (dev mock)
+    @POST("payments/mock-charge")
+    suspend fun mockCharge(@Body request: MockChargeRequest): Response<MockChargeResponse>
 
     // Menus
     @GET("menus")

@@ -1,0 +1,6 @@
+{
+  "success": false,
+  "status": 404,
+  "code": "ORDER_NOT_FOUND",
+  "message": "Order not found."
+}

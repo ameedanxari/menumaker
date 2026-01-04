@@ -6,11 +6,14 @@ import { ProcessorType } from '../models/PaymentProcessor.js';
 import { authenticate } from '../middleware/auth.js';
 import { logSecurityEvent } from '../utils/logger.js';
 import { Business } from '../models/Business.js';
+import { AppDataSource } from '../config/database.js';
+import { Payment } from '../models/Payment.js';
 
 export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
   const stripeService = new StripeService();
   const orderService = new OrderService();
   const processorService = new PaymentProcessorService(); // Phase 3: Multi-processor support
+  const paymentRepo = AppDataSource.getRepository(Payment);
 
   /**
    * POST /payments/create-intent-multi (Phase 3 - US3.1)
@@ -328,6 +331,49 @@ export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
           currency: payment.currency,
           status: payment.status,
         },
+      },
+    });
+  });
+
+  /**
+   * POST /payments/mock-charge
+   * Development-only helper to mark a payment as succeeded without processor integration.
+   */
+  fastify.post('/mock-charge', async (request, reply) => {
+    const { amount_cents, currency = 'INR', method, reference } = request.body as {
+      amount_cents: number;
+      currency?: string;
+      method: string;
+      reference?: string;
+    };
+
+    if (!amount_cents || !method) {
+      return reply.status(400).send({
+        success: false,
+        error: { code: 'INVALID_PAYMENT', message: 'amount_cents and method are required' },
+      });
+    }
+
+    // Create a payment record marked as succeeded
+    const payment = paymentRepo.create({
+      amount_cents,
+      currency,
+      status: 'succeeded',
+      processor: method,
+      processor_type: method as ProcessorType,
+      processor_payment_id: `mock_${Date.now()}`,
+      net_amount_cents: amount_cents,
+      processor_fee_cents: 0,
+      metadata: { reference },
+    });
+
+    await paymentRepo.save(payment);
+
+    reply.send({
+      success: true,
+      data: {
+        payment_id: payment.id,
+        status: payment.status,
       },
     });
   });

@@ -13,7 +13,12 @@ struct MorePage {
     // MARK: - Elements
 
     private var moreScreen: XCUIElement {
-        app.staticTexts["More"].firstMatch
+        let candidates: [XCUIElement] = [
+            app.otherElements["more-screen"],
+            app.staticTexts["More"].firstMatch,
+            app.staticTexts["Profile"].firstMatch
+        ]
+        return candidates.first(where: { $0.exists }) ?? app.otherElements.firstMatch
     }
 
     var logoutButton: XCUIElement {

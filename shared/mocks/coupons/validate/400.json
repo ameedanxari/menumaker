@@ -1,0 +1,6 @@
+{
+  "success": false,
+  "status": 400,
+  "code": "COUPON_INVALID",
+  "message": "Coupon code is invalid or expired."
+}

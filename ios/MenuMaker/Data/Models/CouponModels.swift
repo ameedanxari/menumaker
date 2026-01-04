@@ -86,6 +86,25 @@ struct CouponListData: Decodable {
     let coupons: [Coupon]
 }
 
+struct ValidateCouponRequest: Encodable {
+    let couponCode: String
+    let businessId: String
+    let orderSubtotalCents: Int
+    let dishIds: [String]
+}
+
+struct ValidatedCouponData: Decodable {
+    let valid: Bool
+    let discountAmountCents: Int
+    let discountAmount: Double
+    let coupon: Coupon
+}
+
+struct ValidateCouponResponse: Decodable {
+    let success: Bool
+    let data: ValidatedCouponData
+}
+
 struct CreateCouponRequest: Encodable {
     let businessId: String
     let code: String

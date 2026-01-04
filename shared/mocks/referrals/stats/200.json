@@ -1,0 +1,36 @@
+{
+  "success": true,
+  "data": {
+    "stats": {
+      "total_referrals": 25,
+      "successful_referrals": 15,
+      "pending_referrals": 5,
+      "monthly_referrals": 8,
+      "total_earnings_cents": 12500,
+      "available_credits_cents": 7500,
+      "pending_rewards_cents": 3000,
+      "referral_code": "INVITE123",
+      "leaderboard_position": 4
+    },
+    "leaderboard": [
+      {
+        "rank": 1,
+        "user_name": "Top Referrer",
+        "referral_count": 50,
+        "earnings_cents": 25000
+      },
+      {
+        "rank": 2,
+        "user_name": "Runner Up",
+        "referral_count": 35,
+        "earnings_cents": 17500
+      },
+      {
+        "rank": 4,
+        "user_name": "Customer One",
+        "referral_count": 25,
+        "earnings_cents": 12500
+      }
+    ]
+  }
+}

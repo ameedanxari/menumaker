@@ -1,0 +1,68 @@
+{
+  "success": true,
+  "data": {
+    "orders": [
+      {
+        "id": "order-1",
+        "business_id": "business-1",
+        "customer_name": "John Doe",
+        "customer_phone": "+1234567890",
+        "customer_email": "john@example.com",
+        "total_cents": 2500,
+        "status": "pending",
+        "items": [
+          {
+            "id": "item-1",
+            "dish_id": "dish-1",
+            "dish_name": "Margherita",
+            "quantity": 1,
+            "price_cents": 1299,
+            "total_cents": 1299
+          },
+          {
+            "id": "item-2",
+            "dish_id": "dish-2",
+            "dish_name": "Spicy Arrabbiata",
+            "quantity": 1,
+            "price_cents": 1099,
+            "total_cents": 1099
+          }
+        ],
+        "created_at": "2024-02-01T10:00:00Z",
+        "updated_at": "2024-02-01T10:05:00Z",
+        "delivery_address": "123 Main St",
+        "estimated_delivery_time": "2024-02-01T10:45:00Z",
+        "delivery_person_name": "Alex Rider",
+        "delivery_person_phone": "+10987654321",
+        "delivery_fee_cents": 199
+      },
+      {
+        "id": "order-2",
+        "business_id": "business-1",
+        "customer_name": "Jane Doe",
+        "customer_phone": "+1230000000",
+        "customer_email": "jane@example.com",
+        "total_cents": 3000,
+        "status": "delivered",
+        "items": [
+          {
+            "id": "item-3",
+            "dish_id": "dish-1",
+            "dish_name": "Margherita",
+            "quantity": 2,
+            "price_cents": 1299,
+            "total_cents": 2598
+          }
+        ],
+        "created_at": "2024-02-02T12:00:00Z",
+        "updated_at": "2024-02-02T12:45:00Z",
+        "delivery_address": "456 Oak Ave",
+        "estimated_delivery_time": "2024-02-02T12:40:00Z",
+        "delivery_person_name": "Sam Sparks",
+        "delivery_person_phone": "+12125551212",
+        "delivery_fee_cents": 299
+      }
+    ],
+    "total": 2
+  }
+}

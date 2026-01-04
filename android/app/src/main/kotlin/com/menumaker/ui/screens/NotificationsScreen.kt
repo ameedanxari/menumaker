@@ -235,6 +235,11 @@ fun NotificationRow(
 @Composable
 fun NotificationIcon(type: NotificationType) {
     val (icon, iconColor, backgroundColor) = when (type) {
+        NotificationType.ORDER_PLACED,
+        NotificationType.ORDER_CONFIRMED,
+        NotificationType.ORDER_READY,
+        NotificationType.ORDER_DELIVERED,
+        NotificationType.ORDER_CANCELLED,
         NotificationType.ORDER_UPDATE -> Triple(
             Icons.Default.ShoppingBag,
             Color.White,
@@ -245,10 +250,17 @@ fun NotificationIcon(type: NotificationType) {
             Color.White,
             Color(0xFF4CAF50)
         )
-        NotificationType.REVIEW -> Triple(
+        NotificationType.REVIEW,
+        NotificationType.REVIEW_RECEIVED -> Triple(
             Icons.Default.Star,
             Color.White,
             Color(0xFFFFB300)
+        )
+        NotificationType.PAYMENT_RECEIVED,
+        NotificationType.PAYOUT_COMPLETED -> Triple(
+            Icons.Default.Payment,
+            Color.White,
+            Color(0xFF9C27B0)
         )
         NotificationType.SYSTEM -> Triple(
             Icons.Default.Notifications,

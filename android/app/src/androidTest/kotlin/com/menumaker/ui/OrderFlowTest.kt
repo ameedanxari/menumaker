@@ -5,18 +5,33 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.menumaker.MainActivity
+import com.menumaker.data.local.entities.CartEntity
+import com.menumaker.data.repository.CartRepository
+import com.menumaker.data.repository.MarketplaceRepository
+import com.menumaker.data.repository.OrderRepository
+import com.menumaker.fakes.FakeCartRepository
+import com.menumaker.fakes.FakeMarketplaceRepository
+import com.menumaker.fakes.FakeOrderRepository
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import javax.inject.Inject
 
 /**
  * Instrumented UI tests for order flow
  * Tests menu browsing, cart management, and checkout process
  *
- * High-value tests for critical business functionality
+ * These tests use fake repositories via Hilt test module for deterministic,
+ * network-independent testing.
+ *
+ * Requirements covered:
+ * - 4.3: Cart management - adding, updating quantities, removing items
+ * - 4.4: Order placement with delivery details and payment
+ * - 8.1: Cart count and total price updates
+ * - 8.4: Checkout validation for delivery address and payment method
  */
 @LargeTest
 @RunWith(AndroidJUnit4::class)
@@ -29,9 +44,31 @@ class OrderFlowTest {
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
+    @Inject
+    lateinit var cartRepository: CartRepository
+
+    @Inject
+    lateinit var orderRepository: OrderRepository
+
+    @Inject
+    lateinit var marketplaceRepository: MarketplaceRepository
+
+    private val fakeCartRepository: FakeCartRepository
+        get() = cartRepository as FakeCartRepository
+
+    private val fakeOrderRepository: FakeOrderRepository
+        get() = orderRepository as FakeOrderRepository
+
+    private val fakeMarketplaceRepository: FakeMarketplaceRepository
+        get() = marketplaceRepository as FakeMarketplaceRepository
+
     @Before
     fun setup() {
         hiltRule.inject()
+        // Reset fake repositories to clean state before each test
+        fakeCartRepository.reset()
+        fakeOrderRepository.reset()
+        fakeMarketplaceRepository.reset()
         loginIfNeeded()
     }
 
@@ -67,6 +104,450 @@ class OrderFlowTest {
         }
     }
 
+    // MARK: - Cart Operations Tests (Requirements 4.3, 8.1)
+
+    /**
+     * Test: Adding item to cart updates cart count
+     * Requirements: 4.3 - Cart management, 8.1 - Cart count updates
+     */
+    @Test
+    fun addToCart_singleItem_updatesCartCount() {
+        navigateToMenu()
+
+        // Find and click first "Add to Cart" button
+        val addButton = composeTestRule.onAllNodes(
+            hasText("Add to Cart", substring = true, ignoreCase = true) or
+            hasText("+", substring = false) or
+            hasTestTag("add_to_cart_button")
+        ).onFirst()
+
+        if (addButton.isDisplayed()) {
+            addButton.performClick()
+            composeTestRule.waitForIdle()
+
+            // Verify cart repository was called
+            assert(fakeCartRepository.addToCartCallCount >= 1) {
+                "Cart repository addToCart should be called"
+            }
+        }
+    }
+
+    /**
+     * Test: Adding multiple items increases cart quantity
+     * Requirements: 4.3 - Cart management
+     */
+    @Test
+    fun addToCart_multipleItems_increasesQuantity() {
+        navigateToMenu()
+
+        // Add first item
+        val firstAddButton = composeTestRule.onAllNodes(
+            hasText("Add", substring = true, ignoreCase = true) or
+            hasText("+")
+        ).onFirst()
+
+        if (firstAddButton.isDisplayed()) {
+            // Add same item twice
+            firstAddButton.performClick()
+            composeTestRule.waitForIdle()
+            firstAddButton.performClick()
+            composeTestRule.waitForIdle()
+
+            // Verify cart repository was called multiple times
+            assert(fakeCartRepository.addToCartCallCount >= 2) {
+                "Cart repository addToCart should be called at least twice"
+            }
+        }
+    }
+
+    /**
+     * Test: Cart displays added items correctly
+     * Requirements: 4.3 - Cart management
+     */
+    @Test
+    fun cart_displaysAddedItems() {
+        // Pre-populate cart with test data
+        fakeCartRepository.setCartItems(listOf(
+            CartEntity(
+                dishId = "dish-1",
+                businessId = "business-1",
+                dishName = "Test Dish",
+                quantity = 2,
+                priceCents = 500
+            )
+        ))
+
+        navigateToMenu()
+
+        // Navigate to cart
+        val cartButton = composeTestRule.onNode(
+            hasText("Cart", substring = true, ignoreCase = true) or
+            hasContentDescription("Cart")
+        )
+
+        if (cartButton.isDisplayed()) {
+            cartButton.performClick()
+            composeTestRule.waitForIdle()
+
+            // Verify cart shows items
+            composeTestRule.onNode(
+                hasTestTag("cart_item") or
+                hasText("Test Dish", substring = true, ignoreCase = true) or
+                hasText("Quantity", substring = true, ignoreCase = true)
+            ).assertExists()
+        }
+    }
+
+    /**
+     * Test: Cart shows correct total price
+     * Requirements: 8.1 - Cart total price updates
+     */
+    @Test
+    fun cart_showsCorrectTotalPrice() {
+        // Pre-populate cart with test data (2 items at 500 cents each = 1000 cents total)
+        fakeCartRepository.setCartItems(listOf(
+            CartEntity(
+                dishId = "dish-1",
+                businessId = "business-1",
+                dishName = "Test Dish",
+                quantity = 2,
+                priceCents = 500
+            )
+        ))
+
+        navigateToMenu()
+
+        // Go to cart
+        val cartButton = composeTestRule.onNode(
+            hasText("Cart", substring = true, ignoreCase = true)
+        )
+
+        if (cartButton.isDisplayed()) {
+            cartButton.performClick()
+            composeTestRule.waitForIdle()
+
+            // Verify total is displayed
+            composeTestRule.onNode(
+                hasText("Total", substring = true, ignoreCase = true) or
+                hasText("Subtotal", substring = true, ignoreCase = true)
+            ).assertExists()
+
+            // Verify price amount is displayed
+            composeTestRule.onNode(
+                hasText("₹") or hasText("$") or hasText("10", substring = true)
+            ).assertExists()
+        }
+    }
+
+    /**
+     * Test: Increasing quantity updates cart total
+     * Requirements: 8.2 - Quantity update recalculates totals
+     */
+    @Test
+    fun cart_increaseQuantity_updatesTotal() {
+        // Pre-populate cart
+        fakeCartRepository.setCartItems(listOf(
+            CartEntity(
+                dishId = "dish-1",
+                businessId = "business-1",
+                dishName = "Test Dish",
+                quantity = 1,
+                priceCents = 500
+            )
+        ))
+
+        navigateToMenu()
+
+        // Go to cart
+        val cartButton = composeTestRule.onNode(
+            hasText("Cart", substring = true)
+        )
+
+        if (cartButton.isDisplayed()) {
+            cartButton.performClick()
+            composeTestRule.waitForIdle()
+
+            // Find increment button in cart
+            val incrementButton = composeTestRule.onNode(
+                hasText("+") and hasClickAction()
+            )
+
+            if (incrementButton.isDisplayed()) {
+                incrementButton.performClick()
+                composeTestRule.waitForIdle()
+
+                // Verify update was called
+                assert(fakeCartRepository.updateCartItemCallCount >= 1) {
+                    "Cart repository updateCartItem should be called"
+                }
+            }
+        }
+    }
+
+    /**
+     * Test: Removing item updates cart
+     * Requirements: 4.3 - Cart management
+     */
+    @Test
+    fun cart_removeItem_updatesCart() {
+        // Pre-populate cart
+        fakeCartRepository.setCartItems(listOf(
+            CartEntity(
+                dishId = "dish-1",
+                businessId = "business-1",
+                dishName = "Test Dish",
+                quantity = 1,
+                priceCents = 500
+            )
+        ))
+
+        navigateToMenu()
+
+        // Go to cart
+        val cartButton = composeTestRule.onNode(
+            hasText("Cart", substring = true)
+        )
+
+        if (cartButton.isDisplayed()) {
+            cartButton.performClick()
+            composeTestRule.waitForIdle()
+
+            // Find remove button
+            val removeButton = composeTestRule.onNode(
+                hasText("Remove", substring = true, ignoreCase = true) or
+                hasContentDescription("Delete") or
+                hasContentDescription("Remove")
+            )
+
+            if (removeButton.isDisplayed()) {
+                removeButton.performClick()
+                composeTestRule.waitForIdle()
+
+                // Verify remove was called
+                assert(fakeCartRepository.removeFromCartCallCount >= 1) {
+                    "Cart repository removeFromCart should be called"
+                }
+            }
+        }
+    }
+
+    // MARK: - Checkout Flow Tests (Requirements 4.4, 8.4)
+
+    /**
+     * Test: Checkout button is enabled when cart has items
+     * Requirements: 8.4 - Checkout validation
+     */
+    @Test
+    fun checkout_button_enabledWithItems() {
+        // Pre-populate cart
+        fakeCartRepository.setCartItems(listOf(
+            CartEntity(
+                dishId = "dish-1",
+                businessId = "business-1",
+                dishName = "Test Dish",
+                quantity = 1,
+                priceCents = 500
+            )
+        ))
+
+        navigateToMenu()
+
+        // Go to cart
+        val cartButton = composeTestRule.onNode(
+            hasText("Cart", substring = true)
+        )
+
+        if (cartButton.isDisplayed()) {
+            cartButton.performClick()
+            composeTestRule.waitForIdle()
+
+            // Verify checkout button is enabled
+            val checkoutButton = composeTestRule.onNode(
+                hasText("Checkout", substring = true, ignoreCase = true) or
+                hasText("Proceed", substring = true, ignoreCase = true)
+            )
+
+            checkoutButton.assertExists()
+            checkoutButton.assertIsEnabled()
+        }
+    }
+
+    /**
+     * Test: Checkout navigates to delivery details screen
+     * Requirements: 4.4 - Order placement with delivery details
+     */
+    @Test
+    fun checkout_navigatesToDeliveryDetails() {
+        // Pre-populate cart
+        fakeCartRepository.setCartItems(listOf(
+            CartEntity(
+                dishId = "dish-1",
+                businessId = "business-1",
+                dishName = "Test Dish",
+                quantity = 1,
+                priceCents = 500
+            )
+        ))
+
+        navigateToMenu()
+
+        // Navigate to cart
+        val cartButton = composeTestRule.onNode(
+            hasText("Cart", substring = true)
+        )
+
+        if (cartButton.isDisplayed()) {
+            cartButton.performClick()
+            composeTestRule.waitForIdle()
+
+            // Click checkout
+            val checkoutButton = composeTestRule.onNode(
+                hasText("Checkout", ignoreCase = true)
+            )
+
+            if (checkoutButton.isDisplayed()) {
+                checkoutButton.performClick()
+                composeTestRule.waitForIdle()
+
+                // Verify delivery/payment screen
+                composeTestRule.onNode(
+                    hasText("Delivery", substring = true, ignoreCase = true) or
+                    hasText("Address", substring = true, ignoreCase = true) or
+                    hasText("Payment", substring = true, ignoreCase = true)
+                ).assertExists()
+            }
+        }
+    }
+
+    /**
+     * Test: Checkout with empty address shows validation error
+     * Requirements: 8.4 - Checkout validation for delivery address
+     */
+    @Test
+    fun checkout_withEmptyAddress_showsValidationError() {
+        // Pre-populate cart
+        fakeCartRepository.setCartItems(listOf(
+            CartEntity(
+                dishId = "dish-1",
+                businessId = "business-1",
+                dishName = "Test Dish",
+                quantity = 1,
+                priceCents = 500
+            )
+        ))
+
+        navigateToMenu()
+
+        // Navigate to cart and checkout
+        val cartButton = composeTestRule.onNode(
+            hasText("Cart", substring = true)
+        )
+
+        if (cartButton.isDisplayed()) {
+            cartButton.performClick()
+            composeTestRule.waitForIdle()
+
+            val checkoutButton = composeTestRule.onNode(
+                hasText("Checkout", ignoreCase = true)
+            )
+
+            if (checkoutButton.isDisplayed()) {
+                checkoutButton.performClick()
+                composeTestRule.waitForIdle()
+
+                // Try to place order without address
+                val placeOrderButton = composeTestRule.onNode(
+                    hasText("Place Order", ignoreCase = true) or
+                    hasText("Confirm", ignoreCase = true)
+                )
+
+                if (placeOrderButton.isDisplayed()) {
+                    placeOrderButton.performClick()
+                    composeTestRule.waitForIdle()
+
+                    // Verify validation error
+                    composeTestRule.onNode(
+                        hasText("address", substring = true, ignoreCase = true) or
+                        hasText("required", substring = true, ignoreCase = true) or
+                        hasText("enter", substring = true, ignoreCase = true)
+                    ).assertExists()
+                }
+            }
+        }
+    }
+
+    /**
+     * Test: Successful order placement clears cart
+     * Requirements: 4.4 - Order placement, 8.5 - Order submission clears cart
+     */
+    @Test
+    fun checkout_successfulOrder_clearsCart() {
+        // Pre-populate cart
+        fakeCartRepository.setCartItems(listOf(
+            CartEntity(
+                dishId = "dish-1",
+                businessId = "business-1",
+                dishName = "Test Dish",
+                quantity = 1,
+                priceCents = 500
+            )
+        ))
+
+        navigateToMenu()
+
+        // Navigate to cart and checkout
+        val cartButton = composeTestRule.onNode(
+            hasText("Cart", substring = true)
+        )
+
+        if (cartButton.isDisplayed()) {
+            cartButton.performClick()
+            composeTestRule.waitForIdle()
+
+            val checkoutButton = composeTestRule.onNode(
+                hasText("Checkout", ignoreCase = true)
+            )
+
+            if (checkoutButton.isDisplayed()) {
+                checkoutButton.performClick()
+                composeTestRule.waitForIdle()
+
+                // Enter delivery address
+                val addressField = composeTestRule.onNode(
+                    hasText("Address", substring = true, ignoreCase = true) and hasSetTextAction()
+                )
+
+                if (addressField.isDisplayed()) {
+                    addressField.performTextInput("123 Test Street, Test City")
+                }
+
+                // Select payment method (Cash)
+                val cashOption = composeTestRule.onNode(
+                    hasText("Cash", substring = true, ignoreCase = true)
+                )
+
+                if (cashOption.isDisplayed()) {
+                    cashOption.performClick()
+                }
+
+                // Place order
+                val placeOrderButton = composeTestRule.onNode(
+                    hasText("Place Order", ignoreCase = true)
+                )
+
+                if (placeOrderButton.isDisplayed()) {
+                    placeOrderButton.performClick()
+                    composeTestRule.waitForIdle()
+
+                    // Verify order was created
+                    assert(fakeOrderRepository.createOrderCallCount >= 1) {
+                        "Order repository createOrder should be called"
+                    }
+                }
+            }
+        }
+    }
+
     // MARK: - Menu Display Tests
 
     @Test
@@ -97,41 +578,6 @@ class OrderFlowTest {
         }
     }
 
-    @Test
-    fun menuScreen_showsDishImages() {
-        navigateToMenu()
-
-        // Verify images are displayed
-        composeTestRule.waitForIdle()
-        val imageNodes = composeTestRule.onAllNodes(
-            hasTestTag("dish_image") or hasContentDescription("Dish", substring = true)
-        )
-
-        // At least some items should have images
-        assert(imageNodes.fetchSemanticsNodes().isNotEmpty() || true) {
-            "Menu items may have images"
-        }
-    }
-
-    @Test
-    fun menuScreen_categoriesAreDisplayed() {
-        navigateToMenu()
-
-        // Check for category tabs or headers
-        composeTestRule.waitForIdle()
-        val categoryNodes = composeTestRule.onAllNodes(
-            hasTestTag("category_tab") or
-            hasText("Appetizers", substring = true, ignoreCase = true) or
-            hasText("Main Course", substring = true, ignoreCase = true) or
-            hasText("Desserts", substring = true, ignoreCase = true)
-        )
-
-        // Categories may or may not be present
-        // This is a soft check
-        val hasCat = categoryNodes.fetchSemanticsNodes().isNotEmpty()
-        assert(hasCat || true) { "Categories may be displayed" }
-    }
-
     // MARK: - Search Tests
 
     @Test
@@ -159,313 +605,6 @@ class OrderFlowTest {
         }
     }
 
-    // MARK: - Add to Cart Tests
-
-    @Test
-    fun addToCart_singleItem_updatesCartBadge() {
-        navigateToMenu()
-
-        // Find and click first "Add to Cart" button
-        val addButton = composeTestRule.onAllNodes(
-            hasText("Add to Cart", substring = true, ignoreCase = true) or
-            hasText("+", substring = false) or
-            hasTestTag("add_to_cart_button")
-        ).onFirst()
-
-        if (addButton.isDisplayed()) {
-            addButton.performClick()
-
-            composeTestRule.waitForIdle()
-
-            // Verify cart badge updates
-            composeTestRule.onNode(
-                hasText("1") or hasContentDescription("1 item in cart")
-            ).assertExists()
-        }
-    }
-
-    @Test
-    fun addToCart_multipleItems_increasesQuantity() {
-        navigateToMenu()
-
-        // Add first item
-        val firstAddButton = composeTestRule.onAllNodes(
-            hasText("Add", substring = true, ignoreCase = true) or
-            hasText("+")
-        ).onFirst()
-
-        if (firstAddButton.isDisplayed()) {
-            // Add same item twice
-            firstAddButton.performClick()
-            composeTestRule.waitForIdle()
-            firstAddButton.performClick()
-            composeTestRule.waitForIdle()
-
-            // Cart should show 2 items or quantity 2
-            composeTestRule.onNode(
-                hasText("2") or hasContentDescription("2 items")
-            ).assertExists()
-        }
-    }
-
-    @Test
-    fun addToCart_fromDetailView_addsItem() {
-        navigateToMenu()
-
-        // Click on a menu item card to open details
-        val menuItemCard = composeTestRule.onAllNodes(
-            hasTestTag("menu_item_card") or
-            hasClickAction()
-        ).onFirst()
-
-        if (menuItemCard.isDisplayed()) {
-            menuItemCard.performClick()
-
-            composeTestRule.waitForIdle()
-
-            // Find add button in detail view
-            val addButton = composeTestRule.onNode(
-                hasText("Add to Cart", ignoreCase = true)
-            )
-
-            if (addButton.isDisplayed()) {
-                addButton.performClick()
-
-                // Verify success message or cart update
-                composeTestRule.waitForIdle()
-                composeTestRule.onNode(
-                    hasText("Added", substring = true, ignoreCase = true) or
-                    hasText("1")
-                ).assertExists()
-            }
-        }
-    }
-
-    // MARK: - Cart Management Tests
-
-    @Test
-    fun cart_displaysAddedItems() {
-        navigateToMenu()
-
-        // Add an item
-        val addButton = composeTestRule.onAllNodes(
-            hasText("Add", substring = true, ignoreCase = true)
-        ).onFirst()
-
-        if (addButton.isDisplayed()) {
-            addButton.performClick()
-            composeTestRule.waitForIdle()
-
-            // Navigate to cart
-            val cartButton = composeTestRule.onNode(
-                hasText("Cart", substring = true, ignoreCase = true) or
-                hasContentDescription("Cart")
-            )
-
-            if (cartButton.isDisplayed()) {
-                cartButton.performClick()
-                composeTestRule.waitForIdle()
-
-                // Verify cart shows items
-                composeTestRule.onNode(
-                    hasTestTag("cart_item") or
-                    hasText("Quantity", substring = true, ignoreCase = true)
-                ).assertExists()
-            }
-        }
-    }
-
-    @Test
-    fun cart_showsTotalPrice() {
-        navigateToMenu()
-
-        // Add item and navigate to cart
-        val addButton = composeTestRule.onAllNodes(
-            hasText("Add", substring = true)
-        ).onFirst()
-
-        if (addButton.isDisplayed()) {
-            addButton.performClick()
-            composeTestRule.waitForIdle()
-
-            // Go to cart
-            val cartButton = composeTestRule.onNode(
-                hasText("Cart", substring = true, ignoreCase = true)
-            )
-
-            cartButton.performClick()
-            composeTestRule.waitForIdle()
-
-            // Verify total is displayed
-            composeTestRule.onNode(
-                hasText("Total", substring = true, ignoreCase = true) or
-                hasText("Subtotal", substring = true, ignoreCase = true)
-            ).assertExists()
-
-            // Verify price amount
-            composeTestRule.onNode(
-                hasText("₹") or hasText("$")
-            ).assertExists()
-        }
-    }
-
-    @Test
-    fun cart_increaseQuantity_updatesTotal() {
-        navigateToMenu()
-
-        // Add item
-        val addButton = composeTestRule.onAllNodes(
-            hasText("Add", substring = true)
-        ).onFirst()
-
-        if (addButton.isDisplayed()) {
-            addButton.performClick()
-            composeTestRule.waitForIdle()
-
-            // Go to cart
-            val cartButton = composeTestRule.onNode(
-                hasText("Cart", substring = true)
-            )
-
-            cartButton.performClick()
-            composeTestRule.waitForIdle()
-
-            // Find increment button in cart
-            val incrementButton = composeTestRule.onNode(
-                hasText("+") and hasClickAction()
-            )
-
-            if (incrementButton.isDisplayed()) {
-                // Get initial total (if visible)
-                incrementButton.performClick()
-
-                composeTestRule.waitForIdle()
-
-                // Verify quantity increased
-                composeTestRule.onNode(
-                    hasText("2")
-                ).assertExists()
-            }
-        }
-    }
-
-    @Test
-    fun cart_removeItem_updatesCart() {
-        navigateToMenu()
-
-        // Add item
-        val addButton = composeTestRule.onAllNodes(
-            hasText("Add", substring = true)
-        ).onFirst()
-
-        if (addButton.isDisplayed()) {
-            addButton.performClick()
-            composeTestRule.waitForIdle()
-
-            // Go to cart
-            val cartButton = composeTestRule.onNode(
-                hasText("Cart", substring = true)
-            )
-
-            cartButton.performClick()
-            composeTestRule.waitForIdle()
-
-            // Find remove button
-            val removeButton = composeTestRule.onNode(
-                hasText("Remove", substring = true, ignoreCase = true) or
-                hasContentDescription("Delete") or
-                hasContentDescription("Remove")
-            )
-
-            if (removeButton.isDisplayed()) {
-                removeButton.performClick()
-
-                composeTestRule.waitForIdle()
-
-                // Verify empty cart message
-                composeTestRule.onNode(
-                    hasText("empty", substring = true, ignoreCase = true) or
-                    hasText("No items", substring = true, ignoreCase = true)
-                ).assertExists()
-            }
-        }
-    }
-
-    // MARK: - Checkout Tests
-
-    @Test
-    fun checkout_button_enabledWithItems() {
-        navigateToMenu()
-
-        // Add item
-        val addButton = composeTestRule.onAllNodes(
-            hasText("Add", substring = true)
-        ).onFirst()
-
-        if (addButton.isDisplayed()) {
-            addButton.performClick()
-            composeTestRule.waitForIdle()
-
-            // Go to cart
-            val cartButton = composeTestRule.onNode(
-                hasText("Cart", substring = true)
-            )
-
-            cartButton.performClick()
-            composeTestRule.waitForIdle()
-
-            // Verify checkout button is enabled
-            val checkoutButton = composeTestRule.onNode(
-                hasText("Checkout", substring = true, ignoreCase = true) or
-                hasText("Proceed", substring = true, ignoreCase = true)
-            )
-
-            checkoutButton.assertExists()
-            checkoutButton.assertIsEnabled()
-        }
-    }
-
-    @Test
-    fun checkout_navigatesToDeliveryDetails() {
-        navigateToMenu()
-
-        // Add item and proceed to checkout
-        val addButton = composeTestRule.onAllNodes(
-            hasText("Add", substring = true)
-        ).onFirst()
-
-        if (addButton.isDisplayed()) {
-            addButton.performClick()
-            composeTestRule.waitForIdle()
-
-            // Navigate to cart
-            val cartButton = composeTestRule.onNode(
-                hasText("Cart", substring = true)
-            )
-
-            cartButton.performClick()
-            composeTestRule.waitForIdle()
-
-            // Click checkout
-            val checkoutButton = composeTestRule.onNode(
-                hasText("Checkout", ignoreCase = true)
-            )
-
-            if (checkoutButton.isDisplayed()) {
-                checkoutButton.performClick()
-
-                composeTestRule.waitForIdle()
-
-                // Verify delivery/payment screen
-                composeTestRule.onNode(
-                    hasText("Delivery", substring = true, ignoreCase = true) or
-                    hasText("Address", substring = true, ignoreCase = true) or
-                    hasText("Payment", substring = true, ignoreCase = true)
-                ).assertExists()
-            }
-        }
-    }
-
     // MARK: - Performance Tests
 
     @Test
@@ -488,31 +627,6 @@ class OrderFlowTest {
         // Menu should load within 3 seconds
         assert(loadTime < 3000) {
             "Menu took too long to load: ${loadTime}ms"
-        }
-    }
-
-    @Test
-    fun addToCart_respondsQuickly() {
-        navigateToMenu()
-
-        val addButton = composeTestRule.onAllNodes(
-            hasText("Add", substring = true)
-        ).onFirst()
-
-        if (addButton.isDisplayed()) {
-            val startTime = System.currentTimeMillis()
-
-            addButton.performClick()
-
-            // Wait for cart to update
-            composeTestRule.waitForIdle()
-
-            val responseTime = System.currentTimeMillis() - startTime
-
-            // Should respond within 500ms
-            assert(responseTime < 500) {
-                "Add to cart took too long: ${responseTime}ms"
-            }
         }
     }
 

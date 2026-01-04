@@ -64,8 +64,31 @@ class NotificationService: NSObject, ObservableObject {
     }
 
     private func sendTokenToBackend(_ token: String) async {
-        // TODO: Send device token to backend
-        print("Device token: \(token)")
+        struct DeviceRegistrationRequest: Encodable {
+            let device_token: String
+            let platform: String
+            let locale: String?
+            let app_version: String?
+            let device_model: String?
+        }
+
+        let request = DeviceRegistrationRequest(
+            device_token: token,
+            platform: "ios",
+            locale: Locale.current.identifier,
+            app_version: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
+            device_model: UIDevice.current.model
+        )
+
+        do {
+            let _: EmptyResponse = try await APIClient.shared.request(
+                endpoint: AppConstants.API.Endpoints.notificationDevices,
+                method: .post,
+                body: request
+            )
+        } catch {
+            print("Failed to register device token: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Local Notifications

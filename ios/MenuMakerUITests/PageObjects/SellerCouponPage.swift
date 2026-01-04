@@ -30,7 +30,8 @@ struct SellerCouponPage {
 
     // Coupon form elements
     var couponCodeField: XCUIElement {
-        app.textFields.matching(NSPredicate(format: "placeholderValue CONTAINS[c] 'code' OR placeholderValue CONTAINS[c] 'coupon code'")).firstMatch
+        let field = app.textFields["coupon-code-field"]
+        return field.exists ? field : app.textFields.matching(identifier: "coupon-code-field").firstMatch
     }
 
     var discountTypeButtons: XCUIElementQuery {
@@ -38,27 +39,33 @@ struct SellerCouponPage {
     }
 
     var percentageButton: XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'percentage' OR label CONTAINS '%'")).firstMatch
+        let button = app.buttons["percentage-button"]
+        return button.exists ? button : app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'percentage' OR label CONTAINS '%'")).firstMatch
     }
 
     var fixedAmountButton: XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'fixed' OR label CONTAINS '₹'")).firstMatch
+        let button = app.buttons["fixed-amount-button"]
+        return button.exists ? button : app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'fixed' OR label CONTAINS '₹'")).firstMatch
     }
 
     var discountValueField: XCUIElement {
-        app.textFields.matching(NSPredicate(format: "placeholderValue CONTAINS[c] 'discount' OR placeholderValue CONTAINS[c] 'value'")).firstMatch
+        let field = app.textFields["discount-value-field"]
+        return field.exists ? field : app.textFields.matching(identifier: "discount-value-field").firstMatch
     }
 
     var minOrderAmountField: XCUIElement {
-        app.textFields.matching(NSPredicate(format: "placeholderValue CONTAINS[c] 'minimum' OR placeholderValue CONTAINS[c] 'min order'")).firstMatch
+        let field = app.textFields["min-order-field"]
+        return field.exists ? field : app.textFields.matching(identifier: "min-order-field").firstMatch
     }
 
     var maxDiscountField: XCUIElement {
-        app.textFields.matching(NSPredicate(format: "placeholderValue CONTAINS[c] 'max' OR placeholderValue CONTAINS[c] 'maximum discount'")).firstMatch
+        let field = app.textFields["max-discount-field"]
+        return field.exists ? field : app.textFields.matching(identifier: "max-discount-field").firstMatch
     }
 
     var usageLimitField: XCUIElement {
-        app.textFields.matching(NSPredicate(format: "placeholderValue CONTAINS[c] 'usage' OR placeholderValue CONTAINS[c] 'limit'")).firstMatch
+        let field = app.textFields["usage-limit-field"]
+        return field.exists ? field : app.textFields.matching(identifier: "usage-limit-field").firstMatch
     }
 
     var startDatePicker: XCUIElement {
@@ -70,15 +77,18 @@ struct SellerCouponPage {
     }
 
     var saveCouponButton: XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'save' OR label CONTAINS[c] 'create'")).firstMatch
+        let button = app.buttons["save-coupon-button"]
+        return button.exists ? button : app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'save' OR label CONTAINS[c] 'create'")).firstMatch
     }
 
     var cancelButton: XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'cancel'")).firstMatch
+        let button = app.buttons["cancel-button"]
+        return button.exists ? button : app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'cancel'")).firstMatch
     }
 
     var toggleActiveSwitch: XCUIElement {
-        app.switches.matching(NSPredicate(format: "identifier CONTAINS 'active' OR identifier CONTAINS 'enabled'")).firstMatch
+        let toggle = app.switches["coupon-active-toggle"]
+        return toggle.exists ? toggle : app.switches.matching(NSPredicate(format: "identifier CONTAINS 'active' OR identifier CONTAINS 'enabled'")).firstMatch
     }
 
     var deleteButton: XCUIElement {

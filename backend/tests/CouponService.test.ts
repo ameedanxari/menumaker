@@ -464,6 +464,73 @@ describe('CouponService', () => {
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Coupon usage limit reached');
     });
+
+    it('should check per month usage limit', async () => {
+      const validStart = new Date();
+      validStart.setDate(validStart.getDate() - 1);
+      const validEnd = new Date();
+      validEnd.setFullYear(validEnd.getFullYear() + 1);
+
+      const mockCoupon = {
+        id: 'coupon-123',
+        code: 'MONTHLY',
+        status: 'active',
+        min_order_value_cents: 0,
+        valid_from: validStart,
+        valid_until: validEnd,
+        usage_limit_type: 'per_month' as UsageLimitType,
+        usage_limit_per_month: 1,
+        applicable_to: 'all_dishes' as any,
+      };
+
+      mockCouponRepository.findOne.mockResolvedValue(mockCoupon);
+      mockUsageRepository.count.mockResolvedValue(1); // already used once this month
+
+      const result = await couponService.validateCoupon(
+        'MONTHLY',
+        'customer-123',
+        'business-123',
+        1000,
+        []
+      );
+
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('Monthly usage limit for this coupon reached');
+    });
+
+    it('should cap percentage discount at max_discount_cents', async () => {
+      const validStart = new Date();
+      validStart.setDate(validStart.getDate() - 1);
+      const validEnd = new Date();
+      validEnd.setFullYear(validEnd.getFullYear() + 1);
+
+      const mockCoupon = {
+        id: 'coupon-123',
+        code: 'CAP50',
+        status: 'active',
+        min_order_value_cents: 0,
+        valid_from: validStart,
+        valid_until: validEnd,
+        usage_limit_type: 'unlimited' as UsageLimitType,
+        applicable_to: 'all_dishes' as any,
+        discount_type: 'percentage' as DiscountType,
+        discount_value: 50,
+        max_discount_cents: 1000,
+      };
+
+      mockCouponRepository.findOne.mockResolvedValue(mockCoupon);
+
+      const result = await couponService.validateCoupon(
+        'CAP50',
+        'customer-123',
+        'business-123',
+        5000, // 50% would be 2500c, should cap to 1000
+        []
+      );
+
+      expect(result.valid).toBe(true);
+      expect(result.discount_amount_cents).toBe(1000);
+    });
   });
 
   describe('getBusinessCoupons', () => {
@@ -626,6 +693,44 @@ describe('CouponService', () => {
 
       expect(mockUsageRepository.save).toHaveBeenCalled();
       expect(mockCouponRepository.save).toHaveBeenCalled();
+    });
+
+    it('should handle fixed amount coupon and update analytics', async () => {
+      const mockCoupon = {
+        id: 'coupon-456',
+        code: 'FLAT50',
+        status: 'active',
+        min_order_value_cents: 0,
+        valid_from: new Date(),
+        valid_until: new Date(Date.now() + 86400000),
+        usage_limit_type: 'unlimited' as UsageLimitType,
+        applicable_to: 'all_dishes',
+        discount_type: 'fixed' as DiscountType,
+        discount_value: 5000,
+        total_usage_count: 0,
+        total_revenue_impact_cents: 0,
+        total_discount_given_cents: 0,
+        total_revenue_generated_cents: 0,
+      };
+
+      mockCouponRepository.findOne.mockResolvedValue(mockCoupon);
+      mockUsageRepository.create.mockImplementation((data) => data);
+      mockUsageRepository.save.mockResolvedValue({ id: 'usage-1' });
+      mockCouponRepository.save.mockImplementation((data) => Promise.resolve(data));
+
+      const usage = await couponService.applyCoupon(
+        'order-789',
+        'coupon-456',
+        'customer-789',
+        'business-789',
+        10000,
+        5000
+      );
+
+      expect(usage.order_id).toBe('order-789');
+      expect(mockCoupon.total_usage_count).toBe(1);
+      expect(mockCoupon.total_discount_given_cents).toBe(5000);
+      expect(mockCoupon.total_revenue_generated_cents).toBe(5000);
     });
   });
 
