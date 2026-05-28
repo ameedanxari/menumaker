@@ -36,18 +36,19 @@ import adminRoutes from './routes/admin.js';
 import { notificationRoutes } from './routes/notifications.js'; // iOS: Notifications
 import { cartRoutes } from './routes/cart.js'; // iOS: Shopping cart
 import { settingsRoutes } from './routes/settings.js'; // iOS: User settings
+import { env } from './config/env.js';
 
 // Load environment variables
 dotenv.config();
 
-const PORT = parseInt(process.env.PORT || '3001', 10);
+const PORT = env.PORT;
 const HOST = process.env.HOST || '0.0.0.0';
 
 // Create Fastify instance
 const fastify = Fastify({
   logger: {
-    level: process.env.LOG_LEVEL || 'info',
-    ...(process.env.NODE_ENV === 'development' && {
+    level: env.LOG_LEVEL,
+    ...(env.NODE_ENV === 'development' && {
       transport: {
         target: 'pino-pretty',
         options: {
@@ -65,14 +66,13 @@ const fastify = Fastify({
            `req-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
   },
   // Disable default request logging (we'll use our custom middleware)
-  disableRequestLogging: process.env.NODE_ENV === 'production',
+  disableRequestLogging: env.NODE_ENV === 'production',
 });
-
 // Register plugins
 async function registerPlugins() {
   // CORS
   await fastify.register(cors, {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: env.FRONTEND_URL,
     credentials: true,
   });
 
