@@ -162,16 +162,15 @@ fun NavGraph(
             )
         }
 
+import com.menumaker.ui.screens.customer.MenuScreen
+...
         composable(
             route = Destination.SellerMenu.route,
             arguments = listOf(navArgument("sellerId") { type = NavType.StringType })
         ) { backStackEntry ->
             val sellerId = backStackEntry.arguments?.getString("sellerId").orEmpty()
-            val dishViewModel: DishViewModel = hiltViewModel()
-            SellerMenuScreen(
-                navController = navController,
-                sellerId = sellerId,
-                viewModel = dishViewModel
+            MenuScreen(
+                sellerId = sellerId
             )
         }
 
