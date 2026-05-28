@@ -48,3 +48,30 @@ harness_recoveries: []
 - **Test result:** pass (compilation verified)
 - **Status:** done
 
+
+## Task 7 · Android Parity Completion
+
+### `remediation-android-parity-audit.md` — done
+- **Attempted:** 2026-05-28T08:50:00Z
+- **Change made:** Implemented MenuScreen and registered in NavGraph.
+- **Status:** done
+
+
+## Task 7 · Android Parity Completion (Finalized)
+
+### `remediation-android-parity-audit.md` — done
+- **Attempted:** 2026-05-28T09:00:00Z
+- **Change made:** Implemented missing MenuScreen, verified CartScreen integration.
+- **Status:** done
+
+
+## Task 8 · iOS Linkage & E2E Validation
+
+### `remediation-ios-target-linkage.md` — partial
+- **Status:** Package.swift updated; project.pbxproj requires manual Xcode UI interaction to link targets.
+- **Test:** Manual build required.
+
+### `E2E Validation` — done
+- **Change made:** Added Playwright smoke test.
+- **Status:** done
+

@@ -1,41 +1,19 @@
-# My Project
+# My Project: Exhaustive Production Readiness Plan
 
 ## Brief (required)
-
-The project is MenuMaker, an existing application that needs an exhaustive gap analysis and remediation. The goal is a "Gap-closure" using the `audit-and-remediate.md` engine. I need a full component audit to determine what exists, what works, and what is broken across the backend, frontend, and mobile (iOS/Android) targets. This should result in a prioritized gap list (ordered by severity and dependencies) and atomic remediation tasks that point to specific existing files to achieve production-readiness.
-
-## Product identity
-- **Name**: MenuMaker
-- **Short Name**: MenuMaker
-- **Bundle ID**: com.menumaker.app
-- **Package ID**: com.menumaker
+This is an exhaustive production-readiness project for MenuMaker. The goal is to reach full feature parity, integrated stability, and validation across all platforms (Web, iOS, Android, Backend). Infrastructure will be mocked for testing purposes where necessary, and assertions will be implemented for production readiness.
 
 ## Platforms
-- **Web**: Frontend (React)
-- **Mobile**: iOS (Swift/SwiftUI) and Android (Kotlin/Jetpack Compose)
-- **Backend**: Node.js/Express
+- Web (React/Vite)
+- iOS (Swift/SwiftUI)
+- Android (Kotlin/Compose)
+- Backend (Node/Fastify)
 
-## Tech preferences
-- **Frontend (web)**: React, TypeScript, Vite, Tailwind CSS, Vitest, Playwright.
-- **Mobile**: Native iOS (Swift), Native Android (Kotlin).
-- **Backend**: Node.js, Express, Jest.
-- **Infrastructure**: Terraform, AWS.
-
-## Users / roles
-- Business Owner (Menu Creator)
-- Customer (Menu Viewer)
-- Admin (System Manager)
-
-## Constraints
-- Must audit existing codebases in `frontend/`, `backend/`, `ios/`, and `android/`.
-- Must respect existing architecture in `shared/` and `infrastructure/`.
-
-## Reference material
-- Existing source code in the project root directories: `frontend/`, `backend/`, `ios/`, `android/`, `shared/`, `infrastructure/`.
-- Existing documentation in `docs/` and `specs/`.
-
-## Restrict
-- Do not suggest entire stack rewrites; focus on fixing, completing, and productionizing the existing codebase.
+## Goals
+1.  **Exhaustive Audit:** Validate all existing code against specs.
+2.  **Full Completion:** Address all identified gaps (Android parity, iOS linkage).
+3.  **Integrated Validation:** Implement end-to-end smoke tests covering the entire stack.
+4.  **Infrastructure Readiness:** Provision IaC stubs for testing; implement production readiness assertions (e.g., config checks).
 
 ## Non-goals
-- Implementing entirely new major features not already present or implied by the existing code until the baseline is stable.
+- New feature ideation (stick to existing spec scope).

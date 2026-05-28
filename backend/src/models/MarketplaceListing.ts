@@ -1,19 +1,16 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity()
-export class Review {
+export class MarketplaceListing {
   @PrimaryGeneratedColumn()
   id!: number;
-
-  @Column('int')
-  rating!: number;
-
-  @Column('text')
-  comment!: string;
 
   @Column()
   businessId!: number;
 
   @Column()
-  userId!: number;
+  category!: string;
+
+  @Column('boolean')
+  isActive!: boolean;
 }

@@ -1,19 +1,19 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity()
-export class Review {
+export class TaxReport {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column('int')
-  rating!: number;
-
-  @Column('text')
-  comment!: string;
+  @Column('decimal')
+  amount!: number;
 
   @Column()
-  businessId!: number;
+  currency!: string;
 
   @Column()
-  userId!: number;
+  taxPeriod!: string;
+
+  @Column()
+  status!: string;
 }
