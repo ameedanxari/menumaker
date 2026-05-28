@@ -1,28 +1,24 @@
-# Gap List
+# Exhaustive Production Readiness Gap List
 
-_Ordered by severity._
+## 1. Android Feature Parity (High Severity)
+- **Description:** Implement missing `/menu` and `/cart` screens on Android to match iOS/Web.
+- **Tasks:**
+  - Create `android/app/src/main/kotlin/com/menumaker/ui/screens/menu/MenuScreen.kt`.
+  - Create `android/app/src/main/kotlin/com/menumaker/ui/screens/cart/CartScreen.kt`.
+  - Update `NavGraph` to include these screens.
 
-## G1 · backend-env-validation
-- **Severity:** critical
-- **Description:** Implement robust environment variable validation at backend startup using Zod.
-- **Component:** backend/
+## 2. iOS Target Linkage Resolution (Critical Severity)
+- **Description:** Resolve `pbxproj` and `Package.swift` linkage for the Customer target.
+- **Tasks:**
+  - Manual review/edit of `ios/MenuMaker.xcodeproj/project.pbxproj` to add Customer target.
 
-## G2 · ios-target-linkage
-- **Severity:** critical
-- **Description:** Fix `project.pbxproj` and `Package.swift` for Customer target linkage.
-- **Component:** ios/
+## 3. Infrastructure Stubbing (Medium Severity)
+- **Description:** Provision robust IaC stubs that handle testing environments and assert production-readiness.
+- **Tasks:**
+  - Complete `infrastructure/main.tf` with conditional logic: if `env=production` and `aws_access_key` is missing, assert error.
 
-## G3 · infra-restoration
-- **Severity:** critical
-- **Description:** Restore missing `infrastructure/` directory and ensure Terraform/AWS parity.
-- **Component:** infrastructure/
-
-## G4 · android-parity-audit
-- **Severity:** high
-- **Description:** Feature parity audit and baseline UI tests for Android.
-- **Component:** android/
-
-## G5 · cicd-multi-target-verification
-- **Severity:** high
-- **Description:** Update workflows for multi-target and Terraform automation.
-- **Component:** .github/workflows/
+## 4. End-to-End Integrated Validation (High Severity)
+- **Description:** Create an E2E test suite covering the full user flow.
+- **Tasks:**
+  - Implement Web/API smoke test (Playwright).
+  - Implement Mobile UI test (Appium/Compose Test).
