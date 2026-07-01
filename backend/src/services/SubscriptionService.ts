@@ -1116,10 +1116,21 @@ function stripeEventCreatedAt(metadata?: unknown): number {
 
 function shouldApplyStripeEvent(
   localSubscription: Subscription,
+  eventType: string,
   eventCreated: number
 ): boolean {
   dateFromStripeSeconds('Stripe event created timestamp', eventCreated);
-  return eventCreated >= stripeEventCreatedAt(localSubscription.metadata);
+  const previousEventCreated = stripeEventCreatedAt(localSubscription.metadata);
+  const previousEventType = validatedPersistedSubscriptionMetadata(localSubscription.metadata)?.stripe_last_event_type;
+
+  if (eventCreated < previousEventCreated) {
+    return false;
+  }
+  if (eventCreated > previousEventCreated) {
+    return true;
+  }
+
+  return !(previousEventType === 'customer.subscription.deleted' && eventType !== 'customer.subscription.deleted');
 }
 
 function updateStripeEventMetadata(
@@ -1345,7 +1356,7 @@ export function applyStripeSubscriptionSnapshot(
     stripeSubscription
   ) as typeof stripeSubscription;
   assertStripeSubscriptionIdentityMatchesLocal(localSubscription, normalizedStripeSubscription);
-  if (!shouldApplyStripeEvent(localSubscription, eventCreated)) {
+  if (!shouldApplyStripeEvent(localSubscription, normalizedEventType, eventCreated)) {
     return { applied: false, reason: 'stale_event' };
   }
 
@@ -1455,7 +1466,7 @@ export function applyStripeSubscriptionDeleted(
     stripeSubscription
   ) as typeof stripeSubscription;
   assertStripeSubscriptionIdentityMatchesLocal(localSubscription, normalizedStripeSubscription);
-  if (!shouldApplyStripeEvent(localSubscription, eventCreated)) {
+  if (!shouldApplyStripeEvent(localSubscription, normalizedEventType, eventCreated)) {
     return { applied: false, reason: 'stale_event' };
   }
 
@@ -2000,7 +2011,7 @@ export class SubscriptionService {
       }
 
       case 'customer.subscription.trial_will_end':
-        if (!shouldApplyStripeEvent(localSubscription, eventCreated)) {
+        if (!shouldApplyStripeEvent(localSubscription, event.type, eventCreated)) {
           return { applied: false, reason: 'stale_event' };
         }
         const trialWillEndAt = timestampFromStripeSeconds(

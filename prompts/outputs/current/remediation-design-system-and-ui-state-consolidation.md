@@ -20,7 +20,7 @@ Establish one versioned platform-neutral token authority and deterministic web/A
 - **File:** `frontend/design-tokens.json`
 - **File:** `frontend/scripts/validate-tokens.cjs`
 - **Precise change:** Make this the canonical source with versioned primitive/semantic/component layers for color, typography, spacing, radius, elevation, motion, breakpoint, focus, and state roles; preserve current orange/neutral/semantic palette; remove platform syntax and duplicate aliases; record deprecation/migration metadata.
-- **Acceptance:**
+- **Acceptance:** 
   - Every currently used web CSS/Tailwind, Android Material, and iOS asset/theme value maps to a canonical token or a documented platform exception.
   - Semantic contrast pairs satisfy WCAG AA (4.5:1 normal text, 3:1 large text/UI) in light and dark themes.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -41,7 +41,7 @@ Establish one versioned platform-neutral token authority and deterministic web/A
 - **File:** `ios/MenuMaker/Shared/Theme/GeneratedTokens.swift`
 - **File:** `ios/MenuMaker/Generated/DesignTokens/asset-colors.json`
 - **Precise change:** Generate `frontend/src/styles/tokens.css`, `frontend/tailwind-tokens.cjs`, Android Compose `GeneratedTokens.kt`/resource colors, and iOS `GeneratedTokens.swift`/asset-color input from the canonical JSON; add generated headers/check mode/formatting, explicit dark-mode/system-appearance output, and a brand namespace proving a second brand can perform a config-driven brand swap without code changes; remove `frontend/src/design-tokens.json` after reference migration.
-- **Acceptance:**
+- **Acceptance:** 
   - Two generation runs are byte-identical and `--check` fails on manual generated-file edits.
   - Web/Android/iOS compile without hard-coded duplicate brand/semantic values outside approved exceptions.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -55,7 +55,7 @@ Establish one versioned platform-neutral token authority and deterministic web/A
 - **Change type:** modify-existing
 - **File:** `frontend/src/components/ui/index.ts`
 - **Precise change:** Define canonical Button, Input, Select, Textarea, Card, Modal, Table, ThemeToggle, feedback, and state primitives with typed variants/sizes/slots; migrate consumers from `components/common/Button`; encode focus/loading/disabled/error semantics from generated tokens; deprecate then delete duplicates after import proof.
-- **Acceptance:**
+- **Acceptance:** 
   - Production source imports one Button authority and component variants contain no raw brand hex/spacing values.
   - Keyboard, focus restore/trap, accessible name/error, loading announcement, disabled behavior, and ref forwarding tests cover each interactive primitive.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -71,7 +71,7 @@ Establish one versioned platform-neutral token authority and deterministic web/A
 - **File:** `scripts/design-system/validate-review-artifact.mjs`
 - **Precise change:** Build a static self-contained review showing token swatches/typography/spacing/radius/motion, web/native mappings, component variants, default/loading/empty/error/disabled/success states, light/dark, responsive widths, RTL, Dynamic Type/font scaling, keyboard/focus, screen-reader notes, contrast results, and links to current source/theme files with a non-redesign statement.
 - **Reference Evidence:** Link existing product files `frontend/design-tokens.json`, `frontend/src/styles/tokens.css`, `android/app/src/main/kotlin/com/menumaker/ui/theme/`, and `ios/MenuMaker/Shared/Theme/ColorTheme.swift`; state that these local product sources are authoritative and external Mobbin/Figma research is not needed for this non-redesign consolidation.
-- **Acceptance:**
+- **Acceptance:** 
   - The artifact loads locally without a build server and has no missing assets/placeholder sections.
   - User-review checkpoint records approval/feedback before screen migration tasks proceed.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -86,7 +86,7 @@ Establish one versioned platform-neutral token authority and deterministic web/A
 - **File:** `docs/design-system/state-matrix.yaml`
 - **File:** `scripts/design-system/verify_state_matrix.py`
 - **Precise change:** Define state semantics/copy/actions/live announcements for auth, public menu, cart/checkout, seller dashboard/menu/orders, payments, settings, and admin flows; map web components, Android Composables, and iOS Views; require 44pt/48dp targets, keyboard/focus order, VoiceOver/TalkBack labels, reduced motion, zoom/font scaling, RTL, and no color-only status.
-- **Acceptance:**
+- **Acceptance:** 
   - Every primary flow has default/loading/empty/error/disabled/success plus offline/pending where applicable, with one recovery action per error class.
   - Automated axe/Compose/XCTest checks plus manual keyboard/VoiceOver/TalkBack evidence report zero critical/serious violations.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -103,7 +103,7 @@ Establish one versioned platform-neutral token authority and deterministic web/A
 - **File:** `scripts/design-system/fixtures/bad-state-matrix.yaml`
 - **File:** `scripts/design-system/fixtures/bad-review.html`
 - **Precise change:** Run token generation check, raw-value/import duplication scan, component/state coverage, axe-core/automated a11y checks, a 44x44 web/iOS and 48x48 Android touch-target audit, and light/dark/RTL visual-regression diffs for representative web, Android, and iOS seller/customer screens with deterministic fixtures and reviewed thresholds.
-- **Acceptance:**
+- **Acceptance:** 
   - Unreviewed token output, duplicate primitive, missing state, contrast regression, accessibility violation, or rendered-visual drift returns non-zero with platform/screen evidence.
   - Baseline updates require a linked design review and cannot run automatically in ordinary CI.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.

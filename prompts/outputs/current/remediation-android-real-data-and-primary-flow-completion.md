@@ -18,7 +18,7 @@ Make repositories the only runtime data authority, define explicit state machine
 - **File:** `android/app/src/main/kotlin/com/menumaker/viewmodel/SellerViewModel.kt`
 - **File:** `android/app/src/test/kotlin/com/menumaker/viewmodel/SellerViewModelTest.kt`
 - **Precise change:** Replace the no-op `loadDashboardData()` with a `SellerDashboardUiState` reducer that loads current business ID, orders, dishes, reviews, and analytics concurrently; preserves cached data with freshness metadata; calculates revenue/pending/availability/rating from domain records; and emits distinct loading, content, empty, stale-offline, partial-error, and fatal-error states.
-- **Acceptance:**
+- **Acceptance:** 
   - An account with no orders/dishes renders a genuine empty state, never sample records.
   - Partial failure identifies the failed source while retaining successful/cached sections and retry actions.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -34,7 +34,7 @@ Make repositories the only runtime data authority, define explicit state machine
 - **File:** `android/app/src/androidTest/kotlin/com/menumaker/SellerFlowTest.kt`
 - **File:** `android/app/src/androidTest/kotlin/com/menumaker/ui/ParityScreensTest.kt`
 - **Precise change:** Delete `sampleDishes`, `sampleOrders`, and `sampleReviews`; consume the unified dashboard state; add accessible loading skeleton, first-run empty guidance, offline-stale banner, section error/retry, disabled mutation, and success feedback; preserve Material 3 theme/navigation and 48dp touch targets.
-- **Acceptance:**
+- **Acceptance:** 
   - No production source contains Aisha/Priya/sample seller fixtures or substitutes fixtures for an empty repository.
   - Compose tests assert default, loading, empty, error, stale-offline, disabled, and success semantics for dashboard/orders/menu/reviews.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -70,7 +70,7 @@ Make repositories the only runtime data authority, define explicit state machine
 - **File:** `android/app/src/test/kotlin/com/menumaker/viewmodel/ReviewViewModelTest.kt`
 - **File:** `android/app/src/test/kotlin/com/menumaker/viewmodel/ReferralViewModelTest.kt`
 - **Precise change:** Wire cache clearing to app-owned caches only, cart clearing to `CartRepository`, notification switches to the settings API plus local optimistic rollback, help/FAQ/terms/privacy to configured HTTPS destinations or native screens, and expose completion/error feedback; coordinate profile/review/menu image actions through the existing `ImageService` and backend media contract rather than embedding picker/network logic in Composables.
-- **Acceptance:**
+- **Acceptance:** 
   - Every current TODO/no-op click in Settings/Profile/Review/Menu has a repository/service call, navigation destination, or is removed from the UI.
   - Destructive actions require confirmation and tests prove personal files and OS-owned media are never deleted by cache cleanup.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -89,7 +89,7 @@ Make repositories the only runtime data authority, define explicit state machine
 - **File:** `android/app/src/test/kotlin/com/menumaker/repository/OfflineDataTest.kt`
 - **File:** `android/app/src/test/kotlin/com/menumaker/workers/SyncWorkerTest.kt`
 - **Precise change:** Replace partial-map submission with a versioned `PendingMutationEntity` containing operation UUID/idempotency key, full order/items/fees/address/payment-method payload, enqueue time, attempt count, next attempt, and last redacted error; process in order with exponential backoff+jitter; classify 4xx permanent versus 5xx/network retryable; reconcile server IDs transactionally; and emit structured WorkManager progress.
-- **Acceptance:**
+- **Acceptance:** 
   - Process death/restart preserves item quantities, purchase prices, totals, notes, and idempotency keys.
   - Repeated worker execution creates one server order; poison mutations stop retrying and surface a user-recoverable failure without blocking later independent entries.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -106,7 +106,7 @@ Make repositories the only runtime data authority, define explicit state machine
 - **File:** `android/app/src/test/kotlin/com/menumaker/viewmodel/CustomerPaymentViewModelPropertyTest.kt`
 - **File:** `android/app/src/test/kotlin/com/menumaker/ui/CheckoutValidationPropertyTest.kt`
 - **Precise change:** Remove hard-coded saved cards; load tokenized payment-method summaries from the canonical payment API; expose last4/brand/expiry only; create payment intents server-side; hand provider client secrets to the supported payment SDK; verify terminal status from the backend; and preserve cash-on-delivery as a separate server-authorized method.
-- **Acceptance:**
+- **Acceptance:** 
   - No PAN/CVV is persisted, logged, placed in ViewModel state, or submitted to MenuMaker servers.
   - Tests cover no saved methods, provider cancel/failure, expired method, intent replay, pending verification, cash authorization, and successful completion.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -120,7 +120,7 @@ Make repositories the only runtime data authority, define explicit state machine
 - **Change type:** create-new
 - **File:** `scripts/cleanup/verify-android-screen-ownership.sh`
 - **Precise change:** Assert canonical `ui/screens/customer/CartScreen.kt` and `ui/screens/customer/MenuScreen.kt` ownership, scan imports/navigation/tests for duplicate package references, produce a deletion manifest for `ui/screens/cart/CartScreen.kt` and `ui/screens/menu/MenuScreen.kt`, and refuse deletion until compile plus seller/customer navigation tests pass.
-- **Acceptance:**
+- **Acceptance:** 
   - The verifier reports exactly one navigable Cart and one navigable Menu implementation.
   - Duplicate files are deleted only after zero production/test references and equivalent state/accessibility coverage are proven.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.

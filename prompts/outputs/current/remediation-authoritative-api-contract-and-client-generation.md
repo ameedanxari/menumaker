@@ -19,7 +19,7 @@ Create and validate an OpenAPI 3.1 contract from explicit Fastify route schemas,
 - **Change type:** create-new
 - **File:** `docs/architecture/adr/0003-api-contract-authority.md`
 - **Precise change:** Select OpenAPI 3.1 generated from Fastify route schemas as authority; define `/api/v1`, snake_case wire fields, ISO-8601 UTC strings, integer minor currency units, canonical order/payment statuses, error envelope, pagination, idempotency keys, deprecation windows, and generated-client ownership.
-- **Acceptance:**
+- **Acceptance:** 
   - The ADR resolves every known method/path/query/status conflict listed in `audit-report.md`.
   - Breaking changes require `/api/v2` or a documented compatibility adapter and cannot be hidden in regenerated code.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -33,7 +33,7 @@ Create and validate an OpenAPI 3.1 contract from explicit Fastify route schemas,
 - **Change type:** create-new
 - **File:** `backend/src/app.ts`
 - **Precise change:** Move Fastify construction/plugin/route registration from `main.ts` into `buildApp(dependencies, options)`; require JSON schemas for params/query/body/success/error on every route; register security schemes and version metadata; expose `app.swagger()` after routes; and make databases/providers injectable for contract/integration tests.
-- **Acceptance:**
+- **Acceptance:** 
   - Every registered `/api/v1` operation has an `operationId`, tags, request schema, success schema, and shared error responses.
   - Building the app with test dependencies does not open a port or initialize production providers.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -47,7 +47,7 @@ Create and validate an OpenAPI 3.1 contract from explicit Fastify route schemas,
 - **Change type:** create-new
 - **File:** `openapi/menumaker.v1.yaml`
 - **Precise change:** Generate a stable, sorted OpenAPI document from `buildApp`, including auth, business, menu, dish, order, payment, subscription, payout, coupon, marketplace, review, referral, notification, settings, admin, POS, delivery, GDPR, OCR, media, and reporting operations; add descriptions for authorization and idempotency behavior without embedding secrets or server-specific URLs.
-- **Acceptance:**
+- **Acceptance:** 
   - Regeneration from an unchanged checkout is byte-for-byte identical.
   - A breaking-change detector rejects removed/renamed operations, required fields, enum values, or response shapes unless the API major version changes.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -65,7 +65,7 @@ Create and validate an OpenAPI 3.1 contract from explicit Fastify route schemas,
 - **File:** `package-lock.json`
 - **File:** `frontend/src/utils/analytics.ts`
 - **Precise change:** Add pinned OpenAPI TypeScript generation and validation scripts that emit `shared/src/generated/api.ts`; export wire DTOs and operation types; keep domain helpers hand-written outside the generated directory; and make `shared` a frontend dependency instead of duplicating response interfaces in `frontend/src/services/api.ts`. Preserve the frontend analytics service's compile-time public API while generated client types are introduced, including any named exports required by existing analytics tests.
-- **Acceptance:**
+- **Acceptance:** 
   - Generated files contain a header forbidding manual edits and are reproducible from `openapi/menumaker.v1.yaml`.
   - Frontend production code has zero manually written endpoint strings outside one generated-client adapter.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -88,7 +88,7 @@ Create and validate an OpenAPI 3.1 contract from explicit Fastify route schemas,
 - **File:** `android/app/src/main/kotlin/com/menumaker/ui/debug/DebugMenuScreen.kt`
 - **File:** `android/app/src/sharedTest/kotlin/com/menumaker/fixtures/SharedMockLoader.kt`
 - **Precise change:** Add a pinned OpenAPI Kotlin generation task producing Retrofit/Gson sources under `build/generated/openapi`; wire generation before compilation; replace `ApiService.kt` and duplicate remote DTO ownership through repository adapters; keep Room/domain entities separate from wire DTOs; and fail build when the spec or generated output is stale. Preserve Android navigation and screen compilation while generated API sources are wired into the variant build, including repairing pre-existing syntax/import drift exposed by the mandatory seller/customer unit-test compile without changing UI behavior.
-- **Acceptance:**
+- **Acceptance:** 
   - PATCH/PUT, query names, notification paths, profile paths, integration paths, analytics paths, and status enums match the canonical spec.
   - Seller and customer unit tests compile against the same generated operation set with no copied endpoint annotations.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -103,7 +103,7 @@ Create and validate an OpenAPI 3.1 contract from explicit Fastify route schemas,
 - **File:** `ios/Scripts/generate-openapi-client.sh`
 - **File:** `ios/MenuMaker/Generated/API/MenuMakerGeneratedAPI.swift`
 - **Precise change:** Pin a Swift OpenAPI generator/runtime, generate transport code into `ios/MenuMaker/Generated/API`, verify a clean diff, and adapt repositories through a small `MenuMakerAPITransport` protocol while keeping SwiftUI domain/view models independent of generated structs.
-- **Acceptance:**
+- **Acceptance:** 
   - Business orders, marketplace, reviews, referrals, favorites, integrations, analytics, and status enums compile from the canonical spec.
   - The production target contains no mutable endpoint registry duplicated from `AppConstants.API.Endpoints`.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -117,7 +117,7 @@ Create and validate an OpenAPI 3.1 contract from explicit Fastify route schemas,
 - **Change type:** create-new
 - **File:** `scripts/contracts/verify-all.sh`
 - **Precise change:** Regenerate OpenAPI and all three clients in clean temporary directories, compare tracked/generated outputs, run an OpenAPI breaking-change check, compile adapter fixtures, and exercise a shared fake-server suite for auth, seller menu/order, customer checkout, payment, notification, and error/pagination envelopes.
-- **Acceptance:**
+- **Acceptance:** 
   - Any undocumented backend route or stale/generated client causes a non-zero exit naming the operation and platform.
   - The fake server validates request and response bodies against the same schema rather than maintaining another freehand mock contract.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.

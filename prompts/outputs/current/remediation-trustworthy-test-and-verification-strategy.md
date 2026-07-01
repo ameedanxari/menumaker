@@ -23,7 +23,7 @@ For UI verification, preserve the audited existing theme authority and explicitl
 - **File:** `backend/strict-compiler-debt.json`
 - **File:** `scripts/quality/verify-strict-compiler-baseline.mjs`
 - **Precise change:** Enable `noEmitOnError`, strict null checks, no implicit any/returns/fallthrough, consistent casing, and unused checks in a staged baseline; create a checked debt file for temporary suppressions with owner/expiry; remove Jest diagnostic ignore codes as source is corrected.
-- **Acceptance:**
+- **Acceptance:** 
   - `npm run build --workspace=backend` fails for introduced type/null/unused/fallthrough defects.
   - The suppression baseline is monotonically non-increasing and no production directory is excluded from compilation.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -37,7 +37,7 @@ For UI verification, preserve the audited existing theme authority and explicitl
 - **Change type:** create-new
 - **File:** `backend/tests/integration/testHarness.ts`
 - **Precise change:** Provision a disposable PostgreSQL database/container per suite, run G1 migrations, build the injected G4 app, seed deterministic factories, stub only external provider boundaries, reset tables safely, capture request IDs, and provide authenticated customer/seller/admin clients.
-- **Acceptance:**
+- **Acceptance:** 
   - Tests cannot connect to development/production database names and fail if migrations are pending.
   - Harness teardown detects open handles, leaked rows, and unconsumed provider expectations.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -51,7 +51,7 @@ For UI verification, preserve the audited existing theme authority and explicitl
 - **Change type:** create-new
 - **File:** `backend/tests/integration/criticalJourneys.test.ts`
 - **Precise change:** Test signup/session rotation, seller ownership/RBAC, menu publication/versioning, concurrent order totals/status transitions, payment webhook idempotency, subscription entitlement, coupon/referral single-use, GDPR export/deletion cascade, admin moderation audit, and notification outbox transaction rollback with happy path plus at least two failures each.
-- **Acceptance:**
+- **Acceptance:** 
   - Monetary totals are property-tested in integer minor units and concurrent duplicate commands have one durable effect.
   - Authorization tests cover customer, seller-owner, other seller, support, moderator, super-admin, suspended, and banned identities.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -86,7 +86,7 @@ For UI verification, preserve the audited existing theme authority and explicitl
 - **File:** `frontend/tests/e2e/seller-order-management.spec.ts`
 - **File:** `frontend/tests/e2e/helpers.ts`
 - **Precise change:** Remove blanket page/layout/menu/subscription/form/provider exclusions; set risk-based thresholds for statements/branches/functions/lines; require tests for auth, public menu/cart/checkout, seller menu/orders/reports/payments/settings; and configure Playwright `webServer` to start both migrated backend plus frontend with deterministic data and teardown.
-- **Acceptance:**
+- **Acceptance:** 
   - Coverage includes every route component in `App.tsx` or carries a reviewed line-level exclusion with reason.
   - E2E passes from a clean checkout without a manually running backend and fails when backend health or fixture seed fails.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -112,7 +112,7 @@ For UI verification, preserve the audited existing theme authority and explicitl
 - **File:** `shared/mocks/api/v1/report_dashboard/200.json`
 - **File:** `shared/fake-backend/validate-fixtures.js`
 - **Precise change:** Inventory fixtures by OpenAPI operation/status/scenario, store JSON under `shared/mocks/api/v1/<operationId>/`, validate each body against the canonical schema, migrate Android/iOS/web consumers incrementally, and preserve platform-only UI state outside API fixtures.
-- **Acceptance:**
+- **Acceptance:** 
   - Every fixture has operation ID, status, schema hash, scenario, source, and consumers; conflicting copies are rejected.
   - Production builds contain no fixture manifest/data and tests fail when the OpenAPI schema changes incompatibly.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -127,7 +127,7 @@ For UI verification, preserve the audited existing theme authority and explicitl
 - **File:** `shared/fake-backend/run-with-server.js`
 - **File:** `shared/fake-backend/server.js`
 - **Precise change:** Start a schema-valid deterministic server on an ephemeral port, expose readiness/reset/seed controls only to localhost test processes, launch Android seller/customer and iOS Business/Customer smoke suites with that URL through the existing package scripts, capture requests/responses redacted, and fail on unhandled operation or fixture mismatch.
-- **Acceptance:**
+- **Acceptance:** 
   - Each product covers login plus its primary seller/customer journey over HTTP without platform repository fakes.
   - Server shutdown, port collision, test timeout, and malformed client request return non-zero and preserve diagnostics.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -146,7 +146,7 @@ For UI verification, preserve the audited existing theme authority and explicitl
 - **File:** `scripts/quality/fixtures/bad-mutation-score/quality-input.json`
 - **File:** `scripts/quality/fixtures/bad-retry-dependent-pass/quality-input.json`
 - **Precise change:** Aggregate strict-build, lint, unit/integration/E2E/UI, coverage, mutation score for payment/order invariants, test duration, retry/flake rate, skipped tests, changed-file coverage, and dashboard quality kpi metrics into JSON/Markdown; expose filter definitions plus chart and table-ready rows with tooltip and legend metadata; set release thresholds and quarantine expiry ownership without converting quarantine failures to success.
-- **Acceptance:**
+- **Acceptance:** 
   - The report fails a release on reduced critical coverage, new skipped/only tests, mutation threshold regression, or retry-dependent pass.
   - Metrics are comparable by commit and platform and link to raw artifacts rather than hand-written summaries.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.

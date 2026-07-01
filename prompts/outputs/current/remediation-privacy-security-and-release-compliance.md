@@ -20,7 +20,7 @@ Permission and privacy UI must follow this rule: existing product style is autho
 - **File:** `docs/security/data-inventory.yaml`
 - **File:** `scripts/security/verify_data_inventory.py`
 - **Precise change:** Enumerate every entity field, log/trace attribute, upload/blob, mobile cache/preference/keychain/Room record, analytics event, backup, and third-party processor with classification, subject, purpose, legal basis, consent capture for optional tracking/processing, source, owner, readers/writers, encryption, residency, retention, export/deletion behavior, and downstream processors.
-- **Acceptance:**
+- **Acceptance:** 
   - A schema/source scanner reports every TypeORM column and known client persistence key exactly once.
   - Unknown retention, purpose, processor, or deletion handling blocks release instead of defaulting to indefinite storage.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -35,7 +35,7 @@ Permission and privacy UI must follow this rule: existing product style is autho
 - **File:** `docs/security/threat-model.md`
 - **File:** `scripts/security/validate_threat_model.py`
 - **Precise change:** Model assets, trust boundaries, actors, abuse cases, and STRIDE/privacy threats for web/browser session, mobile storage, Fastify/API, admin/RBAC, PostgreSQL, media uploads/S3, Stripe/webhooks, POS/delivery/Twilio/Anthropic, CI/CD, backups, and support access; link controls, tests, residual risk, owner, and review date.
-- **Acceptance:**
+- **Acceptance:** 
   - Threats include cross-tenant access, IDOR, refresh replay, webhook forgery/replay, fake payment success, malicious upload/OCR, log/backup leakage, dependency/action compromise, and break-glass misuse.
   - Critical/high threats have preventive and detective controls plus named verification commands.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -53,7 +53,7 @@ Permission and privacy UI must follow this rule: existing product style is autho
 - **File:** `backend/tests/GDPRService.integration.test.ts`
 - **File:** `backend/tests/MediaService.test.ts`
 - **Precise change:** Derive a data export and data deletion plan from the inventory; include all owned/related tables, object-storage keys, notifications, audit-preserved pseudonymous records, processor requests, local stores/mobile cache invalidation, legal-hold exceptions, and backup expiry; create a signed export JSON manifest/checksum, resumable job state, approval for destructive execution, and evidence without exporting secrets/other tenants.
-- **Acceptance:**
+- **Acceptance:** 
   - Integration fixtures populate every data location and prove export completeness, tenant isolation, deletion/anonymization outcome, processor status, and retained-record rationale.
   - Failed provider/blob/table steps resume idempotently and never mark complete until every required location has evidence.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -68,7 +68,7 @@ Permission and privacy UI must follow this rule: existing product style is autho
 - **File:** `backend/src/models/PaymentProcessor.ts`
 - **File:** `backend/tests/credential-encryption.test.ts`
 - **Precise change:** Replace plaintext credential JSON with envelope-encrypted ciphertext, KMS key/version/context, algorithm/version, created/rotated timestamps, and masked metadata; use AWS KMS/Secrets Manager adapters, per-business authenticated context, no decrypt on list/read paths, rotation job with dual-read/single-write transition, and audit all privileged decrypts.
-- **Acceptance:**
+- **Acceptance:** 
   - Database dumps contain no provider secret/token plaintext and ciphertext cannot decrypt under another business/context.
   - Rotation, disabled old key, corrupt ciphertext, KMS outage, unauthorized read, and redacted logging are tested.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -85,7 +85,7 @@ Permission and privacy UI must follow this rule: existing product style is autho
 - **File:** `ios/MenuMaker/Info.plist`
 - **File:** `android/app/src/main/AndroidManifest.xml`
 - **Precise change:** Map iOS Info.plist/entitlements and Android Manifest/SDK permissions to feature, data category, purpose, optionality, retention, sharing, tracking, and denial behavior; remove unused broad permissions; add just-in-time camera/photos/location/notifications education and graceful denial; derive App Store privacy nutrition and Play Data Safety answers from the same file.
-- **Acceptance:**
+- **Acceptance:** 
   - Static scans find no permission, SDK data collection, analytics/crash field, or background access missing from the manifest.
   - UI tests prove denied/limited permissions preserve unrelated flows and settings can revisit consent.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -106,7 +106,7 @@ Permission and privacy UI must follow this rule: existing product style is autho
 - **File:** `scripts/security/fixtures/release-security/license/package-lock.json`
 - **File:** `scripts/security/fixtures/release-security/expired-exception/exceptions.yaml`
 - **Precise change:** Verify full-SHA GitHub Action pins and least-privilege permissions; scan committed history/candidate artifacts for secrets; audit npm/Gradle/Swift dependencies and licenses; generate SBOMs and provenance; run SAST, IaC, container, OpenAPI auth, and mobile manifest checks; enforce approved exceptions with owner/expiry and emit signed evidence linked to artifact digest.
-- **Acceptance:**
+- **Acceptance:** 
   - A critical vulnerability, detected secret, mutable action tag, excessive workflow permission, unapproved license, or expired exception returns non-zero.
   - Evidence identifies tool/database timestamps and does not claim compliance beyond tested controls.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -120,7 +120,7 @@ Permission and privacy UI must follow this rule: existing product style is autho
 - **Change type:** modify-existing
 - **File:** `.github/workflows/smart-ci.yml`
 - **Precise change:** Add CI steps for the Task 8 data-inventory, threat-model, GDPR, credential-encryption, mobile-data-practices, and release-security gates, preserving the fail-closed pinned-action and least-privilege workflow contract.
-- **Acceptance:**
+- **Acceptance:** 
   - The workflow includes each Task 8 named verification command and fails if any gate returns non-zero.
   - Workflow permissions remain least-privilege and action references remain full-SHA pinned.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.

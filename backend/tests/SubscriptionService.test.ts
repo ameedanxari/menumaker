@@ -3719,6 +3719,40 @@ describe('subscription webhook lifecycle state', () => {
     expect(subscription.metadata).toEqual({ stripe_last_event_created: 200 });
   });
 
+  it('prevents Stripe snapshot updates at the same timestamp after terminal deletion metadata', () => {
+    const subscription = createSubscription('starter', {
+      status: 'canceled',
+      metadata: {
+        stripe_last_event_created: 200,
+        stripe_last_event_type: 'customer.subscription.deleted',
+      },
+    });
+
+    const result = applyStripeSubscriptionSnapshot(
+      subscription,
+      {
+        status: 'active',
+        current_period_start: 1780272000,
+        current_period_end: 1782863999,
+        cancel_at_period_end: false,
+        canceled_at: null,
+        trial_start: null,
+        trial_end: null,
+      } as any,
+      'customer.subscription.updated',
+      200
+    );
+
+    expect(result).toEqual({ applied: false, reason: 'stale_event' });
+    expect(subscription).toMatchObject({
+      status: 'canceled',
+      metadata: {
+        stripe_last_event_created: 200,
+        stripe_last_event_type: 'customer.subscription.deleted',
+      },
+    });
+  });
+
   it('rejects corrupt local lifecycle metadata before Stripe event ordering or mutation', () => {
     const snapshotSubscription = createSubscription('starter', {
       status: 'active',
@@ -4575,6 +4609,51 @@ describe('subscription webhook lifecycle state', () => {
       } as any)
     ).resolves.toEqual({ applied: false, reason: 'stale_event' });
     expect(subscriptionRepository.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores same-second non-deletion webhook snapshots after terminal deletion', async () => {
+    const subscription = createSubscription('starter', {
+      stripe_subscription_id: 'sub_123',
+      status: 'active',
+      metadata: {
+        stripe_last_event_created: 1780000000,
+        stripe_last_event_type: 'customer.subscription.deleted',
+      },
+    });
+    const subscriptionRepository = createRepository<any>([subscription]);
+    const service = new SubscriptionService({
+      requireStripe: false,
+      enforceCapability: false,
+      subscriptionRepository: subscriptionRepository as any,
+      businessRepository: createRepository() as any,
+      orderRepository: createRepository() as any,
+    });
+
+    await expect(
+      service.handleSubscriptionWebhook({
+        type: 'customer.subscription.updated',
+        created: 1780000000,
+        data: {
+          object: {
+            id: 'sub_123',
+            status: 'active',
+            current_period_start: 1780272000,
+            current_period_end: 1782863999,
+            cancel_at_period_end: false,
+            canceled_at: null,
+            trial_start: null,
+            trial_end: null,
+          },
+        },
+      } as any)
+    ).resolves.toEqual({ applied: false, reason: 'stale_event' });
+
+    expect(subscriptionRepository.save).not.toHaveBeenCalled();
+    expect(subscription.status).toBe('active');
+    expect(subscription.metadata).toEqual({
+      stripe_last_event_created: 1780000000,
+      stripe_last_event_type: 'customer.subscription.deleted',
+    });
   });
 
   it('rejects trial-ending webhooks that do not match persisted local trial evidence', async () => {

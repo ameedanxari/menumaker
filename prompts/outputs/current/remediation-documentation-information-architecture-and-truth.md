@@ -20,7 +20,7 @@ Inventory and classify the corpus, establish a small governed `docs/` hierarchy 
 - **File:** `docs/governance/document-inventory.csv`
 - **File:** `scripts/docs/build_inventory.py`
 - **Precise change:** List every root/docs/spec/platform Markdown or text report with title, type, subject, authority, owner, created/last-evidence date, status (`authoritative`, `supporting`, `superseded`, `historical`, `generated`), replacement, inbound links, retention reason, and proposed destination/delete decision.
-- **Acceptance:**
+- **Acceptance:** 
   - The ledger contains every tracked documentation/report file exactly once and flags conflicting readiness statements.
   - Deletion is prohibited when inbound links, unique decisions, legal/operational evidence, or unknown provenance remain.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -65,7 +65,7 @@ Inventory and classify the corpus, establish a small governed `docs/` hierarchy 
 - **File:** `scripts/dev-setup.sh`
 - **File:** `validate-integration.sh`
 - **Precise change:** Define and link `product/`, `architecture/adr/`, `api/`, `development/`, `testing/`, `operations/runbooks/`, `security/`, `release/`, `design-system/`, and `archive/<year>/`; state authority precedence, owners, review cadence, generated-doc rules, and the difference between specs, decisions, runbooks, evidence, and history. Preserve documentation entry points for the user-facing settings screen, debug menu behavior in dev builds, and one-command setup scripts without advertising disabled launch capabilities.
-- **Acceptance:**
+- **Acceptance:** 
   - A new contributor can reach setup, API contract, target architecture, testing, deployment, incident, security/privacy, and current roadmap in at most two links.
   - Root retains only README, CONTRIBUTING, AGENTS, MY_PROJECT, and legally conventional top-level files approved in the inventory.
   - Root and mobile README launch copy does not advertise disabled POS, delivery partner, OCR, tax reporting, subscription, or enhanced-referral capabilities as available.
@@ -81,7 +81,7 @@ Inventory and classify the corpus, establish a small governed `docs/` hierarchy 
 - **File:** `docs/product/status.md`
 - **File:** `scripts/docs/verify_status_claims.py`
 - **Precise change:** Summarize component completion, open gaps G1–G14, capability-registry states, last successful build/test/deploy/restore evidence, environment limitations, owners, next milestones, and explicit criteria for using `production-ready`; link machine artifacts rather than copying results.
-- **Acceptance:**
+- **Acceptance:** 
   - README/NEXT-STEPS/mobile reports no longer make contradictory current readiness claims; historical claims are labelled and archived.
   - Each status claim has source path, command/run URL, timestamp, scope, and confidence; missing evidence is stated as unverified.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -96,7 +96,7 @@ Inventory and classify the corpus, establish a small governed `docs/` hierarchy 
 - **File:** `docs/product/capability-index.md`
 - **File:** `scripts/docs/verify_capability_docs.py`
 - **Precise change:** Map each capability-registry entry to canonical product requirement, OpenAPI operation, architecture owner, code paths, tests, operations guide, and archived predecessors; merge unique content from root feature guides into concise current pages and preserve original files under dated archive with `Superseded by` headers.
-- **Acceptance:**
+- **Acceptance:** 
   - Every launch capability has exactly one current product page and every archived guide points to its replacement.
   - Generated API/test/coverage artifacts are linked or regenerated, never hand-copied into current narrative pages.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -266,7 +266,7 @@ Inventory and classify the corpus, establish a small governed `docs/` hierarchy 
 - **File:** `prompts/outputs/current/ui-reference-source-map.md`
 - **File:** `prompts/outputs/current/ux-flows.md`
 - **Precise change:** Read the approved inventory, move historical/superseded documents to `docs/archive/<year>/` with provenance frontmatter and replacement links, delete generated outputs that are reproducible and unreferenced, rewrite inbound links, and produce a before/after manifest; default to dry run and require explicit approval for delete.
-- **Acceptance:**
+- **Acceptance:** 
   - Dry run reports every move/delete/link rewrite and hash; apply is idempotent and never touches authoritative/unknown/legal-retained files.
   - After apply, root-document allowlist and full Markdown link check pass with no unique content silently lost.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -293,7 +293,7 @@ Inventory and classify the corpus, establish a small governed `docs/` hierarchy 
 - **File:** `scripts/docs/fixtures/bad-archive-metadata/docs/README.md`
 - **File:** `scripts/docs/fixtures/bad-archive-metadata/docs/archive/2026/old-status.md`
 - **Precise change:** Validate frontmatter schema/owner/status/review date, relative/anchor/code-path links, authoritative uniqueness, archive replacement links, root allowlist, stale evidence windows, generated-file markers, and prohibited unsupported phrases such as current `production-ready` without evidence.
-- **Acceptance:**
+- **Acceptance:** 
   - CI fails on orphan current docs, duplicate authority, broken paths, expired review, root clutter, or unsupported readiness statements.
   - Historical archives are exempt from freshness but must retain provenance/hash/replacement metadata.
   - Disabled-capability claim verification rejects README/store/release copy that advertises POS, delivery partner, OCR, tax reporting, subscriptions, or enhanced referrals without disabled/gated/historical context.

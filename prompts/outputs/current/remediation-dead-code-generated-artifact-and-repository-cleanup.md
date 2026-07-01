@@ -20,7 +20,7 @@ Where cleanup touches UI components or screens, existing product style is author
 - **File:** `docs/engineering/cleanup-ledger.yaml`
 - **File:** `scripts/cleanup/verify_ledger.py`
 - **Precise change:** Record candidate path/symbol, category (`duplicate`, `unreferenced`, `generated`, `fixture-in-production`, `compatibility`, `stale-report`, `legacy-workflow`), evidence commands/results, runtime/build/test/resource references, owner, canonical replacement, migration tasks, risk, rollback, disposition, and approval.
-- **Acceptance:**
+- **Acceptance:** 
   - Every candidate named in the audit has a row and hash; unknown/dynamic/reflection/resource references prevent automatic deletion.
   - A row cannot become `delete-approved` without replacement, zero-reference proof, behavior coverage, and rollback evidence.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -41,7 +41,7 @@ Where cleanup touches UI components or screens, existing product style is author
 - **File:** `scripts/cleanup/fixtures/sample-android/src/main/kotlin/com/example/DynamicScreen.kt`
 - **File:** `scripts/cleanup/fixtures/sample-ios/project.pbxproj`
 - **Precise change:** Combine TypeScript import dependency maps/tsconfig, Kotlin compiler/source-set/navigation/Hilt/Room/resource references, Xcode target membership/symbol/resource lookups, workflow calls, package scripts, git tracking/ignore rules, and generated headers; output evidence into the ledger without deleting.
-- **Acceptance:**
+- **Acceptance:** 
   - Fixtures prove detection of unused imports/files, duplicate symbols, Xcode target-only references, Android resource/navigation references, generated outputs, and dynamic-reference uncertainty.
   - The tool never labels uncertain/reflection/string/resource candidates auto-delete.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -60,7 +60,7 @@ Where cleanup touches UI components or screens, existing product style is author
 - **File:** `android/app/google-services.json`
 - **File:** `android/app/google-services.json.README`
 - **Precise change:** Ignore coverage/test output, Playwright reports, Gradle/Xcode derived artifacts, local Firebase configs, generated API clients where regeneration policy requires, Terraform plan/state, and evidence temp files; untrack `backend/coverage_output.txt`, `backend/final_coverage.txt`, `backend/test_output.txt`; replace `android/app/google-services.json` with documented local/CI injection and safe template.
-- **Acceptance:**
+- **Acceptance:** 
   - A clean build/test leaves no untracked repository noise except declared evidence directories.
   - Release artifact scans contain no test fixtures, UI mock routers, test Firebase project values, coverage output, Terraform state, or local credentials.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -74,7 +74,7 @@ Where cleanup touches UI components or screens, existing product style is author
 - **Change type:** create-new
 - **File:** `scripts/cleanup/apply-source-cleanup.py`
 - **Precise change:** Consume delete-approved ledger rows, migrate web `components/common/Button` consumers to `components/ui/Button`, remove duplicate Android Cart/Menu screens after G5 verification, remove duplicate token JSON after G12 generation, move iOS fixtures out of production membership after G6, and emit exact moved/deleted hashes plus reverse patch.
-- **Acceptance:**
+- **Acceptance:** 
   - TypeScript, both Android flavors, both iOS schemes, navigation tests, UI component tests, and accessibility checks pass after each small cleanup batch.
   - The script defaults to dry-run, refuses dirty overlapping files, and applies only approved hashes to prevent deleting changed code.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -89,7 +89,7 @@ Where cleanup touches UI components or screens, existing product style is author
 - **File:** `docs/engineering/workflow-ownership.yaml`
 - **File:** `scripts/ci/verify_workflow_ownership.py`
 - **Precise change:** Map triggers/jobs/required checks/artifacts from `ci.yml`, `pr-checks.yml`, `nightly-e2e.yml`, `smart-ci.yml`, and `deploy.yml`; designate consolidated active workflows, migrate unique jobs, disable/rename legacy triggers, then delete legacy files after one green observation window; link G9 deprecation entries for route/model aliases.
-- **Acceptance:**
+- **Acceptance:** 
   - Every required check/job has exactly one owner and no duplicate workflow races or contradictory environment setup.
   - If workflow ownership is rendered as a graph, loading and empty states explain unavailable workflow data, error states name the invalid workflow/check, the legend distinguishes active/legacy/retired workflows, and each tooltip shows trigger, owner, required-check, and artifact metadata.
   - Deleted aliases/workflows have zero code/repository-setting references and a documented rollback commit.
@@ -109,7 +109,7 @@ Where cleanup touches UI components or screens, existing product style is author
 - **File:** `scripts/cleanup/fixtures/hygiene/bad-sample-marker/frontend/src/sampleData.ts`
 - **File:** `scripts/cleanup/fixtures/hygiene/good/.gitkeep`
 - **Precise change:** Fail on tracked build/coverage/test/state/credential artifacts, unauthorized root docs, production mock/sample markers, duplicate component/screen authorities, expired deprecations/cleanup rows, broken generated-file policy, and unexpected large files; support a narrow owner/expiry allowlist and emit remediation links.
-- **Acceptance:**
+- **Acceptance:** 
   - Seeded fixtures for each prohibited category fail with a precise path/category/owner action.
   - The gate runs in required CI and a clean checkout/build/test cycle passes without manual deletion.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.

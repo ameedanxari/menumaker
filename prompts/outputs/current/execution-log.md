@@ -3,7 +3,7 @@ session_id: DA50B2BE-59AD-42C4-90DA-9E6613B1E4DD
 parent_session: 4E2CCBA2-8258-4153-8DEA-0337F252844C
 plan_source: audit-and-remediate
 started_at: 2026-06-28T07:41:04Z
-updated_at: 2026-07-01T01:32:33Z
+updated_at: 2026-07-01T23:08:14Z
 platforms: [web, android, ios]
 last_completed_task: remediation-backend-stub-and-domain-workflow-completion.md
 next_task: null
@@ -17,6 +17,19 @@ harness_recoveries: [frontend api focused test rerun without unsupported Vitest 
 ---
 
 # Execution Log
+
+### Backend subscription same-second terminal-deletion ordering hardening — done
+- **Attempted:** 2026-07-01T23:08:14Z
+- **Change made:** Hardened subscription snapshot ordering so same-second `customer.subscription.updated` and `customer.subscription.trial_will_end` payloads are treated as stale when existing metadata shows terminal-deletion evidence, preventing non-deletion snapshots from overwriting deleted subscription state before repository persistence or read-side trust.
+- **Test run:** `PATH="/Users/mehreenadeem/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/mehreenadeem/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH" JWT_SECRET=test-secret-key-for-ci-testing-32-chars-minimum WHATSAPP_ENABLED=true TWILIO_ACCOUNT_SID=AC00000000000000000000000000000000 TWILIO_AUTH_TOKEN=test-token-32-chars-minimum NODE_OPTIONS=--experimental-vm-modules node node_modules/jest/bin/jest.js --config backend/jest.config.js SubscriptionService.test.ts --runInBand --testNamePattern="same-second|stale_event|terminal deletion|trial will end"; `PATH="/Users/mehreenadeem/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/mehreenadeem/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH" node node_modules/typescript/bin/tsc --noEmit -p backend/tsconfig.json`
+- **Test result:** pass for focused subscription ordering coverage (3 selected tests), broader subscription/capability backend suites (169 tests), and backend TypeScript.
+- **Acceptance verified:**
+  - ✅ Subscription snapshots with `status: active` and equal `created` timestamps are rejected after terminal deleted metadata is present.
+  - ✅ `customer.subscription.updated` webhooks at equal timestamps now return `stale_event` and skip persistence.
+  - ✅ Existing subscription lifecycle, capability-gating, webhook, metadata ordering, and identifier-boundary guardrails remain green.
+- **Status:** done
+- **Notes:** User requested regular commits and pushes moving forward. Push attempts currently fail in this environment because GitHub HTTPS credentials are not configured (`fatal: could not read Username for 'https://github.com': Device not configured`).
+- **Session:** DA50B2BE-59AD-42C4-90DA-9E6613B1E4DD
 
 ### Backend delivery audit text boundary hardening — done
 - **Attempted:** 2026-07-01T01:32:33Z

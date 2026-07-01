@@ -1,5 +1,5 @@
 ---
-generated_at: 2026-07-01T11:33:58Z
+generated_at: 2026-07-01T23:07:47Z
 generated_by: scripts/build-path-ledger.sh
 plan_files: 14
 total_paths: 623
@@ -687,3 +687,4 @@ If the path you are about to write is not listed here, stop:_
 - `scripts/quality/fixtures/bad-retry-dependent-pass/quality-input.json` — tasks-trustworthy-test-and-verification-strategy.md:R7 (create-new)
 - `scripts/quality/fixtures/bad-skipped-test/quality-input.json` — tasks-trustworthy-test-and-verification-strategy.md:R7 (create-new)
 - `scripts/quality/fixtures/good/quality-input.json` — tasks-trustworthy-test-and-verification-strategy.md:R7 (create-new)
+

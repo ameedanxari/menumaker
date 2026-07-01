@@ -17,7 +17,7 @@ Establish TypeORM migrations as the only production schema authority, generate a
 - **Change type:** create-new
 - **File:** `docs/architecture/adr/0001-database-schema-ownership.md`
 - **Precise change:** Record PostgreSQL as canonical state, TypeORM migrations as the sole non-local schema writer, prohibited production use of `synchronize`, expand/contract rules, rollback-versus-forward-fix criteria, advisory-lock ownership, and Tier 0 RPO/RTO assumptions for order/payment/subscription state.
-- **Acceptance:**
+- **Acceptance:** 
   - The ADR names `backend/src/migrations/` and `AppDataSource.runMigrations()` as the only production schema path.
   - It distinguishes zonal failure, regional loss, operator error, destructive migration, and logical corruption instead of claiming blanket zero data loss.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -31,7 +31,7 @@ Establish TypeORM migrations as the only production schema authority, generate a
 - **Change type:** create-new
 - **File:** `backend/src/migrations/1718841600000-InitialMenuMakerSchema.ts`
 - **Precise change:** Implement a TypeORM `MigrationInterface` whose `up` creates every table, enum/check constraint, foreign key, unique constraint, and index represented by the entities registered in `backend/src/config/database.ts`; implement a dependency-safe `down` for disposable test environments and include no seed or customer data.
-- **Acceptance:**
+- **Acceptance:** 
   - A clean database reaches the current entity schema with `migration:run` while `synchronize=false`.
   - Running the migration twice leaves the second run with zero pending migrations rather than duplicate-object errors.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -47,7 +47,7 @@ Establish TypeORM migrations as the only production schema authority, generate a
 - **File:** `backend/src/main.ts`
 - **File:** `backend/tests/database-config.test.ts`
 - **Precise change:** Register `src/migrations/*.{ts,js}`, replace implicit `NODE_ENV` synchronization with an explicit `DB_SYNCHRONIZE_LOCAL=true` guard that is rejected in production, expose migration-table naming, and provide a startup preflight that fails when pending migrations exist unless the process is the dedicated migration job.
-- **Acceptance:**
+- **Acceptance:** 
   - `NODE_ENV=production DB_SYNCHRONIZE_LOCAL=true` terminates before database initialization with a configuration error.
   - Application startup reports pending migration IDs and refuses readiness until the migration job completes.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -69,7 +69,7 @@ Establish TypeORM migrations as the only production schema authority, generate a
 - **File:** `backend/src/services/MarketplaceService.ts`
 - **File:** `backend/src/services/ReviewService.ts`
 - **Precise change:** Replace the build command that swallows `tsc` failures, add `migration:run`, `migration:revert:test-only`, `migration:show`, `migrate:test:clean`, and `migrate:test:upgrade` scripts, and ensure each command uses `src/config/database.ts` with the same environment schema as the application.
-- **Acceptance:**
+- **Acceptance:** 
   - `npm run build --workspace=backend` returns the TypeScript compiler exit code without `|| exit 0`.
   - Clean and upgrade migration commands return non-zero when a migration fails or schema drift remains.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -83,7 +83,7 @@ Establish TypeORM migrations as the only production schema authority, generate a
 - **Change type:** create-new
 - **File:** `backend/tests/integration/migrations.test.ts`
 - **Precise change:** Use a disposable PostgreSQL database to test zero-to-current migration, upgrade from the last release fixture, representative User→Business→Menu→Order→Payment relations, non-null/index constraints, a failed destructive migration rollback, and restoration of a checksum-verified backup fixture.
-- **Acceptance:**
+- **Acceptance:** 
   - The test asserts exact row counts and primary/foreign-key identity before and after upgrade and restore.
   - Failure injection proves the migration transaction leaves the prior schema readable and records the failed migration name.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.

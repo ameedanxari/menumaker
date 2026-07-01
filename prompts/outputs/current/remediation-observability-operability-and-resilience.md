@@ -20,7 +20,7 @@ Implement OpenTelemetry-correlated logs/metrics/traces for Fastify/PostgreSQL/pr
 - **File:** `docs/operations/slo-catalog.yaml`
 - **File:** `scripts/observability/validate_slos.py`
 - **Precise change:** Define availability/latency/correctness SLOs for auth, public menu, order creation/status, payment webhook, seller mutation, media, notification outbox, and background sync; specify SLIs, windows, error budgets, owners, page/ticket thresholds, exclusions, and no-data behavior.
-- **Acceptance:**
+- **Acceptance:** 
   - Tier 0 order/payment SLIs include duplicate/lost/invalid-transition correctness, not HTTP 2xx alone.
   - Every page alert links an owner, runbook, severity, and customer-impact statement.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -35,7 +35,7 @@ Implement OpenTelemetry-correlated logs/metrics/traces for Fastify/PostgreSQL/pr
 - **File:** `backend/src/observability/telemetry.ts`
 - **File:** `backend/tests/telemetry.test.ts`
 - **Precise change:** Initialize OpenTelemetry resources with service/version/environment; instrument HTTP/Fastify/PostgreSQL and explicit Stripe/Twilio/Anthropic/POS/delivery spans; record RED metrics and domain counters; propagate W3C trace context/request IDs; configure Pino redaction for authorization/cookies/tokens/passwords/payment/PII; batch export to AWS X-Ray/CloudWatch via OTLP.
-- **Acceptance:**
+- **Acceptance:** 
   - One order/payment test links request, SQL transaction, provider call, outbox event, and worker spans under one trace without sensitive values.
   - Route labels are bounded templates, not raw URLs/user IDs, and telemetry export failure never blocks Tier 0 state commits.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -50,7 +50,7 @@ Implement OpenTelemetry-correlated logs/metrics/traces for Fastify/PostgreSQL/pr
 - **File:** `backend/src/routes/health.ts`
 - **File:** `backend/tests/health.test.ts`
 - **Precise change:** Expose lightweight `/health/live`, dependency-aware `/health/ready`, and authenticated admin diagnostics; readiness checks database migration/pool, required secrets/capabilities, and outbox backlog thresholds with per-check timeouts; never expose versions/credentials/internal addresses publicly.
-- **Acceptance:**
+- **Acceptance:** 
   - Database loss makes readiness non-2xx while liveness remains 2xx until the process is actually wedged.
   - Startup, drain, migration, and dependency-degraded transitions have integration tests and ECS grace-period settings.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -65,7 +65,7 @@ Implement OpenTelemetry-correlated logs/metrics/traces for Fastify/PostgreSQL/pr
 - **File:** `infrastructure/modules/environment/observability.tf`
 - **File:** `scripts/observability/verify_alert_coverage.py`
 - **Precise change:** Provision CloudWatch log groups/retention, metrics/alarms, X-Ray, dashboard, SNS routing, budget alarm, and scheduled synthetics for public menu, auth, order, and signed payment-event canary; alert on SLO burn, 5xx/latency, RDS/storage, migration failure, outbox/DLQ lag, payment signature failures, and backup status.
-- **Acceptance:**
+- **Acceptance:** 
   - Critical pages require sustained multi-window burn or Tier 0 correctness failure and link to versioned runbooks.
   - Staging proves each alert via controlled injection; production alert destinations and escalation acknowledgements are tested quarterly.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -86,7 +86,7 @@ Implement OpenTelemetry-correlated logs/metrics/traces for Fastify/PostgreSQL/pr
 - **File:** `ios/MenuMaker/Shared/Utilities/TelemetryReporter.swift`
 - **File:** `ios/MenuMakerTests/TelemetryReporterTests.swift`
 - **Precise change:** Define a shared event taxonomy and platform adapters: web reports fatal boundary/API failures; Android uses structured Timber/Crashlytics events and WorkManager sync metrics; iOS uses `Logger` signposts plus Xcode Organizer/crash metadata; attach release/environment/operation/error-code/correlation ID but no tokens, addresses, phone/email, payment metadata, or request bodies.
-- **Acceptance:**
+- **Acceptance:** 
   - Forced debug crashes and sync failures appear in the correct non-production project with symbolication/source maps and correlation IDs.
   - Automated redaction tests reject sensitive keys and values before exporter calls.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -101,7 +101,7 @@ Implement OpenTelemetry-correlated logs/metrics/traces for Fastify/PostgreSQL/pr
 - **File:** `docs/operations/runbooks/index.md`
 - **File:** `scripts/operations/validate_runbooks.py`
 - **Precise change:** Link runbooks for API outage, database failover/restore, bad migration, payment webhook backlog, duplicate order/payment suspicion, credential compromise, media outage, outbox/DLQ replay, mobile bad release, and Terraform drift; each includes detection, customer impact, containment, evidence capture, approval, recovery, verification, communication, and postmortem.
-- **Acceptance:**
+- **Acceptance:** 
   - Quarterly staging drills produce timestamps, commands, checksums, restored row/invariant checks, actual RPO/RTO, gaps, and named follow-ups.
   - Replay/restore tools require explicit environment, dry-run summary, approval identity, idempotency key, and immutable evidence output.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.

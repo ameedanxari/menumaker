@@ -20,7 +20,7 @@ Client UI layering must preserve the existing theme authority and state contract
 - **File:** `docs/architecture/target-state.md`
 - **File:** `scripts/architecture/verify_state_ownership.py`
 - **Precise change:** Define Identity, Business Catalog, Ordering, Payments/Billing, Promotions/Referrals, Marketplace/Reviews, Fulfilment/Integrations, Notifications, Compliance/Admin, and Reporting contexts; map owned tables, commands, queries, events, projections, forbidden writers, transaction boundaries, and seller/customer/admin consumers; keep one deployable Fastify modular monolith initially.
-- **Acceptance:**
+- **Acceptance:** 
   - Every TypeORM entity/table is assigned exactly one write owner and zero or more read projections.
   - Orders/payments/subscriptions/rewards/audit workflows name atomic boundaries, idempotency keys, ordering keys, replay owner, and fail-closed behavior.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -38,7 +38,7 @@ Client UI layering must preserve the existing theme authority and state contract
 - **File:** `scripts/architecture/fixtures/invalid-cross-owner/application/payment-route.ts`
 - **File:** `scripts/architecture/fixtures/invalid-cycle/domain/order-cycle.ts`
 - **Precise change:** Parse TypeScript imports and enforce `domain -> application -> infrastructure/http` direction per context, prohibit route-to-repository private access and cross-context entity mutations, allow shared kernel only for IDs/money/time/error primitives, and compare exceptions to dated ADR entries.
-- **Acceptance:**
+- **Acceptance:** 
   - Existing violations are emitted as a finite baseline with owner and expiry; new violations fail CI.
   - The checker catches payment routes reaching a private repository and non-owner contexts importing mutable entities.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -53,7 +53,7 @@ Client UI layering must preserve the existing theme authority and state contract
 - **File:** `backend/src/contexts/index.ts`
 - **File:** `backend/tests/context-modules.test.ts`
 - **Precise change:** Define a `ContextModule` contract exposing routes, services, repositories, event handlers, readiness, and capability metadata; migrate registrations from `main.ts`/`app.ts` in ownership order; inject infrastructure adapters; and prevent context modules from importing the global Fastify singleton.
-- **Acceptance:**
+- **Acceptance:** 
   - `main.ts` contains only process lifecycle and `buildApp` composition; route modules are registered through context manifests.
   - Each context can construct with in-memory/test adapters and exposes no mutable repository owned by another context.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -69,7 +69,7 @@ Client UI layering must preserve the existing theme authority and state contract
 - **File:** `backend/tests/contracts.test.ts`
 - **File:** `backend/tests/context-integration.test.ts`
 - **Precise change:** Define branded IDs, Money, UTC timestamp, command metadata, idempotency key, actor/tenant/purpose context, domain event envelope with schema version/ordering key, query pagination, and projection checkpoint; apply first to order→payment→notification and referral→reward workflows.
-- **Acceptance:**
+- **Acceptance:** 
   - Cross-context calls use commands/queries/events rather than importing services/entities across owners.
   - Events carry owner, version, correlation/causation, ordering, retention, and replay metadata and have schema compatibility tests.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -84,7 +84,7 @@ Client UI layering must preserve the existing theme authority and state contract
 - **File:** `docs/architecture/client-layering.md`
 - **File:** `scripts/architecture/verify_client_layers.py`
 - **Precise change:** Define generated transport DTO→domain mapper→repository→use-case/ViewModel→UI-state layers for web, Android, and iOS; assign auth/session, cart, order, and settings cache ownership; prohibit UI imports of generated DTOs/endpoint strings and repository imports of platform screens.
-- **Acceptance:**
+- **Acceptance:** 
   - Representative auth, seller menu/order, customer cart/checkout, and settings flows map to concrete existing/new files on each platform.
   - Architecture checks identify duplicate repository/state owners and direct transport access from UI.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -99,7 +99,7 @@ Client UI layering must preserve the existing theme authority and state contract
 - **File:** `docs/architecture/deprecation-ledger.yaml`
 - **File:** `scripts/architecture/verify_deprecations.py`
 - **Precise change:** List route aliases, `Order.status`/`total_amount_cents`, legacy endpoint paths, duplicate DTOs, old context imports, owner, replacement, consumers, telemetry, removal release, and rollback; delete only after contract/client scans and one deprecation window prove zero use.
-- **Acceptance:**
+- **Acceptance:** 
   - Every compatibility alias in production source has a ledger row or is removed.
   - Removal PRs include consumer search, contract diff, migration impact, and rollback evidence.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.

@@ -22,7 +22,7 @@ Create a machine-readable capability registry, classify every stub as implement-
 - **File:** `backend/src/services/TranslationService.ts`
 - **File:** `backend/tests/TranslationService.test.ts`
 - **Precise change:** Enumerate every registered route/domain with owner, launch scope, status (`implemented`, `disabled`, `deprecated`), feature flag, dependencies, contract operation IDs, tests, known TODO/stub locations, and removal milestone; classify POS, analytics, referral rewards, QR generation, moderation actions, support email, tax waiver calculations, OCR, delivery, and notification side effects.
-- **Acceptance:**
+- **Acceptance:** 
   - A scanner maps every `main.ts` route registration and every source TODO/not-implemented/placeholder marker to a registry row or approved non-functional comment exemption.
   - No capability is marked implemented without at least one backend integration test and one client or operator consumer.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -39,7 +39,7 @@ Create a machine-readable capability registry, classify every stub as implement-
 - **File:** `frontend/src/pages/AdminPortalPage.tsx`
 - **File:** `backend/src/services/AdminService.ts`
 - **Precise change:** Validate feature flags and required integration credentials at startup, expose `requireCapability(name)` middleware returning a stable 503 `FEATURE_UNAVAILABLE`, omit disabled operations from client navigation/discovery, and emit capability readiness in authenticated admin health without exposing secrets.
-- **Acceptance:**
+- **Acceptance:** 
   - Missing launch-required credentials fail startup; optional disabled features return the documented code and never execute partial writes.
   - Capability status comes from validated config/registry, not scattered `process.env` checks.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -55,7 +55,7 @@ Create a machine-readable capability registry, classify every stub as implement-
 - **File:** `backend/src/routes/pos.ts`
 - **File:** `backend/tests/POSSyncService.test.ts`
 - **Precise change:** Implement provider adapters for only approved launch providers with encrypted credentials, compare-and-swap token refresh, request idempotency, cursor checkpoints, rate-limit backoff, typed permanent/retryable errors, sync-log audit records, and replay-safe item/order mapping; route all unapproved providers through the disabled capability state.
-- **Acceptance:**
+- **Acceptance:** 
   - No launch provider path throws `Token refresh not implemented` or returns a stub success.
   - Tests cover expired token concurrency, rate limiting, partial page failure, resume from cursor, mapping conflict, revoked credentials, and replay.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -70,7 +70,7 @@ Create a machine-readable capability registry, classify every stub as implement-
 - **File:** `backend/src/services/AnalyticsService.ts`
 - **File:** `backend/tests/AnalyticsService.test.ts`
 - **Precise change:** Separate seller business analytics from platform observability; calculate seller metrics from orders/payments/refunds within explicit timezones; obtain platform uptime/error/latency from the G10 telemetry adapter or mark unavailable; remove hard-coded 99.97 and placeholder arrays; define freshness and partial-data metadata.
-- **Acceptance:**
+- **Acceptance:** 
   - All returned values trace to a SQL aggregation or telemetry query with range/timezone tests.
   - Empty/no-telemetry states are explicit and never represented by plausible constants.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -97,7 +97,7 @@ Create a machine-readable capability registry, classify every stub as implement-
 - **File:** `backend/tests/ModerationService.test.ts`
 - **File:** `backend/tests/PayoutService.test.ts`
 - **Precise change:** Post referral credit through an immutable ledger transaction, create coupons through `CouponService`, generate QR artifacts with a maintained encoder, and publish notification outbox entries atomically; coordinate `ModerationService` to hide/suspend/warn through typed content adapters and audit before/after state; disable any unresolved action instead of returning success.
-- **Acceptance:**
+- **Acceptance:** 
   - Concurrent reward qualification credits each beneficiary exactly once and links ledger, coupon, notification, and referral IDs.
   - Moderation response status reflects the actual content/user mutation and every privileged action has actor, reason, target, before/after, and timestamp.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -118,7 +118,7 @@ Create a machine-readable capability registry, classify every stub as implement-
 - **File:** `backend/tests/OrderServiceFailure.test.ts`
 - **File:** `backend/tests/utils/sharedFixtures.ts`
 - **Precise change:** Add transactional outbox records with channel/template/locale/deduplication key, attempt state, next attempt, provider receipt, and redacted terminal error; enqueue from support, GDPR, referral, order, payment, and moderation transactions; dispatch through channel adapters with exponential retry, DLQ, opt-out enforcement, and operator replay audit.
-- **Acceptance:**
+- **Acceptance:** 
   - Domain writes and notification intent commit atomically; provider outage does not roll back the domain action or lose intent.
   - Duplicate events send at most once per channel/deduplication key and terminal failures are queryable by support without message-body secrets.
   - Order route/service cancellation and read/update boundaries remain plan-owned while order notification and launch-scope ordering side effects are hardened.
@@ -145,7 +145,7 @@ Create a machine-readable capability registry, classify every stub as implement-
 - **File:** `backend/src/services/SubscriptionService.ts`
 - **File:** `backend/tests/SubscriptionService.test.ts`
 - **Precise change:** Scan production source for TODO/FIXME/not-implemented/stub/placeholder and suspicious hard-coded success data, apply a small reviewed allowlist for harmless documentation/UI placeholders, cross-check capability status and OpenAPI exposure, and emit file/line/capability evidence. Extend the shared capability route coverage owned by R2 when R7 route hardening changes capability-gated endpoints.
-- **Acceptance:**
+- **Acceptance:** 
   - The script fails when an implemented launch capability contains an unclassified runtime stub or a disabled capability is still advertised to clients.
   - Each allowlist entry has owner, reason, expiry date, and linked registry row.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -161,7 +161,7 @@ Create a machine-readable capability registry, classify every stub as implement-
 - **File:** `backend/src/routes/subscriptions.ts`
 - **File:** `backend/tests/subscription-webhook.integration.test.ts`
 - **Precise change:** Keep subscription webhook raw-body, signature, idempotency, ordering, and lifecycle regression evidence tied to the backend capability-hardening plan while `subscriptions` remains disabled by default; any future service-layer fail-closed changes must continue to pass the webhook regression suite without requiring live Stripe credentials.
-- **Acceptance:**
+- **Acceptance:** 
   - Subscription webhook regression coverage remains listed in the path ledger for this capability plan and does not collide with the payment/session security task's existing ownership.
   - Disabled subscription service-boundary changes still prove webhook lifecycle helpers, raw-body handling, idempotency, stale-event ordering, and trial metadata behavior through focused backend tests.
   - The task's named verification command is required before handoff whenever subscription fail-closed behavior is changed.
@@ -205,7 +205,7 @@ Create a machine-readable capability registry, classify every stub as implement-
 - **File:** `ios/MenuMakerTests/IntegrationCapabilityBoundaryTests.swift`
 - **File:** `ios/MenuMakerTests/ReferralCapabilityBoundaryTests.swift`
 - **Precise change:** Keep client API wrappers, screens, repositories, and view models aligned with the disabled capability registry; POS and delivery connect flows must remain launch-gated locally, subscription billing methods must not expose live upgrade/portal calls while disabled, and enhanced referral UIs must not offer fake reward, leaderboard, affiliate, or payout success states.
-- **Acceptance:**
+- **Acceptance:** 
   - Client code for disabled capabilities either displays an explicit launch-gated/disabled state or surfaces the backend `FEATURE_UNAVAILABLE` response without retrying into partial workflow side effects.
   - No visible button or wrapper method advertises live POS, delivery, paid subscription, OCR/tax import/reporting, or enhanced-referral reward/payout behavior until the matching registry row is enabled with evidence.
   - The path ledger records these client API wrapper, DTO/model, view-model, screen, compile-support, and regression-test files as modify-existing ownership for this backend capability-hardening plan without colliding with platform-specific UI/test tasks.
@@ -257,7 +257,7 @@ Create a machine-readable capability registry, classify every stub as implement-
 - **File:** `.ai-prompts/safety-report.json`
 - **File:** `.ai-prompts/safety-report-docs.json`
 - **Precise change:** Keep these generated planning, readiness, source-ledger, graph, review, execution-log, path-ledger, and resumption-checkpoint artifacts declared as plan-owned paths because executor preflight and checkpointing intentionally refresh them while continuing this remediation prompt.
-- **Acceptance:**
+- **Acceptance:** 
   - `validate-ready-to-execute.sh` can regenerate the AI-prompt-library artifacts and rebuild `path-ledger.md` without causing those files to appear as non-ledger scope drift.
   - The generated path ledger lists each refreshed planning/checkpoint artifact exactly once under this remediation prompt.
   - `task-graph.json` remains a machine-readable planning graph only and introduces no user-facing chart; tooltip, legend, loading, empty, and error behavior stay not applicable to this generated executor artifact.

@@ -20,7 +20,7 @@ Create a fail-closed payment ingress and session lifecycle: exact raw webhook by
 - **File:** `backend/src/models/RefreshSession.ts`
 - **File:** `backend/tests/RefreshSession.test.ts`
 - **Precise change:** Add a TypeORM entity with `id`, `user_id`, `family_id`, `token_hash`, `created_at`, `expires_at`, `rotated_at`, `revoked_at`, `replaced_by_id`, `reuse_detected_at`, `user_agent_hash`, and `ip_prefix`; store only SHA-256/HMAC token hashes and index active family/user lookups.
-- **Acceptance:**
+- **Acceptance:** 
   - No raw refresh token or bearer credential is persisted or logged.
   - A reused rotated token revokes its entire family and records `reuse_detected_at`.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -35,7 +35,7 @@ Create a fail-closed payment ingress and session lifecycle: exact raw webhook by
 - **File:** `backend/src/utils/jwt.ts`
 - **File:** `backend/tests/jwt.test.ts`
 - **Precise change:** Add `typ`, `jti`, `sid`, issuer, and audience claims; use distinct validated access/refresh secrets or asymmetric keys; make access verification reject refresh tokens; reduce access lifetime to 15 minutes; and expose hashing helpers without logging token contents.
-- **Acceptance:**
+- **Acceptance:** 
   - `verifyAccessToken` rejects a validly signed refresh token and wrong audience/issuer.
   - Key/secret configuration shorter than 32 bytes or shared between token types fails startup.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -51,7 +51,7 @@ Create a fail-closed payment ingress and session lifecycle: exact raw webhook by
 - **File:** `backend/src/routes/auth.ts`
 - **File:** `backend/tests/auth-session-routes.test.ts`
 - **Precise change:** Issue one-time opaque refresh credentials backed by `RefreshSession`, rotate atomically on `/refresh`, revoke the family on `/logout` and password change, set refresh credentials in `HttpOnly; Secure; SameSite=Strict` cookies for the web origin, and return bearer refresh tokens only for explicitly identified native clients.
-- **Acceptance:**
+- **Acceptance:** 
   - Concurrent refresh attempts allow exactly one successor and revoke the family when the loser is replayed.
   - Logout, password change, user suspension, and user ban invalidate active families before returning success.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -66,7 +66,7 @@ Create a fail-closed payment ingress and session lifecycle: exact raw webhook by
 - **File:** `backend/src/main.ts`
 - **File:** `backend/tests/webhook-raw-body.test.ts`
 - **Precise change:** Refactor plugin order to register a Fastify raw-body mechanism before routes, enable it only for `/api/v1/payments/webhook` and `/api/v1/subscriptions/webhook`, retain a bounded Buffer/string of the exact bytes, and reject webhook startup when either signing secret is absent in staging/production.
-- **Acceptance:**
+- **Acceptance:** 
   - JSON parsing never mutates the payload supplied to `stripe.webhooks.constructEvent`.
   - Raw bodies are capped to a documented size and are never included in request/security logs.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -81,7 +81,7 @@ Create a fail-closed payment ingress and session lifecycle: exact raw webhook by
 - **File:** `backend/src/routes/payments.ts`
 - **File:** `backend/tests/payment-webhook.integration.test.ts`
 - **Precise change:** Register `/mock-charge` only when `NODE_ENV=test` and `ENABLE_FAKE_PAYMENTS=true`; require authenticated test fixtures even then; persist Stripe event IDs with a unique constraint; lock the related payment/order during transitions; ignore already-processed events; and validate allowed monotonic status transitions and amount/currency/order metadata.
-- **Acceptance:**
+- **Acceptance:** 
   - Production route enumeration contains no `/mock-charge` endpoint.
   - Replaying the same signed event returns 2xx without a second payment/order transition, while a mismatched amount or order ID fails closed and raises a security event.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -96,7 +96,7 @@ Create a fail-closed payment ingress and session lifecycle: exact raw webhook by
 - **File:** `backend/src/routes/subscriptions.ts`
 - **File:** `backend/tests/subscription-webhook.integration.test.ts`
 - **Precise change:** Consume the exact raw body, persist/deduplicate event IDs, retrieve the current Stripe object when event ordering is stale, enforce subscription/customer/business ownership, and acknowledge only after the local transaction commits.
-- **Acceptance:**
+- **Acceptance:** 
   - Duplicate, out-of-order, invalid-signature, unknown-customer, and handler-failure cases have deterministic retry-safe responses.
   - Access-tier changes are committed atomically with the processed-event receipt.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -111,7 +111,7 @@ Create a fail-closed payment ingress and session lifecycle: exact raw webhook by
 - **File:** `frontend/src/stores/authStore.ts`
 - **File:** `frontend/src/stores/authStore.test.ts`
 - **Precise change:** Remove `accessToken` from persisted Zustand state, use same-origin credentialed requests with the HttpOnly refresh/session cookie, keep any short-lived access token in memory only when required, rehydrate identity through `/auth/me`, and implement CSRF protection for cookie-authenticated mutations.
-- **Acceptance:**
+- **Acceptance:** 
   - Browser local/session storage and IndexedDB contain no access token, refresh token, JWT, or session secret after login and reload.
   - Reload, refresh rotation, logout, expired session, CSRF failure, and concurrent-tab logout have automated tests.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -126,7 +126,7 @@ Create a fail-closed payment ingress and session lifecycle: exact raw webhook by
 - **File:** `android/app/src/main/kotlin/com/menumaker/data/local/datastore/TokenDataStore.kt`
 - **File:** `android/app/src/test/kotlin/com/menumaker/data/local/datastore/TokenDataStoreTest.kt`
 - **Precise change:** Move refresh credentials to Android Keystore-backed encrypted storage, keep access credentials memory-scoped where practical, add a one-time migration that deletes plain preference keys after verified transfer, use seller/customer flavor-specific aliases, and wipe credentials when decryption or rotation fails.
-- **Acceptance:**
+- **Acceptance:** 
   - A fresh and upgraded installation contains no token plaintext in the DataStore preferences XML.
   - Tests cover migration, key invalidation, logout wipe, failed decrypt, and customer/seller alias isolation.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.

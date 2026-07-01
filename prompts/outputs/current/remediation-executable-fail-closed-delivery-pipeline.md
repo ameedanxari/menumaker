@@ -19,7 +19,7 @@ Adopt one concrete AWS target—ECS Fargate for the Fastify API, RDS PostgreSQL,
 - **Change type:** create-new
 - **File:** `docs/architecture/adr/0002-aws-production-runtime.md`
 - **Precise change:** Select ECS Fargate, ALB, RDS PostgreSQL Multi-AZ, S3/CloudFront, Route 53/ACM, Secrets Manager, CloudWatch, ECR, and separate dev/staging/prod Terraform state; document rejected Lambda/EKS choices, region/data-residency caveat, cost assumptions, RPO/RTO, and the user-review checkpoint before first production apply.
-- **Acceptance:**
+- **Acceptance:** 
   - Every service has an owner, data classification, network zone, scaling boundary, and failure/rollback behavior.
   - The ADR explicitly states that catastrophic regional loss exceeds the initial RPO until a cross-region recovery decision is approved.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -33,7 +33,7 @@ Adopt one concrete AWS target—ECS Fargate for the Fastify API, RDS PostgreSQL,
 - **Change type:** create-new
 - **File:** `infrastructure/modules/environment/main.tf`
 - **Precise change:** Create a reusable module wiring VPC/public-private subnets, NAT/egress, security groups, ALB, ECS cluster/service/task definition, RDS PostgreSQL, ECR, S3 media/web buckets, CloudFront, AWS Secrets Manager/KMS secret management, CloudWatch logs/alarms, Route 53/ACM inputs, encryption, backup retention, and least-privilege task roles.
-- **Acceptance:**
+- **Acceptance:** 
   - Databases and tasks have no public IP; ALB is the only public API ingress and TLS is mandatory.
   - Dev, staging, and prod use the same module while deletion protection, Multi-AZ, retention, capacity, and domains vary through validated inputs.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -52,7 +52,7 @@ Adopt one concrete AWS target—ECS Fargate for the Fastify API, RDS PostgreSQL,
 - **File:** `infrastructure/environments/staging.tfvars`
 - **File:** `infrastructure/environments/prod.tfvars`
 - **Precise change:** Replace missing `backend`/`database` modules with `module "environment"`, configure a version-constrained AWS provider and remote encrypted/locked state bootstrap instructions, and expose only non-secret outputs consumed by deployment verification.
-- **Acceptance:**
+- **Acceptance:** 
   - `terraform plan` for dev/staging/prod resolves every module path and contains no placeholder resource.
   - State keys, account IDs, domains, and secret ARNs are environment-specific and production destructive changes require an explicit approval policy.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -69,7 +69,7 @@ Adopt one concrete AWS target—ECS Fargate for the Fastify API, RDS PostgreSQL,
 - **File:** `infrastructure/fixtures/mutable-image.tfvars`
 - **File:** `infrastructure/fixtures/public-database.tfvars`
 - **Precise change:** Define environment, AWS account/region, CIDRs, domain, image digest, desired capacity, RDS size/storage/backup retention, deletion protection, log retention, alarm targets, secret ARNs, and tags with validations that reject public database CIDRs, mutable image tags, weak production retention, or unknown environments.
-- **Acceptance:**
+- **Acceptance:** 
   - Production rejects `deletion_protection=false`, backup retention below 7 days, and images not pinned by digest.
   - No secret value is accepted as a plain Terraform variable or emitted as an output.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -84,7 +84,7 @@ Adopt one concrete AWS target—ECS Fargate for the Fastify API, RDS PostgreSQL,
 - **File:** `.github/workflows/smart-ci.yml`
 - **File:** `scripts/ci/audit_workflows.py`
 - **Precise change:** Make lint, unit, PostgreSQL integration/migration, UI/E2E, build, and deploy stages explicit alongside strict TypeScript, contract, Android flavor, iOS scheme, Terraform validate/plan, secret scan, and dependency audit jobs; remove `|| true`/`|| echo`; use `DATABASE_URL`/`FRONTEND_URL`; pin actions to reviewed full commit SHAs; declare least-privilege `permissions`; and use ECR, versioned S3, and GitHub Actions artifacts as the artifact publication targets for checksummed immutable outputs.
-- **Acceptance:**
+- **Acceptance:** 
   - Deliberately failing each gate produces a failed required check; no test/build/lint/migration/health failure is converted to success.
   - The artifact manifest records source SHA, dependency locks, image digest, web checksum, Android AAB checksums, iOS archive checksum, and gate run URL.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -98,7 +98,7 @@ Adopt one concrete AWS target—ECS Fargate for the Fastify API, RDS PostgreSQL,
 - **Change type:** modify-existing
 - **File:** `.github/workflows/deploy.yml`
 - **Precise change:** Consume the CI artifact manifest by SHA; require GitHub `staging`/`production` environments; run Terraform plan and approval before apply; execute the G1 migration job once; update ECS by image digest; publish the web checksum to S3/CloudFront; build/upload only real approved mobile scheme/flavors; verify `/health`, a read-only API smoke, CloudWatch alarms, and migration state; automatically roll back ECS/web on verification failure while never auto-reverting a destructive database migration.
-- **Acceptance:**
+- **Acceptance:** 
   - Production has an approval boundary and concurrency lock; a smoke failure restores the prior image/web artifact and creates an incident artifact.
   - Workflow references only schemes/flavors proven by `xcodebuild -list` and `./gradlew tasks`, with no comment-only deployment step.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
@@ -113,7 +113,7 @@ Adopt one concrete AWS target—ECS Fargate for the Fastify API, RDS PostgreSQL,
 - **File:** `scripts/release/verify-deployment.sh`
 - **File:** `scripts/release/verify-deployment.bats`
 - **Precise change:** Verify DNS/TLS, health/readiness, exact image/web digests, database migration version, read-only seller/customer smoke requests, CloudWatch alarm state, and synthetic media access; emit JSON evidence and support `--environment staging|production --expected-manifest <path>` without printing secrets.
-- **Acceptance:**
+- **Acceptance:** 
   - Wrong digest, pending migration, invalid TLS, 5xx response, or alarm state returns non-zero with a redacted evidence file.
   - A quarterly runbook exercise measures restore and artifact rollback time against the ADR targets.
   - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
