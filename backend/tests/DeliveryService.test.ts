@@ -2447,6 +2447,22 @@ describe('DeliveryService disabled-provider boundary', () => {
         ],
       },
       {
+        id: 'tracking-oversized-history-message',
+        delivery_integration_id: 'integration-1',
+        order_id: 'order-oversized-history-message',
+        provider: 'swiggy',
+        status: 'assigned',
+        delivery_partner_id: 'partner-1',
+        attempt_count: 1,
+        status_history: [
+          {
+            status: 'assigned',
+            timestamp: new Date('2026-06-21T00:00:00.000Z'),
+            message: `assigned-${'x'.repeat(1001)}`,
+          },
+        ],
+      },
+      {
         id: 'tracking-non-array-history',
         delivery_integration_id: 'integration-1',
         order_id: 'order-non-array-history',
@@ -2565,6 +2581,16 @@ describe('DeliveryService disabled-provider boundary', () => {
         provider: 'swiggy',
         status: 'cancelled',
         delivery_partner_id: 'partner-1',
+        attempt_count: 1,
+      },
+      {
+        id: 'tracking-cancelled-oversized-reason',
+        delivery_integration_id: 'integration-1',
+        order_id: 'order-cancelled-oversized-reason',
+        provider: 'swiggy',
+        status: 'cancelled',
+        delivery_partner_id: 'partner-1',
+        cancellation_reason: `customer-${'x'.repeat(1001)}`,
         attempt_count: 1,
       },
       {
@@ -2699,6 +2725,8 @@ describe('DeliveryService disabled-provider boundary', () => {
       .rejects.toThrow(
         'Persisted delivery tracking history row 1 field names must not include unsafe control characters'
       );
+    await expect(service.getDeliveryTracking('order-oversized-history-message'))
+      .rejects.toThrow('Persisted delivery tracking history row 1 message must be at most 1000 characters');
     await expect(service.getDeliveryTracking('order-non-array-history'))
       .rejects.toThrow('Persisted delivery tracking status_history must be an array');
     await expect(service.getDeliveryTracking('order-stale-history-status'))
@@ -2719,6 +2747,8 @@ describe('DeliveryService disabled-provider boundary', () => {
       .rejects.toThrow('Persisted delivery tracking picked_up_at cannot be present before picked_up status');
     await expect(service.getDeliveryTracking('order-cancelled-missing-reason'))
       .rejects.toThrow('Persisted delivery tracking cancellation_reason is required for cancelled status');
+    await expect(service.getDeliveryTracking('order-cancelled-oversized-reason'))
+      .rejects.toThrow('Persisted delivery tracking cancellation_reason must be at most 1000 characters');
     await expect(service.getDeliveryTracking('order-assigned-missing-provider-id'))
       .rejects.toThrow('Persisted delivery tracking delivery_partner_id is required once delivery is assigned');
     await expect(service.getDeliveryTracking('order-assigned-stale-cancellation'))
@@ -2843,6 +2873,12 @@ describe('DeliveryService disabled-provider boundary', () => {
         provider_trace_id: 'trace-1',
       } as any)
     ).rejects.toThrow('Delivery status update details include unsupported field(s): provider_trace_id');
+
+    await expect(
+      service.updateDeliveryStatus('tracking-1', 'picked_up', {
+        message: `picked-up-${'x'.repeat(1001)}`,
+      })
+    ).rejects.toThrow('Delivery status message must be at most 1000 characters');
 
     expect(trackingRepository.findOne).not.toHaveBeenCalled();
     expect(trackingRepository.save).not.toHaveBeenCalled();
@@ -4793,6 +4829,29 @@ describe('delivery status transitions', () => {
     });
   });
 
+  it('rejects oversized provider status messages before mutating tracking audit state', () => {
+    const tracking: any = {
+      id: 'tracking-1',
+      status: 'assigned',
+      delivery_person_name: 'Existing Rider',
+      status_history: [{ status: 'assigned', timestamp: new Date('2026-06-21T00:00:00.000Z') }],
+    };
+
+    expect(() =>
+      applyDeliveryStatusUpdate(tracking, 'picked_up', {
+        message: `picked-up-${'x'.repeat(1001)}`,
+        timestamp: new Date('2026-06-21T00:10:01.000Z'),
+      })
+    ).toThrow('Delivery status message must be at most 1000 characters');
+
+    expect(tracking).toEqual({
+      id: 'tracking-1',
+      status: 'assigned',
+      delivery_person_name: 'Existing Rider',
+      status_history: [{ status: 'assigned', timestamp: new Date('2026-06-21T00:00:00.000Z') }],
+    });
+  });
+
   it('rejects unsafe provider status detail controls before mutating tracking audit state', () => {
     const tracking: any = {
       id: 'tracking-1',
@@ -5497,7 +5556,7 @@ describe('delivery status transitions', () => {
     expect(trackingRepository.rows[0].cancellation_reason).toBeUndefined();
   });
 
-  it('rejects blank cancellation reasons before repository or provider side effects', async () => {
+  it('rejects invalid cancellation reasons before repository or provider side effects', async () => {
     const fakeProvider = {
       provider: 'swiggy' as const,
       createDelivery: jest.fn(),
@@ -5532,6 +5591,14 @@ describe('delivery status transitions', () => {
     await expect(service.cancelDelivery('tracking-1', '   ')).rejects.toThrow(
       'Delivery cancellation reason must be a non-empty string'
     );
+
+    expect(trackingRepository.findOne).not.toHaveBeenCalled();
+    expect(fakeProvider.cancelDelivery).not.toHaveBeenCalled();
+    expect(trackingRepository.save).not.toHaveBeenCalled();
+
+    await expect(
+      service.cancelDelivery('tracking-1', `customer-${'x'.repeat(1000)}`)
+    ).rejects.toThrow('Delivery cancellation reason must be at most 989 characters');
 
     expect(trackingRepository.findOne).not.toHaveBeenCalled();
     expect(fakeProvider.cancelDelivery).not.toHaveBeenCalled();

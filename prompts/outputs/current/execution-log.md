@@ -1,9 +1,9 @@
 ---
-session_id: 4E2CCBA2-8258-4153-8DEA-0337F252844C
-parent_session: 3DAFA2E3-A113-4A38-9979-39FB47BAAD24
+session_id: DA50B2BE-59AD-42C4-90DA-9E6613B1E4DD
+parent_session: 4E2CCBA2-8258-4153-8DEA-0337F252844C
 plan_source: audit-and-remediate
 started_at: 2026-06-28T07:41:04Z
-updated_at: 2026-07-01T01:02:08Z
+updated_at: 2026-07-01T01:32:33Z
 platforms: [web, android, ios]
 last_completed_task: remediation-backend-stub-and-domain-workflow-completion.md
 next_task: null
@@ -17,6 +17,20 @@ harness_recoveries: [frontend api focused test rerun without unsupported Vitest 
 ---
 
 # Execution Log
+
+### Backend delivery audit text boundary hardening — done
+- **Attempted:** 2026-07-01T01:32:33Z
+- **Change made:** Hardened delivery status/cancellation audit text so oversized provider status messages fail before status-update repository reads or status-history mutation, oversized cancellation reasons fail before cancellation repository/provider side effects, and persisted tracking rows with oversized cancellation reasons or status-history messages fail before read-side tracking exposure.
+- **Test run:** `PATH="/Users/mehreenadeem/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/mehreenadeem/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH" JWT_SECRET=test-secret-key-for-ci-testing-32-chars-minimum WHATSAPP_ENABLED=true TWILIO_ACCOUNT_SID=AC00000000000000000000000000000000 TWILIO_AUTH_TOKEN=test-token-32-chars-minimum NODE_OPTIONS=--experimental-vm-modules node node_modules/jest/bin/jest.js --config backend/jest.config.js DeliveryService.test.ts --runInBand --testNamePattern="status detail|status messages|cancellation reasons|persisted delivery tracking history|read-side tracking data|delivery stats"`; `PATH="/Users/mehreenadeem/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/mehreenadeem/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH" JWT_SECRET=test-secret-key-for-ci-testing-32-chars-minimum WHATSAPP_ENABLED=true TWILIO_ACCOUNT_SID=AC00000000000000000000000000000000 TWILIO_AUTH_TOKEN=test-token-32-chars-minimum NODE_OPTIONS=--experimental-vm-modules node node_modules/jest/bin/jest.js --config backend/jest.config.js DeliveryService.test.ts capabilities.test.ts --runInBand`; `PATH="/Users/mehreenadeem/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/mehreenadeem/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH" node node_modules/typescript/bin/tsc --noEmit -p backend/tsconfig.json`; `bash scripts/quality/find-runtime-stubs.sh`.
+- **Test result:** pass for focused delivery audit-text coverage (24 selected tests), broader delivery/capability backend suites (218 tests), backend TypeScript, and runtime-stub gate.
+- **Acceptance verified:**
+  - ✅ Oversized provider status messages fail before status-update repository reads or tracking audit mutation.
+  - ✅ Oversized cancellation reasons fail before delivery tracking reads, provider cancellation calls, or tracking saves.
+  - ✅ Persisted delivery tracking rows with oversized cancellation reasons or status-history messages fail before read-side tracking exposure.
+  - ✅ Delivery integrations remain disabled/gated until provider credentials/certification, staging/live smoke, monitoring, rollback, and release evidence exist.
+- **Status:** done
+- **Notes:** Read-only delivery scout identified this ledger-owned boundary; a subscription scout found a separate same-second Stripe terminal-event candidate for a future checkpoint. Pushes remain blocked by missing GitHub HTTPS credentials in this environment; local commits are still being created per user request.
+- **Session:** DA50B2BE-59AD-42C4-90DA-9E6613B1E4DD
 
 ### Backend payout lifecycle evidence boundary hardening — done
 - **Attempted:** 2026-07-01T01:02:08Z

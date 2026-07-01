@@ -17,6 +17,8 @@ const UNSAFE_DELIVERY_TEXT_CONTROLS =
   /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/u;
 const MAX_DELIVERY_PROVIDER_ID_LENGTH = 255;
 const MAX_DELIVERY_FAILURE_TEXT_LENGTH = 1000;
+const MAX_DELIVERY_AUDIT_TEXT_LENGTH = 1000;
+const DELIVERY_CANCELLATION_STATUS_PREFIX = 'Cancelled: ';
 
 function deliveryPartnerUnavailable(): never {
   throw new FeatureUnavailableError('delivery_partner', DELIVERY_PARTNER_UNAVAILABLE_MESSAGE);
@@ -381,6 +383,18 @@ function assertBoundedDeliveryFailureText(label: string, value: unknown): string
   return normalizedValue;
 }
 
+function assertBoundedDeliveryAuditText(
+  label: string,
+  value: unknown,
+  maxLength = MAX_DELIVERY_AUDIT_TEXT_LENGTH
+): string {
+  const normalizedValue = assertNonEmptyString(label, value);
+  if (normalizedValue.length > maxLength) {
+    throw new Error(`${label} must be at most ${maxLength} characters`);
+  }
+  return normalizedValue;
+}
+
 function assertOptionalNonEmptyString(label: string, value?: string): void {
   if (value === undefined) return;
   assertNonEmptyString(label, value);
@@ -396,6 +410,11 @@ function assertOptionalBoolean(label: string, value: unknown): void {
 function normalizeOptionalString(label: string, value?: string): string | undefined {
   if (value === undefined) return undefined;
   return assertNonEmptyString(label, value);
+}
+
+function normalizeOptionalDeliveryAuditText(label: string, value?: string): string | undefined {
+  if (value === undefined) return undefined;
+  return assertBoundedDeliveryAuditText(label, value);
 }
 
 function normalizeOptionalFailureText(label: string, value?: string): string | undefined {
@@ -700,7 +719,14 @@ function normalizeDeliveryStatusUpdateDetails(
       `Delivery status update details include unsupported field(s): ${unsupportedKeys.sort().join(', ')}`
     );
   }
-  return details;
+  const normalizedMessage = normalizeOptionalDeliveryAuditText(
+    'Delivery status message',
+    details.message
+  );
+  return {
+    ...details,
+    ...(normalizedMessage === undefined ? {} : { message: normalizedMessage }),
+  };
 }
 
 function normalizeDeliveryRatingData(data: {
@@ -1414,7 +1440,11 @@ export class DeliveryService {
   async cancelDelivery(trackingId: string, reason: string): Promise<DeliveryTracking> {
     this.assertDeliveryPartnerEnabled();
     const normalizedTrackingId = assertNonEmptyString('Delivery tracking_id', trackingId);
-    const normalizedReason = assertNonEmptyString('Delivery cancellation reason', reason);
+    const normalizedReason = assertBoundedDeliveryAuditText(
+      'Delivery cancellation reason',
+      reason,
+      MAX_DELIVERY_AUDIT_TEXT_LENGTH - DELIVERY_CANCELLATION_STATUS_PREFIX.length
+    );
     const tracking = await this.trackingRepository.findOne({
       where: { id: normalizedTrackingId },
       relations: ['delivery_integration'],
@@ -1456,7 +1486,7 @@ export class DeliveryService {
     if (result.success) {
       DeliveryService.assertValidDeliveryCancellationResult(result, tracking);
       applyDeliveryStatusUpdate(tracking, 'cancelled', {
-        message: `Cancelled: ${normalizedReason}`,
+        message: `${DELIVERY_CANCELLATION_STATUS_PREFIX}${normalizedReason}`,
       });
       tracking.cancellation_reason = normalizedReason;
 
@@ -1891,10 +1921,12 @@ export class DeliveryService {
     ) {
       throw new Error('Persisted delivery tracking error_message cannot be present before failed status');
     }
-    assertOptionalNonEmptyString(
-      'Persisted delivery tracking cancellation_reason',
-      tracking.cancellation_reason
-    );
+    if (tracking.cancellation_reason !== undefined && tracking.cancellation_reason !== null) {
+      assertBoundedDeliveryAuditText(
+        'Persisted delivery tracking cancellation_reason',
+        tracking.cancellation_reason
+      );
+    }
     if (
       status === 'cancelled' &&
       (tracking.cancellation_reason === undefined || tracking.cancellation_reason === null)
@@ -1968,10 +2000,12 @@ export class DeliveryService {
       }
       previousHistoryTimestamp = historyTimestamp;
       lastHistoryStatus = historyStatus;
-      assertOptionalNonEmptyString(
-        `${historyLabel} message`,
-        historyEntry.message
-      );
+      if (historyEntry.message !== undefined && historyEntry.message !== null) {
+        assertBoundedDeliveryAuditText(
+          `${historyLabel} message`,
+          historyEntry.message
+        );
+      }
       if (
         (historyStatus === 'picked_up' || historyStatus === 'en_route' || historyStatus === 'delivered') &&
         tracking.picked_up_at &&
