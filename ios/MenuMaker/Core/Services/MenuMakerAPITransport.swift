@@ -83,12 +83,12 @@ protocol MenuMakerRequestTransport {
 final class URLSessionMenuMakerTransport: MenuMakerRequestTransport, MenuMakerAPITransport {
     private static let disabledCapabilityRouteGates: [(capability: String, message: String, segments: [[String]])] = [
         (
-            capability: "pos_integrations",
+            capability: "pos_sync",
             message: "POS integrations are disabled until provider credentials, certification, staging smoke, monitoring, and rollback evidence are recorded.",
             segments: [["pos"]]
         ),
         (
-            capability: "delivery_providers",
+            capability: "delivery_partner",
             message: "Delivery-provider integrations are disabled until provider credentials, certification, staging smoke, monitoring, and rollback evidence are recorded.",
             segments: [["delivery"]]
         ),

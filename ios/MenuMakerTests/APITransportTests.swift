@@ -93,6 +93,8 @@ struct APITransportTests {
         let transport = makeTransport()
 
         for endpoint in [
+            "/api/v1/pos/sync",
+            "/api/v1/delivery/providers",
             "/api/v1/subscriptions/current",
             "/referrals/share/instagram",
             "/API/v1/OCR/extract-from-text",
