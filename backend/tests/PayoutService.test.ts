@@ -34,8 +34,8 @@ describe('PayoutService', () => {
       net_amount_cents: 8600,
       payment_count: 2,
       status: 'pending',
-      processor_payout_id: 'processor-payout-1',
-      bank_transaction_id: 'bank-transaction-1',
+      processor_payout_id: undefined,
+      bank_transaction_id: undefined,
       failure_reason: undefined,
       retry_count: 0,
       next_retry_date: undefined,
@@ -228,6 +228,7 @@ describe('PayoutService', () => {
         'bank transaction evidence controls',
         {
           status: 'completed',
+          processor_payout_id: 'processor-payout-1',
           completed_at: new Date('2026-07-01T00:00:00.000Z'),
           bank_transaction_id: 'bank-transaction-1\u200B',
         },
@@ -237,6 +238,7 @@ describe('PayoutService', () => {
         'bank transaction evidence length',
         {
           status: 'completed',
+          processor_payout_id: 'processor-payout-1',
           completed_at: new Date('2026-07-01T00:00:00.000Z'),
           bank_transaction_id: 'b'.repeat(256),
         },
@@ -244,13 +246,14 @@ describe('PayoutService', () => {
       ],
       [
         'completed timestamp evidence',
-        { status: 'completed', completed_at: undefined },
+        { status: 'completed', processor_payout_id: 'processor-payout-1', completed_at: undefined },
         'Payout row 1 completed status requires completed_at evidence',
       ],
       [
         'completed stale failure evidence',
         {
           status: 'completed',
+          processor_payout_id: 'processor-payout-1',
           completed_at: new Date('2026-07-01T00:00:00.000Z'),
           failure_reason: 'Previous timeout',
         },
@@ -284,6 +287,21 @@ describe('PayoutService', () => {
           completed_at: new Date('2026-07-01T00:00:00.000Z'),
         },
         'Payout row 1 failed status cannot include completed_at evidence',
+      ],
+      [
+        'pending stale processor evidence',
+        { status: 'pending', processor_payout_id: 'processor-payout-stale' },
+        'Payout row 1 processor_payout_id evidence cannot be present before completed status',
+      ],
+      [
+        'processing stale bank evidence',
+        { status: 'processing', bank_transaction_id: 'bank-transaction-stale' },
+        'Payout row 1 bank_transaction_id evidence cannot be present before completed status',
+      ],
+      [
+        'held stale completion evidence',
+        { status: 'held', completed_at: new Date('2026-07-01T00:00:00.000Z') },
+        'Payout row 1 completed_at evidence cannot be present before completed status',
       ],
     ])('rejects invalid payout %s before returning history', async (_field, override, expectedError) => {
       mockPayoutRepository.findAndCount.mockResolvedValue([[validPayout(override as Partial<Payout>)], 1]);
@@ -372,6 +390,7 @@ describe('PayoutService', () => {
         failure_reason: 'Payout processor integration unavailable: no payout execution gateway configured',
         retry_count: 1,
         processor_payout_id: null,
+        bank_transaction_id: null,
         completed_at: null,
         next_retry_date: null,
       });
@@ -381,6 +400,7 @@ describe('PayoutService', () => {
         failure_reason: 'Payout processor integration unavailable: no payout execution gateway configured',
         retry_count: 1,
         processor_payout_id: null,
+        bank_transaction_id: null,
         completed_at: null,
         next_retry_date: null,
       }));
@@ -414,6 +434,7 @@ describe('PayoutService', () => {
         failure_reason: 'Processor timeout',
         retry_count: 1,
         processor_payout_id: null,
+        bank_transaction_id: null,
         completed_at: null,
       });
       expect(payout.failed_at).toBeInstanceOf(Date);
@@ -423,6 +444,7 @@ describe('PayoutService', () => {
         failure_reason: 'Processor timeout',
         retry_count: 1,
         processor_payout_id: null,
+        bank_transaction_id: null,
         completed_at: null,
         next_retry_date: expect.any(Date),
       }));
@@ -464,6 +486,60 @@ describe('PayoutService', () => {
         completed_at: undefined,
         failed_at: undefined,
       });
+    });
+
+    it.each([
+      [
+        'processor payout id',
+        { processor_payout_id: 'processor-payout-stale' },
+        'Pending payout row processor_payout_id evidence cannot be present before completed status',
+      ],
+      [
+        'bank transaction id',
+        { bank_transaction_id: 'bank-transaction-stale' },
+        'Pending payout row bank_transaction_id evidence cannot be present before completed status',
+      ],
+      [
+        'completion timestamp',
+        { completed_at: new Date('2026-07-01T00:00:00.000Z') },
+        'Pending payout row completed_at evidence cannot be present before completed status',
+      ],
+    ])('rejects stale pending payout %s before provider execution or settlement', async (_case, staleEvidence, expectedReason) => {
+      const payoutGateway: PayoutExecutionGateway = {
+        executePayout: jest.fn(async () => ({
+          processorPayoutId: 'processor-payout-live-1',
+          bankTransactionId: 'bank-transaction-live-1',
+        })),
+      };
+      payoutService = new PayoutService(payoutGateway);
+      const payout = validPayout({
+        id: 'payout-stale-completion-evidence',
+        status: 'pending',
+        failure_reason: undefined,
+        retry_count: 0,
+        next_retry_date: undefined,
+        failed_at: undefined,
+        ...staleEvidence,
+      });
+      mockPayoutRepository.find.mockResolvedValue([payout]);
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      try {
+        await expect(payoutService.processPendingPayouts()).resolves.toBe(0);
+
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          '[PayoutService] Failed to process payout payout-stale-completion-evidence:',
+          expectedReason
+        );
+        expect(payoutGateway.executePayout).not.toHaveBeenCalled();
+        expect(mockPaymentRepository.update).not.toHaveBeenCalled();
+        expect(mockPayoutRepository.save).not.toHaveBeenCalled();
+        expect(payout).toMatchObject({
+          status: 'pending',
+        });
+      } finally {
+        consoleErrorSpy.mockRestore();
+      }
     });
 
     it('rejects unsafe pending payout metadata field names before provider execution or settlement', async () => {
@@ -534,7 +610,7 @@ describe('PayoutService', () => {
         failure_reason: 'Payout processor payout id must not include unsafe control characters',
         retry_count: 1,
         processor_payout_id: null,
-        bank_transaction_id: undefined,
+        bank_transaction_id: null,
         completed_at: null,
       });
       expect(payout.failed_at).toBeInstanceOf(Date);
@@ -587,7 +663,7 @@ describe('PayoutService', () => {
         failure_reason: expectedReason,
         retry_count: 1,
         processor_payout_id: null,
-        bank_transaction_id: undefined,
+        bank_transaction_id: null,
         completed_at: null,
       });
       expect(payout.failed_at).toBeInstanceOf(Date);

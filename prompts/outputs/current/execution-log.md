@@ -1,9 +1,9 @@
 ---
-session_id: 3DAFA2E3-A113-4A38-9979-39FB47BAAD24
-parent_session: 9568A16A-D582-49DD-9060-589C4D859A9B
+session_id: 4E2CCBA2-8258-4153-8DEA-0337F252844C
+parent_session: 3DAFA2E3-A113-4A38-9979-39FB47BAAD24
 plan_source: audit-and-remediate
 started_at: 2026-06-28T07:41:04Z
-updated_at: 2026-07-01T00:19:48Z
+updated_at: 2026-07-01T01:02:08Z
 platforms: [web, android, ios]
 last_completed_task: remediation-backend-stub-and-domain-workflow-completion.md
 next_task: null
@@ -17,6 +17,20 @@ harness_recoveries: [frontend api focused test rerun without unsupported Vitest 
 ---
 
 # Execution Log
+
+### Backend payout lifecycle evidence boundary hardening — done
+- **Attempted:** 2026-07-01T01:02:08Z
+- **Change made:** Hardened payout lifecycle evidence so non-completed payout rows cannot carry `processor_payout_id`, `bank_transaction_id`, or `completed_at` evidence before payout history reads, pending payout execution, provider dispatch, payment settlement mutation, or retry state can trust them; payout failures now clear bank transaction evidence alongside processor/completion evidence.
+- **Test run:** `PATH="/Users/mehreenadeem/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/mehreenadeem/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH" JWT_SECRET=test-secret-key-for-ci-testing-32-chars-minimum WHATSAPP_ENABLED=true TWILIO_ACCOUNT_SID=AC00000000000000000000000000000000 TWILIO_AUTH_TOKEN=test-token-32-chars-minimum NODE_OPTIONS=--experimental-vm-modules node node_modules/jest/bin/jest.js --config backend/jest.config.js PayoutService.test.ts --runInBand`; `PATH="/Users/mehreenadeem/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/mehreenadeem/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH" JWT_SECRET=test-secret-key-for-ci-testing-32-chars-minimum WHATSAPP_ENABLED=true TWILIO_ACCOUNT_SID=AC00000000000000000000000000000000 TWILIO_AUTH_TOKEN=test-token-32-chars-minimum NODE_OPTIONS=--experimental-vm-modules node node_modules/jest/bin/jest.js --config backend/jest.config.js PayoutService.test.ts EnhancedReferralService.test.ts capabilities.test.ts --runInBand`; `PATH="/Users/mehreenadeem/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/mehreenadeem/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:$PATH" node node_modules/typescript/bin/tsc --noEmit -p backend/tsconfig.json`; `bash scripts/quality/find-runtime-stubs.sh`; `git diff --check`.
+- **Test result:** pass for focused payout lifecycle coverage (49 tests), broader payout/enhanced-referral/capability backend suites (257 tests), backend TypeScript, runtime-stub gate, and whitespace diff check.
+- **Acceptance verified:**
+  - ✅ Non-completed payout history rows with stale processor payout IDs, bank transaction IDs, or completion timestamps fail before read-side exposure.
+  - ✅ Pending payout rows with stale provider/completion evidence fail before provider execution, payout saves, or payment settlement mutation.
+  - ✅ Retryable and non-retryable payout failures clear bank transaction evidence along with processor payout IDs and completion timestamps.
+  - ✅ Enhanced referrals and payout execution remain disabled/gated until payout/reward operations, payout processor credentials/certification, staging/live smoke, monitoring, rollback, and release evidence exist.
+- **Status:** done
+- **Notes:** One read-only scout confirmed the ledger ownership and same payout lifecycle seam. Pushes remain blocked by missing GitHub HTTPS credentials in this environment; local commits are still being created per user request.
+- **Session:** 4E2CCBA2-8258-4153-8DEA-0337F252844C
 
 ### Backend enhanced-referral affiliate profile text boundary hardening — done
 - **Attempted:** 2026-07-01T00:19:48Z

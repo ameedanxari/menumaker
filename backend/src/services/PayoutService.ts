@@ -291,7 +291,10 @@ export class PayoutService {
       payout.processor_payout_id,
       `${label} processor_payout_id`
     );
-    PayoutService.assertOptionalPayoutProviderId(payout.bank_transaction_id, `${label} bank_transaction_id`);
+    const bankTransactionId = PayoutService.assertOptionalPayoutProviderId(
+      payout.bank_transaction_id,
+      `${label} bank_transaction_id`
+    );
     const failureReason = PayoutService.assertOptionalString(payout.failure_reason, `${label} failure_reason`);
     PayoutService.assertNonNegativeSafeInteger(payout.retry_count, `${label} retry_count`);
     PayoutService.assertOptionalDate(payout.next_retry_date, `${label} next_retry_date`);
@@ -376,6 +379,23 @@ export class PayoutService {
       }
       if (completedAt) {
         throw new Error(`${label} failed status cannot include completed_at evidence`);
+      }
+      if (processorPayoutId) {
+        throw new Error(`${label} failed status cannot include processor_payout_id evidence`);
+      }
+      if (bankTransactionId) {
+        throw new Error(`${label} failed status cannot include bank_transaction_id evidence`);
+      }
+    }
+    if (status !== 'completed' && status !== 'failed') {
+      if (processorPayoutId) {
+        throw new Error(`${label} processor_payout_id evidence cannot be present before completed status`);
+      }
+      if (bankTransactionId) {
+        throw new Error(`${label} bank_transaction_id evidence cannot be present before completed status`);
+      }
+      if (completedAt) {
+        throw new Error(`${label} completed_at evidence cannot be present before completed status`);
       }
     }
   }
@@ -784,6 +804,7 @@ export class PayoutService {
     payout.failed_at = new Date();
     payout.completed_at = null;
     payout.processor_payout_id = null;
+    payout.bank_transaction_id = null;
     payout.retry_count++;
 
     if (retryable && payout.retry_count < PayoutService.MAX_RETRY_COUNT) {
