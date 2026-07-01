@@ -555,11 +555,11 @@ describe('POSSyncService adapters', () => {
 
   it('rejects impossible Square HTTP status evidence before classifying provider outcomes', async () => {
     const orderClient: POSHttpClient = async () => ({
-      status: 700,
+      status: 102,
       json: async () => ({ order: { id: 'square-order-1' } }),
     });
     const refreshClient: POSHttpClient = async () => ({
-      status: 99,
+      status: 302,
       json: async () => ({ access_token: 'fresh-access-token' }),
     });
 
@@ -567,14 +567,14 @@ describe('POSSyncService adapters', () => {
       new SquarePOSService(orderClient, 'https://square.test').createOrder(order, integration)
     ).rejects.toMatchObject({
       kind: 'permanent',
-      message: 'Square order response status must be a valid HTTP status',
+      message: 'Square order response status must be a terminal Square response status',
     } satisfies Partial<POSSyncError>);
 
     await expect(
       new SquarePOSService(refreshClient, 'https://square.test').refreshAccessToken(integration)
     ).rejects.toMatchObject({
       kind: 'permanent',
-      message: 'Square token refresh response status must be a valid HTTP status',
+      message: 'Square token refresh response status must be a terminal Square response status',
     } satisfies Partial<POSSyncError>);
   });
 

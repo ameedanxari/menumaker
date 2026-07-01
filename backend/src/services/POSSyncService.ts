@@ -638,6 +638,14 @@ function assertPOSHttpStatus(label: string, value: unknown): number {
   return numeric;
 }
 
+function assertNonTerminalSquareResponseStatus(label: string, value: unknown): number {
+  const responseStatus = assertPOSHttpStatus(label, value);
+  if ((responseStatus >= 100 && responseStatus < 200) || (responseStatus >= 300 && responseStatus < 400)) {
+    throw new POSSyncError(`${label} must be a terminal Square response status`, 'permanent');
+  }
+  return responseStatus;
+}
+
 function assertOptionalBoolean(label: string, value: unknown): void {
   if (value === undefined || value === null) return;
   if (typeof value !== 'boolean') {
@@ -896,7 +904,7 @@ export class SquarePOSService implements IPOSService {
         },
         body: JSON.stringify(payload),
       });
-      const responseStatus = assertPOSHttpStatus('Square order response status', response.status);
+      const responseStatus = assertNonTerminalSquareResponseStatus('Square order response status', response.status);
       if (responseStatus === 429) {
         throw new POSSyncError('Square rate limit exceeded', 'rate_limited', 429, 5 * 60 * 1000);
       }
@@ -969,7 +977,7 @@ export class SquarePOSService implements IPOSService {
         refresh_token: integration.refresh_token,
       }),
     });
-    const responseStatus = assertPOSHttpStatus('Square token refresh response status', response.status);
+    const responseStatus = assertNonTerminalSquareResponseStatus('Square token refresh response status', response.status);
     if (responseStatus === 429) {
       throw new POSSyncError('Square token refresh rate limited', 'rate_limited', 429, 5 * 60 * 1000);
     }
