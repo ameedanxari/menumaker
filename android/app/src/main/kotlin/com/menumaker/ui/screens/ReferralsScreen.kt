@@ -7,7 +7,6 @@ import android.content.Intent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -25,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.menumaker.data.common.Resource
 import com.menumaker.data.remote.models.ReferralHistoryDto
-import com.menumaker.data.remote.models.ReferralLeaderboardDto
 import com.menumaker.data.remote.models.ReferralStatus
 import com.menumaker.viewmodel.ReferralViewModel
 import java.text.SimpleDateFormat
@@ -34,7 +32,8 @@ import java.util.*
 /**
  * Referrals Screen
  *
- * Complete referral system with code sharing, stats, history, and leaderboard.
+ * Referral system with code sharing, stats, and history.
+ * Enhanced leaderboards/reward campaigns are launch-gated and not advertised as available.
  * Matches iOS ReferralView functionality.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,7 +45,6 @@ fun ReferralsScreen(
     val context = LocalContext.current
     val stats by viewModel.stats.collectAsState()
     val referralHistory by viewModel.referralHistory.collectAsState()
-    val leaderboard by viewModel.leaderboard.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val referralCodeMessage by viewModel.referralCodeMessage.collectAsState()
     val referralCodeSuccess by viewModel.referralCodeSuccess.collectAsState()
@@ -73,7 +71,7 @@ fun ReferralsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Refer & Earn") },
+                title = { Text("Referrals") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
@@ -112,9 +110,9 @@ fun ReferralsScreen(
                     )
                 }
 
-                // Credits and Rewards
+                // Reward credits are launch-gated for this build.
                 item {
-                    CreditsRewardsSection(stats = stats)
+                    CreditsRewardsSection()
                 }
 
                 // Stats Cards
@@ -150,9 +148,9 @@ fun ReferralsScreen(
                     )
                 }
 
-                // Leaderboard
+                // Enhanced referral campaigns
                 item {
-                    LeaderboardSection(leaderboard = leaderboard)
+                    EnhancedReferralCampaignSection()
                 }
 
                 // Bottom spacer
@@ -190,13 +188,13 @@ fun ReferralCodeCard(
             )
 
             Text(
-                text = "Invite Friends, Get Rewards!",
+                text = "Invite Friends",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
 
             Text(
-                text = "Share your referral code and earn rewards when your friends sign up",
+                text = "Share your referral code with friends. Reward credits and campaigns are launch-gated for this build.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -248,61 +246,27 @@ fun ReferralCodeCard(
 }
 
 @Composable
-fun CreditsRewardsSection(stats: com.menumaker.data.remote.models.ReferralStatsDto?) {
-    Row(
+fun CreditsRewardsSection() {
+    Card(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
     ) {
-        // Available Credits
-        Card(
-            modifier = Modifier.weight(1f),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = "Available Credits",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = formatCurrency(stats?.availableCreditsCents ?: 0),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF4CAF50)
-                )
-            }
-        }
-
-        // Pending Rewards
-        Card(
-            modifier = Modifier.weight(1f),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = "Pending Rewards",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = formatCurrency(stats?.pendingRewardsCents ?: 0),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFFFF9800)
-                )
-            }
+            Text(
+                text = "Reward credits disabled",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "Basic referral-code sharing is available. Credits, bonuses, ranked campaigns, and prize payouts require a separate enhanced-referral launch decision.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
@@ -330,10 +294,10 @@ fun StatsSection(stats: com.menumaker.data.remote.models.ReferralStatsDto?) {
                 modifier = Modifier.weight(1f)
             )
             StatCard(
-                title = "Rewards Earned",
-                value = formatCurrency(stats?.totalEarningsCents ?: 0),
+                title = "Reward Credits",
+                value = "Disabled",
                 icon = Icons.Default.AttachMoney,
-                color = Color(0xFF4CAF50),
+                color = Color(0xFF607D8B),
                 modifier = Modifier.weight(1f)
             )
         }
@@ -542,14 +506,12 @@ fun ReferralHistoryRow(referral: ReferralHistoryDto) {
                 )
             }
 
-            if (referral.rewardAmountCents > 0) {
-                Text(
-                    text = formatCurrency(referral.rewardAmountCents),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF4CAF50),
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+            Text(
+                text = "Rewards disabled",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.SemiBold
+            )
         }
     }
 }
@@ -617,7 +579,7 @@ fun InformationSection(
 }
 
 @Composable
-fun LeaderboardSection(leaderboard: List<ReferralLeaderboardDto>) {
+fun EnhancedReferralCampaignSection() {
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -627,7 +589,7 @@ fun LeaderboardSection(leaderboard: List<ReferralLeaderboardDto>) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Leaderboard",
+                text = "Enhanced Referral Campaigns",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -638,88 +600,17 @@ fun LeaderboardSection(leaderboard: List<ReferralLeaderboardDto>) {
             )
         }
 
-        if (leaderboard.isEmpty()) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Text(
-                    text = "No leaderboard data yet",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(24.dp)
-                )
-            }
-        } else {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    leaderboard.forEachIndexed { index, entry ->
-                        LeaderboardRow(rank = index + 1, entry = entry)
-                        if (entry != leaderboard.last()) {
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun LeaderboardRow(rank: Int, entry: ReferralLeaderboardDto) {
-    val rankColor = when (rank) {
-        1 -> Color(0xFFFFB300) // Gold
-        2 -> Color.Gray // Silver
-        3 -> Color(0xFFFF9800) // Bronze
-        else -> MaterialTheme.colorScheme.onSurface
-    }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
         ) {
             Text(
-                text = "#$rank",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = rankColor,
-                modifier = Modifier.width(40.dp)
-            )
-
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = entry.userName,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = "${entry.referralCount} referrals",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
-        if (rank <= 3) {
-            Icon(
-                imageVector = Icons.Default.EmojiEvents,
-                contentDescription = null,
-                tint = rankColor
+                text = "Leaderboards, affiliate campaigns, and prize payouts are disabled for this launch build.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(24.dp)
             )
         }
     }
@@ -756,14 +647,14 @@ fun HowItWorksSheet(onDismiss: () -> Unit) {
 
             HowItWorksStep(
                 number = 3,
-                title = "You Both Earn Rewards",
-                description = "You receive ₹100 credit and your friend gets ₹50 off their first order!"
+                title = "Enhanced Rewards",
+                description = "Reward credits are disabled until enhanced referrals are enabled with launch evidence."
             )
 
             HowItWorksStep(
                 number = 4,
-                title = "Use Your Credits",
-                description = "Use your earned credits on any future orders. No minimum order value required!"
+                title = "Future Enablement",
+                description = "Credits, bonuses, leaderboards, and prizes require a separate enablement decision."
             )
 
             Card(
@@ -777,13 +668,13 @@ fun HowItWorksSheet(onDismiss: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Bonus Rewards",
+                        text = "Launch-gated rewards",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
-                    Text("• Refer 5 friends: Get an extra ₹200 bonus")
-                    Text("• Refer 10 friends: Get an extra ₹500 bonus")
-                    Text("• Top monthly referrer: Win exciting prizes!")
+                    Text("• Reward credits are disabled in this launch build")
+                    Text("• Bonus campaigns require enablement evidence")
+                    Text("• Leaderboards and prizes are not available")
                 }
             }
 
@@ -853,22 +744,22 @@ fun TermsSheet(onDismiss: () -> Unit) {
 
             TermsSection(
                 title = "1. Eligibility",
-                content = "The referral program is open to all registered MenuMaker users. You cannot refer yourself or use multiple accounts to claim rewards fraudulently."
+                content = "The referral code-sharing program is open to registered MenuMaker users. You cannot refer yourself or use multiple accounts to abuse the program."
             )
 
             TermsSection(
-                title = "2. Referral Rewards",
-                content = "Referrer receives ₹100 credit after the referred user completes their first order of minimum ₹200. The referred user receives ₹50 off on their first order."
+                title = "2. Reward Availability",
+                content = "Referral credits, bonuses, leaderboards, affiliate campaigns, and prize payouts are disabled for this launch build and require a separate enablement decision."
             )
 
             TermsSection(
                 title = "3. Credit Validity",
-                content = "Referral credits are valid for 90 days from the date of credit. Unused credits will expire after this period and cannot be redeemed."
+                content = "Credit validity terms will be published only if referral credits are enabled."
             )
 
             TermsSection(
                 title = "4. Credit Usage",
-                content = "Credits can be used on any order with no minimum order value required. Credits cannot be transferred or exchanged for cash."
+                content = "Credits cannot be redeemed, transferred, or exchanged for cash while reward credits are disabled."
             )
 
             TermsSection(
@@ -918,7 +809,7 @@ private fun copyToClipboard(context: Context, text: String) {
 
 private fun shareReferralCode(context: Context, code: String) {
     val shareText = """
-        Join me on MenuMaker! Use my referral code $code and get special rewards.
+        Join me on MenuMaker! Use my referral code $code when you sign up.
 
         Download the app now!
     """.trimIndent()
@@ -929,10 +820,6 @@ private fun shareReferralCode(context: Context, code: String) {
         type = "text/plain"
     }
     context.startActivity(Intent.createChooser(shareIntent, "Share via"))
-}
-
-private fun formatCurrency(cents: Int): String {
-    return "₹${cents / 100}"
 }
 
 private fun formatDate(dateString: String): String {
@@ -950,7 +837,7 @@ private fun getStatusDisplayName(status: ReferralStatus): String {
     return when (status) {
         ReferralStatus.PENDING -> "Pending"
         ReferralStatus.COMPLETED -> "Completed"
-        ReferralStatus.CREDITED -> "Credited"
+        ReferralStatus.CREDITED -> "Completed"
         ReferralStatus.EXPIRED -> "Expired"
     }
 }
@@ -959,7 +846,7 @@ private fun getStatusColor(status: ReferralStatus): Color {
     return when (status) {
         ReferralStatus.PENDING -> Color(0xFFFF9800)
         ReferralStatus.COMPLETED -> Color(0xFF2196F3)
-        ReferralStatus.CREDITED -> Color(0xFF4CAF50)
+        ReferralStatus.CREDITED -> Color(0xFF2196F3)
         ReferralStatus.EXPIRED -> Color.Gray
     }
 }

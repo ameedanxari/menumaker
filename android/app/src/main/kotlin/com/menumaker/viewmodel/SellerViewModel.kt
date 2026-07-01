@@ -14,8 +14,55 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
+
+enum class SellerDashboardStatus {
+    Idle,
+    Loading,
+    Content,
+    Empty,
+    StaleOffline,
+    PartialError,
+    FatalError
+}
+
+data class SellerDashboardSectionError(
+    val source: String,
+    val message: String
+)
+
+data class SellerDashboardFreshness(
+    val loadedAtMillis: Long,
+    val stale: Boolean
+)
+
+data class SellerDashboardUiState(
+    val status: SellerDashboardStatus = SellerDashboardStatus.Idle,
+    val business: BusinessDto? = null,
+    val orders: List<OrderDto> = emptyList(),
+    val dishes: List<DishDto> = emptyList(),
+    val reviews: List<ReviewDto> = emptyList(),
+    val todayRevenue: Double = 0.0,
+    val pendingOrders: Int = 0,
+    val availableDishes: Int = 0,
+    val averageRating: Double = 0.0,
+    val freshness: SellerDashboardFreshness? = null,
+    val sectionErrors: List<SellerDashboardSectionError> = emptyList(),
+    val retryableSources: Set<String> = emptySet()
+) {
+    val isLoading: Boolean = status == SellerDashboardStatus.Loading
+    val hasContent: Boolean = orders.isNotEmpty() || dishes.isNotEmpty() || reviews.isNotEmpty()
+}
+
+private data class DashboardSection<T>(
+    val source: String,
+    val data: T?,
+    val error: SellerDashboardSectionError?,
+    val stale: Boolean
+)
 
 /**
  * ViewModel for seller dashboard and management with analytics
@@ -53,6 +100,9 @@ class SellerViewModel @Inject constructor(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    private val _dashboardState = MutableStateFlow(SellerDashboardUiState())
+    val dashboardState: StateFlow<SellerDashboardUiState> = _dashboardState.asStateFlow()
+
     // Analytics state
     private val _selectedPeriod = MutableStateFlow(TimePeriod.TODAY)
     val selectedPeriod: StateFlow<TimePeriod> = _selectedPeriod.asStateFlow()
@@ -79,22 +129,122 @@ class SellerViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
+            _dashboardState.value = _dashboardState.value.copy(
+                status = SellerDashboardStatus.Loading,
+                sectionErrors = emptyList(),
+                retryableSources = emptySet()
+            )
 
-            try {
-                // Load business first
-                // TODO: Implement getCurrentBusiness() method
-                // For now, we'll skip this and assume businessId is available
-
-                // In production, you would:
-                // 1. Get current business
-                // 2. Load data in parallel
-                // 3. Update statistics
-
-                _isLoading.value = false
-            } catch (e: Exception) {
-                _errorMessage.value = e.message
-                _isLoading.value = false
+            val businessSection = collectDashboardSection("business") {
+                businessRepository.getBusinesses()
             }
+            val selectedBusiness = businessSection.data?.firstOrNull { it.isActive }
+                ?: businessSection.data?.firstOrNull()
+
+            if (selectedBusiness == null) {
+                val status = if (businessSection.error == null) {
+                    SellerDashboardStatus.Empty
+                } else {
+                    SellerDashboardStatus.FatalError
+                }
+                val errors = listOfNotNull(businessSection.error)
+                _business.value = null
+                _todayOrders.value = emptyList()
+                _dishes.value = emptyList()
+                _recentReviews.value = emptyList()
+                _todayRevenue.value = 0.0
+                _pendingOrders.value = 0
+                _dashboardState.value = SellerDashboardUiState(
+                    status = status,
+                    sectionErrors = errors,
+                    retryableSources = errors.map { it.source }.toSet()
+                )
+                _errorMessage.value = errors.firstOrNull()?.message
+                _isLoading.value = false
+                return@launch
+            }
+
+            _business.value = selectedBusiness
+
+            val ordersDeferred = async {
+                collectDashboardSection("orders") {
+                    orderRepository.getOrdersByBusiness(selectedBusiness.id)
+                }
+            }
+            val dishesDeferred = async {
+                collectDashboardSection("dishes") {
+                    dishRepository.getDishesByBusiness(selectedBusiness.id)
+                }
+            }
+            val reviewsDeferred = async {
+                collectDashboardSection("reviews") {
+                    reviewRepository.getReviews(selectedBusiness.id)
+                }
+            }
+            val analyticsDeferred = async {
+                collectDashboardSection("analytics") {
+                    businessRepository.getAnalytics(selectedBusiness.id, _selectedPeriod.value.displayName.lowercase())
+                }
+            }
+
+            val ordersSection = ordersDeferred.await()
+            val dishesSection = dishesDeferred.await()
+            val reviewsSection = reviewsDeferred.await()
+            val analyticsSection = analyticsDeferred.await()
+
+            val orders = ordersSection.data.orEmpty()
+            val dishes = dishesSection.data.orEmpty()
+            val reviewData = reviewsSection.data
+            val reviews = reviewData?.reviews.orEmpty()
+            val analytics = analyticsSection.data
+
+            _todayOrders.value = orders
+            _dishes.value = dishes
+            _recentReviews.value = reviews
+            _todayRevenue.value = analytics?.analytics?.totalRevenue ?: (orders.sumOf { it.totalCents } / 100.0)
+            _pendingOrders.value = orders.count { it.status.equals("pending", ignoreCase = true) }
+            _analyticsData.value = analytics?.analytics
+            _customerInsights.value = analytics?.customerInsights
+            _payoutInfo.value = analytics?.payouts
+
+            val errors = listOfNotNull(
+                businessSection.error,
+                ordersSection.error,
+                dishesSection.error,
+                reviewsSection.error,
+                analyticsSection.error
+            )
+            val stale = listOf(businessSection, ordersSection, dishesSection, reviewsSection, analyticsSection)
+                .any { it.stale }
+            val hasContent = orders.isNotEmpty() || dishes.isNotEmpty() || reviews.isNotEmpty()
+            val status = when {
+                errors.isNotEmpty() && !hasContent -> SellerDashboardStatus.FatalError
+                errors.isNotEmpty() && stale -> SellerDashboardStatus.StaleOffline
+                errors.isNotEmpty() -> SellerDashboardStatus.PartialError
+                !hasContent -> SellerDashboardStatus.Empty
+                else -> SellerDashboardStatus.Content
+            }
+
+            _dashboardState.value = SellerDashboardUiState(
+                status = status,
+                business = selectedBusiness,
+                orders = orders,
+                dishes = dishes,
+                reviews = reviews,
+                todayRevenue = _todayRevenue.value,
+                pendingOrders = _pendingOrders.value,
+                availableDishes = dishes.count { it.isAvailable },
+                averageRating = reviewData?.averageRating ?: reviews.map { it.rating }.averageOrZero(),
+                freshness = SellerDashboardFreshness(
+                    loadedAtMillis = System.currentTimeMillis(),
+                    stale = stale
+                ),
+                sectionErrors = errors,
+                retryableSources = errors.map { it.source }.toSet()
+            )
+            _errorMessage.value = errors.firstOrNull()?.message
+            analyticsService.track("seller_dashboard_loaded", mapOf("status" to status.name.lowercase()))
+            _isLoading.value = false
         }
     }
 
@@ -107,8 +257,16 @@ class SellerViewModel @Inject constructor(
     }
 
     private fun updateStatistics() {
-        // TODO: Implement statistics calculation from repository data
-        // For now, these would be populated from API responses
+        val orders = _todayOrders.value
+        val dishes = _dishes.value
+        _todayRevenue.value = orders.sumOf { it.totalCents } / 100.0
+        _pendingOrders.value = orders.count { it.status.equals("pending", ignoreCase = true) }
+        _dashboardState.value = _dashboardState.value.copy(
+            todayRevenue = _todayRevenue.value,
+            pendingOrders = _pendingOrders.value,
+            availableDishes = dishes.count { it.isAvailable },
+            averageRating = getAverageRating()
+        )
     }
 
     // MARK: - Analytics
@@ -285,8 +443,8 @@ class SellerViewModel @Inject constructor(
      * Get average rating
      */
     fun getAverageRating(): Double {
-        // TODO: Calculate from review repository
-        return 0.0
+        return _dashboardState.value.averageRating.takeIf { it > 0.0 }
+            ?: _recentReviews.value.map { it.rating }.averageOrZero()
     }
 
     /**
@@ -362,5 +520,46 @@ class SellerViewModel @Inject constructor(
      */
     fun clearError() {
         _errorMessage.value = null
+        _dashboardState.value = _dashboardState.value.copy(sectionErrors = emptyList(), retryableSources = emptySet())
+    }
+
+    fun retryDashboardSection(source: String? = null) {
+        analyticsService.track("seller_dashboard_retry", mapOf("source" to (source ?: "all")))
+        loadDashboardData()
+    }
+
+    private suspend fun <T> collectDashboardSection(
+        source: String,
+        loader: () -> kotlinx.coroutines.flow.Flow<Resource<T>>
+    ): DashboardSection<T> {
+        var latest: T? = null
+        var latestError: SellerDashboardSectionError? = null
+        val completed = withTimeoutOrNull(DASHBOARD_LOAD_TIMEOUT_MS) {
+            loader().collect { result ->
+                when (result) {
+                    is Resource.Loading -> Unit
+                    is Resource.Success -> latest = result.data
+                    is Resource.Error -> latestError = SellerDashboardSectionError(source, result.message)
+                }
+            }
+            true
+        } ?: false
+
+        if (!completed && latest == null && latestError == null) {
+            latestError = SellerDashboardSectionError(source, "Timed out loading $source")
+        }
+
+        return DashboardSection(
+            source = source,
+            data = latest,
+            error = latestError,
+            stale = latest != null && (latestError != null || !completed)
+        )
+    }
+
+    private fun List<Int>.averageOrZero(): Double = if (isEmpty()) 0.0 else average()
+
+    companion object {
+        private const val DASHBOARD_LOAD_TIMEOUT_MS = 1_500L
     }
 }

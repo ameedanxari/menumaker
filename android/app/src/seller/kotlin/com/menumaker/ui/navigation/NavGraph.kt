@@ -91,7 +91,9 @@ fun NavGraph(
         }
 
         composable(Destination.SellerOrders.route) {
+            val businessId = currentUser?.id ?: ""
             OrdersScreen(
+                businessId = businessId,
                 onNavigateBack = {
                     navController.popBackStack()
                 },

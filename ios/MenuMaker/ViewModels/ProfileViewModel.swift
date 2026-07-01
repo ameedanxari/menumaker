@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import UIKit
 
 @MainActor
 class ProfileViewModel: ObservableObject {
@@ -46,6 +47,47 @@ class ProfileViewModel: ObservableObject {
             return false
         } catch {
             errorMessage = "Failed to update profile"
+            isLoading = false
+            return false
+        }
+    }
+
+    func updateProfilePhoto(_ image: UIImage) async -> Bool {
+        isLoading = true
+        errorMessage = nil
+        successMessage = nil
+
+        do {
+            let photoUrl = try await ImageService.shared.uploadImage(
+                image,
+                to: AppConstants.API.Endpoints.mediaUpload
+            )
+
+            let response: UserResponse = try await apiClient.request(
+                endpoint: AppConstants.API.Endpoints.updatePhoto,
+                method: .post,
+                body: UpdateProfilePhotoRequest(photoUrl: photoUrl)
+            )
+
+            NotificationCenter.default.post(
+                name: NSNotification.Name("UserProfileUpdated"),
+                object: nil,
+                userInfo: ["user": response.data.user]
+            )
+
+            successMessage = "Profile photo updated successfully"
+            isLoading = false
+            return true
+        } catch let error as ImageError {
+            errorMessage = error.errorDescription
+            isLoading = false
+            return false
+        } catch let error as APIError {
+            errorMessage = error.errorDescription
+            isLoading = false
+            return false
+        } catch {
+            errorMessage = "Failed to update profile photo"
             isLoading = false
             return false
         }
@@ -145,5 +187,13 @@ class ProfileViewModel: ObservableObject {
     func clearMessages() {
         errorMessage = nil
         successMessage = nil
+    }
+}
+
+private struct UpdateProfilePhotoRequest: Encodable {
+    let photoUrl: String
+
+    enum CodingKeys: String, CodingKey {
+        case photoUrl = "photo_url"
     }
 }

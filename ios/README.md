@@ -4,7 +4,7 @@ Native iOS application for MenuMaker - Restaurant Menu Management & Ordering Sys
 
 ## 🍎 Overview
 
-**Status**: ✅ **Production Ready - Full Implementation Complete**
+**Status**: launch-scope local implementation evidence exists; public production readiness is governed by [../docs/product/status.md](../docs/product/status.md).
 
 MenuMaker iOS app provides a complete native experience for sellers and customers with:
 - **100% Swift 5.9+** - Modern, type-safe code
@@ -28,7 +28,7 @@ MenuMaker iOS app provides a complete native experience for sellers and customer
 - **Local Storage**: SwiftData
 - **Secure Storage**: Keychain Services
 - **Maps**: MapKit
-- **Payments**: StoreKit 2
+- **Payments**: provider-tokenized payment flows; paid subscription/StoreKit flows are launch-gated
 - **Push**: UserNotifications + APNs
 - **Testing**: XCTest + XCUITest
 
@@ -119,39 +119,42 @@ xcodebuild -scheme MenuMaker -configuration Release archive
 - Auto-switches with system preference
 - Custom dark color palette
 
-## 📱 Features
+## 📱 Feature posture
 
-### Phase 1 - Core Features ✅
+Current iOS release posture is governed by [../docs/product/status.md](../docs/product/status.md) and [../docs/product/capability-index.md](../docs/product/capability-index.md), not by historical phase labels.
+
+### Launch-scope iOS features
 - ✅ User authentication (email/password + biometric)
 - ✅ Seller dashboard with real-time stats
 - ✅ Order management (list, detail, status updates)
 - ✅ Menu and dish editor (CRUD operations)
 - ✅ Offline support with SwiftData
 - ✅ Real-time synchronization
-
-### Phase 2 - Growth Features ✅
-- ✅ Subscriptions (StoreKit 2 integration)
 - ✅ Coupons & promotions
 - ✅ Payment processors (Razorpay, Stripe, Paytm, PhonePe)
 - ✅ Reviews & ratings system
 - ✅ Re-order functionality
-- ✅ OCR menu import with camera
 - ✅ WhatsApp notifications
-
-### Phase 3 - Scale Features ✅
 - ✅ Marketplace discovery with MapKit
 - ✅ Multi-language (English, Hindi, Tamil, Urdu, Arabic with RTL)
-- ✅ Integrations (POS, Delivery platforms)
-- ✅ Referral program
+- ✅ Basic referral-code sharing without reward, leaderboard, or affiliate claims
 - ✅ Advanced analytics
 - ✅ Shopping cart and checkout
 - ✅ Business management
+
+### Disabled until separately enabled and evidenced
+
+- ⛔ Subscriptions, paid-plan upgrades, trials, and billing portal flows
+- ⛔ OCR menu import with camera
+- ⛔ POS sync and third-party delivery partner integrations
+- ⛔ Enhanced referral rewards, leaderboards, affiliate payouts, and prize campaigns
+- ⛔ Tax reporting / GST invoice generation
 
 ### iOS-Specific
 - ✅ Face ID / Touch ID authentication
 - ✅ Apple Pay ready integration
 - ✅ MapKit for location services
-- ✅ Vision Framework for OCR
+- ⛔ Vision Framework OCR flows are launch-gated until OCR is enabled with privacy/provider evidence
 - ✅ UserNotifications for APNs
 - 🔄 Siri Shortcuts (structure ready)
 - 🔄 App Clips (structure ready)
@@ -183,7 +186,7 @@ xcodebuild -scheme MenuMaker -configuration Release archive
 
 ## 📊 Implementation Status
 
-**Current Status**: ✅ **Complete & Production Ready**
+**Current Status**: local launch-scope implementation evidence exists, but public production readiness is governed by [../docs/product/status.md](../docs/product/status.md).
 
 - **Total Swift Files**: 60
 - **Total Lines of Code**: ~10,000+
@@ -204,7 +207,7 @@ xcodebuild -scheme MenuMaker -configuration Release archive
 - ✅ BiometricService - Face ID / Touch ID
 - ✅ ImageService - Loading, caching, upload
 - ✅ CameraService - Photo capture
-- ✅ OCRService - Vision framework integration
+- ⛔ OCRService - present for future Vision framework integration; launch-gated until OCR is enabled
 
 ### Data Layer (12 Repositories + 10 Models)
 - ✅ Complete CRUD operations for all entities
@@ -242,4 +245,4 @@ MIT License - see [LICENSE](../LICENSE)
 ---
 
 **Built with Swift 5.9+ + SwiftUI for iOS 17+**
-**Status**: Production Ready | **Version**: 1.0.0
+**Status**: See [../docs/product/status.md](../docs/product/status.md) | **Version**: 1.0.0

@@ -1,0 +1,29 @@
+{
+  "commit": "abc123",
+  "platform": "native",
+  "generated_at": "2026-06-20T00:00:00Z",
+  "thresholds": {
+    "critical_coverage_min": 0.82,
+    "mutation_score_min": 0.72,
+    "changed_file_coverage_min": 0.75
+  },
+  "gates": [
+    {
+      "name": "ios-smoke",
+      "status": "pass",
+      "raw_artifact": "artifacts/ios-smoke.json",
+      "coverage": 0.85,
+      "previous_coverage": 0.84,
+      "retries": 1,
+      "skipped": 0,
+      "only": 0
+    }
+  ],
+  "changed_files": [],
+  "dashboard": {
+    "kpi": ["flake_rate"],
+    "filter": ["platform"],
+    "chart": [{ "id": "flakes", "tooltip": "Retry-dependent passes", "legend": "Retries" }],
+    "table": [{ "label": "retries", "value": 1 }]
+  }
+}

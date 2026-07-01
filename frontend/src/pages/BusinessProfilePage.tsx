@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useBusinessStore } from '../stores/businessStore';
 import { api } from '../services/api';
 import { Upload, Store, Settings, Save, Loader2 } from 'lucide-react';
 
 export default function BusinessProfilePage() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const {
     currentBusiness,
     settings,
@@ -20,6 +23,8 @@ export default function BusinessProfilePage() {
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const isCreatingNew = location.pathname.includes('/new');
+  const activeBusiness = isCreatingNew ? null : currentBusiness;
 
   // Profile form state
   const [profileForm, setProfileForm] = useState({
@@ -50,18 +55,32 @@ export default function BusinessProfilePage() {
   }, [fetchBusinesses]);
 
   useEffect(() => {
-    if (currentBusiness) {
+    setActiveTab(location.pathname.includes('/settings') ? 'settings' : 'profile');
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (activeBusiness) {
       setProfileForm({
-        name: currentBusiness.name || '',
-        description: currentBusiness.description || '',
-        address: currentBusiness.address || '',
-        phone: currentBusiness.phone || '',
-        email: currentBusiness.email || '',
-        logo_url: currentBusiness.logo_url || '',
-        banner_url: currentBusiness.banner_url || '',
+        name: activeBusiness.name || '',
+        description: activeBusiness.description || '',
+        address: activeBusiness.address || '',
+        phone: activeBusiness.phone || '',
+        email: activeBusiness.email || '',
+        logo_url: activeBusiness.logo_url || '',
+        banner_url: activeBusiness.banner_url || '',
+      });
+    } else {
+      setProfileForm({
+        name: '',
+        description: '',
+        address: '',
+        phone: '',
+        email: '',
+        logo_url: '',
+        banner_url: '',
       });
     }
-  }, [currentBusiness]);
+  }, [activeBusiness]);
 
   useEffect(() => {
     if (settings) {
@@ -106,14 +125,20 @@ export default function BusinessProfilePage() {
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaving(true);
     setErrorMessage('');
     setSuccessMessage('');
 
+    if (!profileForm.name.trim()) {
+      setErrorMessage('Business name is required');
+      return;
+    }
+
+    setIsSaving(true);
+
     try {
-      if (currentBusiness) {
+      if (activeBusiness) {
         // Update existing business
-        await updateBusiness(currentBusiness.id, profileForm);
+        await updateBusiness(activeBusiness.id, profileForm);
         setSuccessMessage('Business profile updated successfully');
       } else {
         // Create new business
@@ -125,6 +150,7 @@ export default function BusinessProfilePage() {
           email: profileForm.email,
         });
         setSuccessMessage('Business created successfully');
+        navigate('/dashboard');
       }
 
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -138,7 +164,7 @@ export default function BusinessProfilePage() {
   const handleSettingsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!currentBusiness) {
+    if (!activeBusiness) {
       setErrorMessage('Please create a business profile first');
       return;
     }
@@ -148,7 +174,7 @@ export default function BusinessProfilePage() {
     setSuccessMessage('');
 
     try {
-      await updateSettings(currentBusiness.id, settingsForm);
+      await updateSettings(activeBusiness.id, settingsForm);
       setSuccessMessage('Settings updated successfully');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error: any) {
@@ -158,7 +184,7 @@ export default function BusinessProfilePage() {
     }
   };
 
-  if (isLoading && !currentBusiness) {
+  if (isLoading && !activeBusiness && !isCreatingNew) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
@@ -170,10 +196,10 @@ export default function BusinessProfilePage() {
     <div>
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">
-          {currentBusiness ? 'Business Profile' : 'Create Your Business'}
+          {activeBusiness ? 'Business Profile' : 'Create Your Business'}
         </h1>
         <p className="text-gray-600 mt-1">
-          {currentBusiness
+          {activeBusiness
             ? 'Manage your business information and settings'
             : 'Set up your business to start creating menus'}
         </p>
@@ -205,7 +231,7 @@ export default function BusinessProfilePage() {
             <Store className="w-5 h-5 inline-block mr-2" />
             Profile
           </button>
-          {currentBusiness && (
+          {activeBusiness && (
             <button
               onClick={() => setActiveTab('settings')}
               className={`pb-4 px-1 border-b-2 font-medium transition-colors ${
@@ -222,15 +248,16 @@ export default function BusinessProfilePage() {
       </div>
 
       {/* Profile Tab */}
-      {activeTab === 'profile' && (
+      {(activeTab === 'profile' || location.pathname.includes('/settings')) && (
         <div className="card">
-          <form onSubmit={handleProfileSubmit} className="space-y-6">
+          <form onSubmit={handleProfileSubmit} className="space-y-6" noValidate>
             <div>
               <label htmlFor="name" className="label">
                 Business Name <span className="text-red-500">*</span>
               </label>
               <input
                 id="name"
+                name="name"
                 type="text"
                 value={profileForm.name}
                 onChange={(e) =>
@@ -248,6 +275,7 @@ export default function BusinessProfilePage() {
               </label>
               <textarea
                 id="description"
+                name="description"
                 value={profileForm.description}
                 onChange={(e) =>
                   setProfileForm({ ...profileForm, description: e.target.value })
@@ -264,6 +292,7 @@ export default function BusinessProfilePage() {
                 </label>
                 <input
                   id="phone"
+                  name="phone"
                   type="tel"
                   value={profileForm.phone}
                   onChange={(e) =>
@@ -280,6 +309,7 @@ export default function BusinessProfilePage() {
                 </label>
                 <input
                   id="email"
+                  name="email"
                   type="email"
                   value={profileForm.email}
                   onChange={(e) =>
@@ -297,6 +327,7 @@ export default function BusinessProfilePage() {
               </label>
               <input
                 id="address"
+                name="address"
                 type="text"
                 value={profileForm.address}
                 onChange={(e) =>
@@ -409,24 +440,24 @@ export default function BusinessProfilePage() {
                 ) : (
                   <>
                     <Save className="w-4 h-4" />
-                    {currentBusiness ? 'Save Changes' : 'Create Business'}
+                    {activeBusiness ? 'Save Changes' : 'Create Business'}
                   </>
                 )}
               </button>
             </div>
           </form>
 
-          {currentBusiness && (
+          {activeBusiness && (
             <div className="mt-6 pt-6 border-t border-gray-200">
               <p className="text-sm text-gray-600">
                 Your menu URL:{' '}
                 <a
-                  href={`/${currentBusiness.slug}`}
+                  href={`/${activeBusiness.slug}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary-600 hover:text-primary-700 font-medium"
                 >
-                  {window.location.origin}/{currentBusiness.slug}
+                  {window.location.origin}/{activeBusiness.slug}
                 </a>
               </p>
             </div>
@@ -435,7 +466,7 @@ export default function BusinessProfilePage() {
       )}
 
       {/* Settings Tab */}
-      {activeTab === 'settings' && currentBusiness && (
+      {(activeTab === 'settings' || location.pathname.includes('/settings')) && activeBusiness && (
         <div className="card">
           <form onSubmit={handleSettingsSubmit} className="space-y-6">
             <div className="space-y-4">
@@ -472,8 +503,7 @@ export default function BusinessProfilePage() {
               </div>
             </div>
 
-            {settingsForm.delivery_enabled && (
-              <div className="space-y-4 border-t border-gray-200 pt-6">
+            <div className="space-y-4 border-t border-gray-200 pt-6">
                 <h3 className="text-lg font-semibold text-gray-900">Delivery Settings</h3>
 
                 <div>
@@ -482,6 +512,7 @@ export default function BusinessProfilePage() {
                   </label>
                   <select
                     id="delivery_fee_type"
+                    name="deliveryFeeType"
                     value={settingsForm.delivery_fee_type}
                     onChange={(e) =>
                       setSettingsForm({
@@ -504,6 +535,7 @@ export default function BusinessProfilePage() {
                     </label>
                     <input
                       id="delivery_fee_flat"
+                      name="deliveryFee"
                       type="number"
                       step="0.01"
                       min="0"
@@ -564,8 +596,7 @@ export default function BusinessProfilePage() {
                     className="input"
                   />
                 </div>
-              </div>
-            )}
+            </div>
 
             <div className="border-t border-gray-200 pt-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Other Settings</h3>
@@ -576,6 +607,7 @@ export default function BusinessProfilePage() {
                 </label>
                 <input
                   id="minimum_order"
+                  name="minOrderAmount"
                   type="number"
                   step="0.01"
                   min="0"
@@ -589,6 +621,30 @@ export default function BusinessProfilePage() {
                     })
                   }
                   className="input"
+                />
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 pt-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Operating Hours</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <input name="monday.isOpen" type="checkbox" className="w-4 h-4 text-primary-600 rounded" />
+                  Monday open
+                </label>
+                <input
+                  name="monday.openTime"
+                  type="time"
+                  defaultValue="09:00"
+                  className="input"
+                  aria-label="Monday open time"
+                />
+                <input
+                  name="monday.closeTime"
+                  type="time"
+                  defaultValue="17:00"
+                  className="input"
+                  aria-label="Monday close time"
                 />
               </div>
             </div>

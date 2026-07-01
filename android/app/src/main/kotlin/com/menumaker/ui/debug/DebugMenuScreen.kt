@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.menumaker.BuildConfig
 import com.menumaker.data.remote.api.ApiConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch

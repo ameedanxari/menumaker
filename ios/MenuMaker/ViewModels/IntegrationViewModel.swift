@@ -12,6 +12,7 @@ class IntegrationViewModel: ObservableObject {
 
     private let repository = IntegrationRepository.shared
     private let analyticsService = AnalyticsService.shared
+    private let launchGatedMessage = "POS and delivery-provider integrations are disabled in this launch build until backend capability evidence is recorded."
 
     init() {
         Task {
@@ -50,53 +51,21 @@ class IntegrationViewModel: ObservableObject {
     // MARK: - Integration Management
 
     func connectPOS(provider: IntegrationProvider, credentials: [String: String]) async {
-        isLoading = true
-        errorMessage = nil
-
-        do {
-            let integration = try await repository.connectPOS(
-                provider: provider,
-                credentials: credentials
-            )
-
-            integrations.append(integration)
-            posIntegrations = repository.getPOSIntegrations()
-
-            analyticsService.track(.businessCreated, parameters: [
-                "integration_type": "pos",
-                "provider": provider.rawValue
-            ])
-
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-
-        isLoading = false
+        errorMessage = launchGatedMessage
+        analyticsService.track(.businessCreated, parameters: [
+            "integration_type": "pos",
+            "provider": provider.rawValue,
+            "status": "launch_gated"
+        ])
     }
 
     func connectDelivery(provider: IntegrationProvider, credentials: [String: String]) async {
-        isLoading = true
-        errorMessage = nil
-
-        do {
-            let integration = try await repository.connectDelivery(
-                provider: provider,
-                credentials: credentials
-            )
-
-            integrations.append(integration)
-            deliveryIntegrations = repository.getDeliveryIntegrations()
-
-            analyticsService.track(.businessCreated, parameters: [
-                "integration_type": "delivery",
-                "provider": provider.rawValue
-            ])
-
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-
-        isLoading = false
+        errorMessage = launchGatedMessage
+        analyticsService.track(.businessCreated, parameters: [
+            "integration_type": "delivery",
+            "provider": provider.rawValue,
+            "status": "launch_gated"
+        ])
     }
 
     func disconnectIntegration(_ integrationId: String) async {

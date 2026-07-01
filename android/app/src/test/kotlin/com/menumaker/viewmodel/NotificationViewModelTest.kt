@@ -4,6 +4,7 @@ import com.menumaker.data.common.Resource
 import com.menumaker.data.remote.models.NotificationDto
 import com.menumaker.data.remote.models.NotificationListData
 import com.menumaker.data.remote.models.NotificationType
+import com.menumaker.data.repository.NotificationPreferences
 import com.menumaker.data.repository.NotificationRepository
 import com.menumaker.services.AnalyticsService
 import kotlinx.coroutines.Dispatchers
@@ -61,9 +62,18 @@ class NotificationViewModelTest {
         
         val flow = flow { emit(Resource.Success(mockNotificationList)) }
         Mockito.`when`(repository.getNotifications()).thenReturn(flow)
+        Mockito.`when`(repository.getNotificationPreferences()).thenReturn(
+            flow { emit(Resource.Success(NotificationPreferences())) }
+        )
+        Mockito.`when`(repository.updateNotificationPreferences(anyNotificationPreferences())).thenReturn(
+            flow { emit(Resource.Success(NotificationPreferences())) }
+        )
 
         viewModel = NotificationViewModel(repository, analyticsService)
     }
+
+    private fun anyNotificationPreferences(): NotificationPreferences =
+        Mockito.any(NotificationPreferences::class.java) ?: NotificationPreferences()
 
     @After
     fun tearDown() {

@@ -19,14 +19,15 @@ import com.menumaker.viewmodel.OrderViewModel
 @Composable
 fun OrdersScreen(
     viewModel: OrderViewModel = hiltViewModel(),
+    businessId: String,
     onNavigateBack: () -> Unit,
     onNavigateToOrderDetail: (String) -> Unit
 ) {
     val ordersState by viewModel.ordersState.collectAsState()
 
-    LaunchedEffect(Unit) {
-        // TODO: Get actual business ID from auth state
-        viewModel.loadOrders("test-business-id")
+    LaunchedEffect(businessId) {
+        if (businessId.isBlank()) return@LaunchedEffect
+        viewModel.loadOrders(businessId)
     }
 
     Scaffold(
@@ -91,7 +92,7 @@ fun OrdersScreen(
                         .padding(padding),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No orders yet")
+                    Text(if (businessId.isBlank()) "Business profile unavailable" else "No orders yet")
                 }
             }
         }

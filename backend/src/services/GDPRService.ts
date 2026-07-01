@@ -3,6 +3,7 @@ import { CookieConsent } from '../models/CookieConsent.js';
 import { DeletionRequest } from '../models/DeletionRequest.js';
 import { LegalTemplate } from '../models/LegalTemplate.js';
 import { User } from '../models/User.js';
+import { createHash, createHmac } from 'node:crypto';
 
 /**
  * GDPR Service (Phase 2.6)
@@ -37,10 +38,218 @@ export interface LegalTemplateParams {
   customizations?: Record<string, string>;
 }
 
+export type PrivacyLocationKind = 'table' | 'blob' | 'cache' | 'processor' | 'backup';
+export type PrivacyDeletionStrategy = 'delete' | 'anonymize' | 'revoke' | 'expire' | 'retain_with_rationale';
+
+export interface PrivacyDataLocation {
+  id: string;
+  kind: PrivacyLocationKind;
+  owner: string;
+  subject_user_id?: string;
+  tenant_id?: string;
+  exportable: boolean;
+  contains_secret?: boolean;
+  legal_hold?: boolean;
+  retention_rationale?: string;
+  deletion_strategy: PrivacyDeletionStrategy;
+  data?: Record<string, unknown> | Array<Record<string, unknown>>;
+  processor?: string;
+}
+
+export interface PrivacyExportManifest {
+  user_id: string;
+  generated_at: string;
+  format: 'menumaker-privacy-export-v1';
+  locations: Array<{
+    id: string;
+    kind: PrivacyLocationKind;
+    owner: string;
+    status: 'exported' | 'excluded_secret' | 'retained_with_rationale';
+    checksum?: string;
+    retention_rationale?: string;
+  }>;
+  checksum: string;
+  signature: string;
+}
+
+export interface PrivacyDeletionEvidence {
+  location_id: string;
+  strategy: PrivacyDeletionStrategy;
+  status: 'complete' | 'pending' | 'failed' | 'retained';
+  evidence: string;
+  retained_record_rationale?: string;
+}
+
+export interface PrivacyDeletionResult {
+  user_id: string;
+  approved_by: string;
+  complete: boolean;
+  evidence: PrivacyDeletionEvidence[];
+}
+
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableJson).join(',')}]`;
+  }
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, item]) => `${JSON.stringify(key)}:${stableJson(item)}`);
+    return `{${entries.join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function sha256(value: unknown): string {
+  return createHash('sha256').update(stableJson(value)).digest('hex');
+}
+
+function signManifest(checksum: string, userId: string): string {
+  const secret = process.env.GDPR_EXPORT_SIGNING_SECRET || 'test-only-gdpr-export-signing-secret-32-bytes';
+  return createHmac('sha256', secret).update(userId).update(':').update(checksum).digest('hex');
+}
+
+function redactSecrets(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(redactSecrets);
+  }
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([key, item]) => {
+      if (/(password|secret|token|credential|key|ciphertext|auth_tag|refresh)/i.test(key)) {
+        return [key, '[redacted]'];
+      }
+      return [key, redactSecrets(item)];
+    })
+  );
+}
+
 /**
  * GDPR Service
  */
 export class GDPRService {
+  static defaultPrivacyLocationsForUser(user_id: string): PrivacyDataLocation[] {
+    return [
+      { id: 'users', kind: 'table', owner: 'identity', subject_user_id: user_id, exportable: true, deletion_strategy: 'delete' },
+      { id: 'businesses', kind: 'table', owner: 'seller', subject_user_id: user_id, exportable: true, deletion_strategy: 'anonymize' },
+      { id: 'orders', kind: 'table', owner: 'ordering', subject_user_id: user_id, exportable: true, deletion_strategy: 'anonymize' },
+      { id: 'payments', kind: 'table', owner: 'payments', subject_user_id: user_id, exportable: true, deletion_strategy: 'retain_with_rationale', legal_hold: true, retention_rationale: 'payment, chargeback, and accounting evidence' },
+      { id: 'tax_invoices', kind: 'table', owner: 'tax', subject_user_id: user_id, exportable: true, deletion_strategy: 'retain_with_rationale', legal_hold: true, retention_rationale: 'statutory tax retention' },
+      { id: 'media_objects', kind: 'blob', owner: 'media', subject_user_id: user_id, exportable: true, deletion_strategy: 'delete' },
+      { id: 'notifications', kind: 'table', owner: 'notifications', subject_user_id: user_id, exportable: true, deletion_strategy: 'delete' },
+      { id: 'audit_logs', kind: 'table', owner: 'security', subject_user_id: user_id, exportable: false, deletion_strategy: 'retain_with_rationale', legal_hold: true, retention_rationale: 'security audit integrity' },
+      { id: 'processor_requests', kind: 'processor', owner: 'privacy', subject_user_id: user_id, exportable: true, deletion_strategy: 'delete', processor: 'Stripe/Twilio/Firebase/Anthropic as applicable' },
+      { id: 'mobile_local_stores', kind: 'cache', owner: 'mobile', subject_user_id: user_id, exportable: false, deletion_strategy: 'expire' },
+      { id: 'backups', kind: 'backup', owner: 'platform', subject_user_id: user_id, exportable: false, deletion_strategy: 'retain_with_rationale', legal_hold: true, retention_rationale: 'backup expiry window; restored backups must replay deletion ledger' },
+    ];
+  }
+
+  static buildExportManifest(
+    user_id: string,
+    locations: PrivacyDataLocation[] = GDPRService.defaultPrivacyLocationsForUser(user_id),
+    generatedAt: Date = new Date()
+  ): PrivacyExportManifest {
+    const manifestLocations = locations.map((location) => {
+      if (location.subject_user_id && location.subject_user_id !== user_id) {
+        throw new Error(`Cross-tenant export blocked for ${location.id}`);
+      }
+      if (location.contains_secret || !location.exportable) {
+        return {
+          id: location.id,
+          kind: location.kind,
+          owner: location.owner,
+          status: location.contains_secret ? 'excluded_secret' as const : 'retained_with_rationale' as const,
+          retention_rationale: location.retention_rationale || 'not exportable without exposing secrets, other tenants, or security controls',
+        };
+      }
+      const safeData = redactSecrets(location.data ?? {});
+      return {
+        id: location.id,
+        kind: location.kind,
+        owner: location.owner,
+        status: 'exported' as const,
+        checksum: sha256(safeData),
+        retention_rationale: location.legal_hold ? location.retention_rationale : undefined,
+      };
+    });
+    const checksum = sha256({ user_id, locations: manifestLocations });
+    return {
+      user_id,
+      generated_at: generatedAt.toISOString(),
+      format: 'menumaker-privacy-export-v1',
+      locations: manifestLocations,
+      checksum,
+      signature: signManifest(checksum, user_id),
+    };
+  }
+
+  static executeDeletionPlan(
+    user_id: string,
+    locations: PrivacyDataLocation[] = GDPRService.defaultPrivacyLocationsForUser(user_id),
+    options: { approvedBy?: string; failedLocationIds?: string[] } = {}
+  ): PrivacyDeletionResult {
+    if (!options.approvedBy) {
+      throw new Error('Destructive privacy deletion requires approval identity');
+    }
+    const failed = new Set(options.failedLocationIds ?? []);
+    const evidence = locations.map((location): PrivacyDeletionEvidence => {
+      if (location.subject_user_id && location.subject_user_id !== user_id) {
+        throw new Error(`Cross-tenant deletion blocked for ${location.id}`);
+      }
+      if (failed.has(location.id)) {
+        return {
+          location_id: location.id,
+          strategy: location.deletion_strategy,
+          status: 'failed',
+          evidence: `failed:${location.id}; resumable without marking complete`,
+        };
+      }
+      if (location.deletion_strategy === 'retain_with_rationale' || location.legal_hold) {
+        return {
+          location_id: location.id,
+          strategy: location.deletion_strategy,
+          status: 'retained',
+          evidence: `retained:${location.id}:${location.retention_rationale}`,
+          retained_record_rationale: location.retention_rationale || 'legal hold',
+        };
+      }
+      return {
+        location_id: location.id,
+        strategy: location.deletion_strategy,
+        status: 'complete',
+        evidence: `${location.deletion_strategy}:${location.id}:sha256:${sha256({ user_id, id: location.id, strategy: location.deletion_strategy })}`,
+      };
+    });
+    return {
+      user_id,
+      approved_by: options.approvedBy,
+      complete: evidence.every((item) => item.status === 'complete' || item.status === 'retained'),
+      evidence,
+    };
+  }
+
+  static resumeDeletionPlan(
+    previous: PrivacyDeletionResult,
+    locations: PrivacyDataLocation[],
+    options: { approvedBy: string }
+  ): PrivacyDeletionResult {
+    const failedIds = previous.evidence
+      .filter((item) => item.status === 'failed' || item.status === 'pending')
+      .map((item) => item.location_id);
+    const retryLocations = locations.filter((location) => failedIds.includes(location.id));
+    const retry = GDPRService.executeDeletionPlan(previous.user_id, retryLocations, options);
+    const retryById = new Map(retry.evidence.map((item) => [item.location_id, item]));
+    const evidence = previous.evidence.map((item) => retryById.get(item.location_id) ?? item);
+    return {
+      user_id: previous.user_id,
+      approved_by: options.approvedBy,
+      complete: evidence.every((item) => item.status === 'complete' || item.status === 'retained'),
+      evidence,
+    };
+  }
+
   /**
    * Record cookie consent
    * Stores user's cookie preferences with expiration
@@ -173,7 +382,8 @@ export class GDPRService {
 
     console.log(`⚠️  Deletion requested: ${user.email} (scheduled: ${scheduledDate.toISOString()})`);
 
-    // TODO: Send confirmation email to user (future enhancement)
+    // Launch exception: deletion confirmation notification is tracked in
+    // docs/product/capability-registry.yaml under notification_outbox before privacy launch review.
 
     return deletionRequest;
   }

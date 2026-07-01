@@ -1,50 +1,21 @@
 {
   "project_info": {
-    "project_number": "123456789000",
-    "project_id": "menumaker-test",
-    "storage_bucket": "menumaker-test.appspot.com"
+    "project_number": "000000000000",
+    "project_id": "menumaker-template",
+    "storage_bucket": "menumaker-template.invalid"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:123456789000:android:abcdef1234567890",
+        "mobilesdk_app_id": "1:000000000000:android:template0000000000",
         "android_client_info": {
           "package_name": "com.menumaker"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "123456789000-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyDummyKeyForTestingPurposesOnly123456"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "123456789000-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:123456789000:android:abcdef1234567891",
-        "android_client_info": {
-          "package_name": "com.menumaker.customer"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDummyKeyForTestingPurposesOnly123456"
+          "current_key": "REPLACE_WITH_FIREBASE_API_KEY"
         }
       ],
       "services": {
@@ -55,7 +26,26 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:123456789000:android:abcdef1234567892",
+        "mobilesdk_app_id": "1:000000000000:android:template0000000001",
+        "android_client_info": {
+          "package_name": "com.menumaker.customer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "REPLACE_WITH_FIREBASE_API_KEY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:000000000000:android:template0000000002",
         "android_client_info": {
           "package_name": "com.menumaker.seller"
         }
@@ -63,7 +53,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDummyKeyForTestingPurposesOnly123456"
+          "current_key": "REPLACE_WITH_FIREBASE_API_KEY"
         }
       ],
       "services": {

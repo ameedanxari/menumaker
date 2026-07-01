@@ -1,8 +1,10 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 type FixturePath = string | string[];
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const sharedMocksRoot = path.resolve(__dirname, '../../../shared/mocks');
 
 function toPathSegments(pathOrSegments: FixturePath): string[] {

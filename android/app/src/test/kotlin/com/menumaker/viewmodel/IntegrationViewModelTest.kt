@@ -2,8 +2,6 @@ package com.menumaker.viewmodel
 
 import com.menumaker.data.common.Resource
 import com.menumaker.data.remote.models.IntegrationDto
-import com.menumaker.data.remote.models.PaymentProcessorData
-import com.menumaker.data.remote.models.PaymentProcessorDto
 import com.menumaker.data.repository.IntegrationRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -61,32 +59,41 @@ class IntegrationViewModelTest {
     }
 
     @Test
-    fun `connectPOS updates connectState`() = runTest {
-        val processor = PaymentProcessorDto(
-            id = "p1",
-            processorType = "square",
-            status = "pending",
-            isActive = false,
-            priority = 1,
-            settlementSchedule = null,
-            minPayoutThresholdCents = null,
-            feePercentage = null,
-            fixedFeeCents = null,
-            lastTransactionAt = null,
-            verifiedAt = null,
-            connectionError = null,
-            metadata = null,
-            createdAt = "2024-01-01"
-        )
-        val data = PaymentProcessorData(processor = processor)
+    fun `connectPOS exposes launch-gated error state`() = runTest {
         Mockito.`when`(repository.connectPOS("Square")).thenReturn(flow {
-             emit(Resource.Success(data))
+             emit(Resource.Error("POS provider 'Square' is launch-gated in this build"))
         })
         
         viewModel.connectPOS("Square")
         
         val state = viewModel.connectState.value
-        assertTrue(state is Resource.Success)
-        assertEquals("p1", (state as Resource.Success).data.processor.id)
+        assertTrue(state is Resource.Error)
+        assertEquals("POS provider 'Square' is launch-gated in this build", (state as Resource.Error).message)
+    }
+
+    @Test
+    fun `connectDelivery exposes launch-gated error state`() = runTest {
+        Mockito.`when`(repository.connectDelivery("DoorDash")).thenReturn(flow {
+             emit(Resource.Error("Delivery provider 'DoorDash' is launch-gated in this build"))
+        })
+
+        viewModel.connectDelivery("DoorDash")
+
+        val state = viewModel.connectState.value
+        assertTrue(state is Resource.Error)
+        assertEquals("Delivery provider 'DoorDash' is launch-gated in this build", (state as Resource.Error).message)
+    }
+
+    @Test
+    fun `disconnectIntegration exposes launch-gated error state`() = runTest {
+        Mockito.`when`(repository.disconnectIntegration("int-1")).thenReturn(flow {
+            emit(Resource.Error("Integration disconnect for 'int-1' is launch-gated in this build"))
+        })
+
+        viewModel.disconnectIntegration("int-1", "b1")
+
+        val state = viewModel.disconnectState.value
+        assertTrue(state is Resource.Error)
+        assertEquals("Integration disconnect for 'int-1' is launch-gated in this build", (state as Resource.Error).message)
     }
 }

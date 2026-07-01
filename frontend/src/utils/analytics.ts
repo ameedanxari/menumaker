@@ -19,7 +19,7 @@ export interface AnalyticsUser {
   properties?: Record<string, any>;
 }
 
-class AnalyticsService {
+export class AnalyticsService {
   private enabled: boolean = true;
   private userId: string | null = null;
   private userProperties: Record<string, any> = {};

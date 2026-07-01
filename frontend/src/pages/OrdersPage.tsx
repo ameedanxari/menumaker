@@ -14,13 +14,19 @@ import {
 import { format } from 'date-fns';
 
 export default function OrdersPage() {
-  const { currentBusiness } = useBusinessStore();
+  const { currentBusiness, fetchBusinesses } = useBusinessStore();
   const { orders, fetchOrders, updateOrderStatus, isLoading } = useOrderStore();
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  useEffect(() => {
+    if (!currentBusiness) {
+      fetchBusinesses();
+    }
+  }, [currentBusiness, fetchBusinesses]);
 
   useEffect(() => {
     if (currentBusiness) {
@@ -230,7 +236,9 @@ export default function OrdersPage() {
                       {order.items?.map((item) => (
                         <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                           <div className="flex-1">
-                            <p className="font-medium text-gray-900">{item.dish?.name || 'Unknown Dish'}</p>
+                            <p className="font-medium text-gray-900">
+                              {item.dish?.name || 'Unknown Dish'} x{item.quantity}
+                            </p>
                             <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                           </div>
                           <div className="text-right">

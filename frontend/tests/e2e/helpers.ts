@@ -62,9 +62,15 @@ export async function login(page: Page, email: string, password: string) {
 }
 
 export async function logout(page: Page) {
-  // Click user menu or logout button
-  await page.click('button[aria-label="User menu"]');
-  await page.click('text=Logout');
+  const directLogoutButton = page.locator('aside').getByRole('button', { name: 'Logout' });
+
+  try {
+    await directLogoutButton.click({ timeout: 10000 });
+  } catch {
+    await page.click('button[aria-label="User menu"]');
+    await page.click('text=Logout');
+  }
+
   await page.waitForURL('/login');
 }
 
@@ -78,9 +84,17 @@ export async function createBusiness(page: Page, businessData: any) {
   await page.fill('textarea[name="description"]', businessData.description);
   await page.fill('input[name="phone"]', businessData.phone);
   await page.fill('input[name="address"]', businessData.address);
-  await page.fill('input[name="city"]', businessData.city);
-  await page.fill('input[name="state"]', businessData.state);
-  await page.fill('input[name="zipCode"]', businessData.zipCode);
+
+  for (const [selector, value] of [
+    ['input[name="city"]', businessData.city],
+    ['input[name="state"]', businessData.state],
+    ['input[name="zipCode"]', businessData.zipCode],
+  ] as const) {
+    const field = page.locator(selector);
+    if (await field.isVisible()) {
+      await field.fill(value);
+    }
+  }
 
   await page.click('button[type="submit"]');
 
@@ -102,7 +116,7 @@ export async function createDish(page: Page, dishData: any) {
   await page.click('button:has-text("Save Dish")');
 
   // Wait for dish to appear in list
-  await expect(page.locator(`text=${dishData.name}`)).toBeVisible({ timeout: 5000 });
+  await expect(page.locator(`text=${dishData.name}`).first()).toBeVisible({ timeout: 5000 });
 }
 
 export async function createMenu(page: Page, menuName: string) {
@@ -116,16 +130,22 @@ export async function createMenu(page: Page, menuName: string) {
 }
 
 export async function publishMenu(page: Page) {
-  await page.click('button:has-text("Publish")');
+  await page.getByRole('button', { name: /menus/i }).click();
 
-  // Confirm publish if there's a confirmation dialog
-  const confirmButton = page.locator('button:has-text("Confirm")');
-  if (await confirmButton.isVisible()) {
-    await confirmButton.click();
+  if (!(await page.locator('button:has-text("Publish")').isVisible())) {
+    await page.click('button:has-text("Create Menu")');
+    await page.fill('#menu-name', `E2E Menu ${Date.now()}`);
+    await page.locator('button:has-text("Create Menu")').last().click();
   }
 
+  // Confirm publish if there's a confirmation dialog
+  page.once('dialog', async (dialog) => {
+    await dialog.accept();
+  });
+  await page.click('button:has-text("Publish")');
+
   // Wait for success message
-  await expect(page.locator('text=/published|live/i')).toBeVisible({ timeout: 5000 });
+  await expect(page.locator('text=/published|live/i').first()).toBeVisible({ timeout: 5000 });
 }
 
 /**
@@ -147,10 +167,24 @@ export async function fillCheckoutForm(page: Page, customerData: any) {
   await page.fill('input[name="customerName"]', customerData.name);
   await page.fill('input[name="customerPhone"]', customerData.phone);
   await page.fill('input[name="customerEmail"]', customerData.email);
-  await page.fill('input[name="deliveryAddress"]', customerData.address);
-  await page.fill('input[name="deliveryCity"]', customerData.city);
-  await page.fill('input[name="deliveryState"]', customerData.state);
-  await page.fill('input[name="deliveryZipCode"]', customerData.zipCode);
+  const fullDeliveryAddress = [
+    customerData.address,
+    customerData.city,
+    customerData.state,
+    customerData.zipCode,
+  ].filter(Boolean).join(', ');
+
+  for (const [selector, value] of [
+    ['textarea[name="deliveryAddress"], input[name="deliveryAddress"]', fullDeliveryAddress],
+    ['input[name="deliveryCity"]', customerData.city],
+    ['input[name="deliveryState"]', customerData.state],
+    ['input[name="deliveryZipCode"]', customerData.zipCode],
+  ] as const) {
+    const field = page.locator(selector).first();
+    if ((await field.count()) > 0 && await field.isVisible()) {
+      await field.fill(value);
+    }
+  }
 }
 
 export async function submitOrder(page: Page) {
@@ -194,7 +228,7 @@ export async function assertMenuPublished(page: Page) {
 
 export async function assertOrderPlaced(page: Page) {
   // Check for order confirmation message
-  await expect(page.locator('text=/order confirmed|thank you for your order/i')).toBeVisible();
+  await expect(page.locator('text=/order confirmed|thank you for your order/i').first()).toBeVisible();
 
   // Check for order ID
   await expect(page.locator('[data-testid="order-id"]')).toBeVisible();

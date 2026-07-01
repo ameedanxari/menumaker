@@ -1,6 +1,11 @@
 package com.menumaker.ui.screens
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -19,6 +24,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.menumaker.BuildConfig
 import com.menumaker.data.remote.api.ApiConfig
 import com.menumaker.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
+import java.io.File
 
 /**
  * Settings Screen
@@ -32,9 +39,11 @@ fun SettingsScreen(
     authViewModel: AuthViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
     onNavigateToNotifications: () -> Unit = {},
-    onNavigateToChangePassword: () -> Unit = {}
+    onNavigateToChangePassword: () -> Unit = {},
+    onClearCart: suspend () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     // Settings state - using simple remember for demonstration
     var darkModeEnabled by remember { mutableStateOf(false) }
@@ -48,8 +57,16 @@ fun SettingsScreen(
     var showClearCacheDialog by remember { mutableStateOf(false) }
     var showClearCartDialog by remember { mutableStateOf(false) }
     var showDebugDialog by remember { mutableStateOf(false) }
+    var settingsFeedback by remember { mutableStateOf<String?>(null) }
     val baseUrl by ApiConfig.baseUrl.collectAsState()
     var debugBaseUrl by remember(baseUrl) { mutableStateOf(baseUrl) }
+
+    settingsFeedback?.let { message ->
+        LaunchedEffect(message) {
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            settingsFeedback = null
+        }
+    }
 
     // App version info
     val appVersion = try {
@@ -82,7 +99,8 @@ fun SettingsScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        // TODO: Implement cache clearing
+                        val deletedBytes = clearAppOwnedCaches(context)
+                        settingsFeedback = "Cleared ${deletedBytes / 1024} KB of app cache"
                         showClearCacheDialog = false
                     }
                 ) {
@@ -106,8 +124,12 @@ fun SettingsScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        // TODO: Implement cart clearing
-                        showClearCartDialog = false
+                        scope.launch {
+                            runCatching { onClearCart() }
+                                .onSuccess { settingsFeedback = "Cart cleared" }
+                                .onFailure { settingsFeedback = it.message ?: "Unable to clear cart" }
+                            showClearCartDialog = false
+                        }
                     }
                 ) {
                     Text("Clear", color = MaterialTheme.colorScheme.error)
@@ -222,12 +244,18 @@ fun SettingsScreen(
             SettingsSection(title = "Help & Support") {
                 SettingsNavigationItem(
                     title = "Help & Support",
-                    onClick = { /* TODO: Navigate to help */ }
+                    onClick = {
+                        openSettingsDestination(context, SettingsDestination.Help)
+                        settingsFeedback = "Opening help"
+                    }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
                 SettingsNavigationItem(
                     title = "FAQ",
-                    onClick = { /* TODO: Navigate to FAQ */ }
+                    onClick = {
+                        openSettingsDestination(context, SettingsDestination.Faq)
+                        settingsFeedback = "Opening FAQ"
+                    }
                 )
             }
 
@@ -237,12 +265,18 @@ fun SettingsScreen(
             SettingsSection(title = "Legal") {
                 SettingsNavigationItem(
                     title = "Terms and Conditions",
-                    onClick = { /* TODO: Navigate to terms */ }
+                    onClick = {
+                        openSettingsDestination(context, SettingsDestination.Terms)
+                        settingsFeedback = "Opening terms"
+                    }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
                 SettingsNavigationItem(
                     title = "Privacy Policy",
-                    onClick = { /* TODO: Navigate to privacy policy */ }
+                    onClick = {
+                        openSettingsDestination(context, SettingsDestination.Privacy)
+                        settingsFeedback = "Opening privacy policy"
+                    }
                 )
             }
 
@@ -321,6 +355,45 @@ fun SettingsScreen(
                 }
             }
         )
+    }
+}
+
+enum class SettingsDestination(val url: String) {
+    Help("https://menumaker.app/help"),
+    Faq("https://menumaker.app/faq"),
+    Terms("https://menumaker.app/terms"),
+    Privacy("https://menumaker.app/privacy")
+}
+
+fun openSettingsDestination(context: Context, destination: SettingsDestination) {
+    val uri = Uri.parse(destination.url)
+    require(uri.scheme == "https") { "Settings destinations must use HTTPS" }
+    val intent = Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    try {
+        context.startActivity(intent)
+    } catch (_: ActivityNotFoundException) {
+        Toast.makeText(context, "No browser is available for ${destination.url}", Toast.LENGTH_SHORT).show()
+    }
+}
+
+fun clearAppOwnedCaches(context: Context): Long {
+    return listOfNotNull(context.cacheDir, context.externalCacheDir)
+        .sumOf { deleteCacheChildren(it) }
+}
+
+private fun deleteCacheChildren(cacheDir: File): Long {
+    if (!cacheDir.exists() || !cacheDir.isDirectory) return 0L
+    return cacheDir.listFiles().orEmpty().sumOf { child ->
+        val bytes = child.safeSize()
+        if (child.deleteRecursively()) bytes else 0L
+    }
+}
+
+private fun File.safeSize(): Long {
+    return when {
+        !exists() -> 0L
+        isFile -> length()
+        else -> listFiles().orEmpty().sumOf { it.safeSize() }
     }
 }
 

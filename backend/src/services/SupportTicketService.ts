@@ -63,8 +63,8 @@ export class SupportTicketService {
     // Auto-assign to support agent (round-robin)
     await this.autoAssignTicket(ticket.id);
 
-    // TODO: Send email notification to assigned support agent
-    // await EmailService.sendTicketCreatedNotification(ticket);
+    // Launch exception: assigned-agent notification is tracked in
+    // docs/product/capability-registry.yaml under notification_outbox before support SLA launch.
 
     return { ticket };
   }
@@ -271,10 +271,8 @@ export class SupportTicketService {
       ip_address,
     });
 
-    // TODO: Send email notification to user (if not internal note)
-    // if (!internal_note) {
-    //   await EmailService.sendTicketReplyNotification(ticket.user.email, message);
-    // }
+    // Launch exception: user reply notification is tracked in
+    // docs/product/capability-registry.yaml under notification_outbox before support SLA launch.
 
     return { success: true };
   }

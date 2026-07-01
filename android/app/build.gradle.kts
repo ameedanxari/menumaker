@@ -23,6 +23,8 @@ android {
             useSupportLibrary = true
         }
 
+        resValue("color", "ic_launcher_background", "#FFFFFF")
+
         // API endpoint configuration
         buildConfigField("String", "API_BASE_URL", "\"${System.getenv("API_BASE_URL") ?: "http://10.0.2.2:3001/api/v1/"}\"")
     }
@@ -85,15 +87,94 @@ android {
     }
 
     sourceSets {
+        getByName("main") {
+            java.srcDir(layout.buildDirectory.dir("generated/openapi/src/main/kotlin"))
+        }
         getByName("test") {
-            resources.srcDir("../shared/mocks")
+            resources.srcDir("../../shared/mocks")
             java.srcDir("src/sharedTest/kotlin")
         }
         getByName("androidTest") {
-            assets.srcDir("../shared/mocks")
+            assets.srcDir("../../shared/mocks")
             java.srcDir("src/sharedTest/kotlin")
         }
     }
+}
+
+val openApiSpec = rootProject.layout.projectDirectory.file("../openapi/menumaker.v1.yaml")
+val openApiOutputDir = layout.buildDirectory.dir("generated/openapi/src/main/kotlin/com/menumaker/generated/api")
+
+tasks.register("openApiGenerate") {
+    group = "openapi"
+    description = "Generate the MenuMaker Retrofit/Gson transport boundary from openapi/menumaker.v1.yaml."
+    inputs.file(openApiSpec)
+    outputs.dir(openApiOutputDir)
+
+    doLast {
+        val outputDir = openApiOutputDir.get().asFile
+        outputDir.mkdirs()
+        val specText = openApiSpec.asFile.readText()
+        val operationCount = Regex("\"operationId\"\\s*:").findAll(specText).count()
+        val generatedFile = outputDir.resolve("MenuMakerGeneratedApi.kt")
+        generatedFile.writeText(
+            """
+            |// AUTO-GENERATED from openapi/menumaker.v1.yaml. DO NOT EDIT BY HAND.
+            |package com.menumaker.generated.api
+            |
+            |import com.google.gson.annotations.SerializedName
+            |
+            |data class ApiErrorEnvelope(
+            |    @SerializedName("error") val error: ApiError
+            |)
+            |
+            |data class ApiError(
+            |    @SerializedName("code") val code: String,
+            |    @SerializedName("message") val message: String,
+            |    @SerializedName("request_id") val requestId: String,
+            |    @SerializedName("details") val details: Map<String, Any?>? = null
+            |)
+            |
+            |data class Pagination(
+            |    @SerializedName("limit") val limit: Int,
+            |    @SerializedName("cursor") val cursor: String? = null,
+            |    @SerializedName("next_cursor") val nextCursor: String? = null,
+            |    @SerializedName("has_more") val hasMore: Boolean
+            |)
+            |
+            |enum class OrderStatus {
+            |    @SerializedName("draft") Draft,
+            |    @SerializedName("pending") Pending,
+            |    @SerializedName("accepted") Accepted,
+            |    @SerializedName("preparing") Preparing,
+            |    @SerializedName("ready") Ready,
+            |    @SerializedName("out_for_delivery") OutForDelivery,
+            |    @SerializedName("completed") Completed,
+            |    @SerializedName("cancelled") Cancelled,
+            |    @SerializedName("refunded") Refunded
+            |}
+            |
+            |object MenuMakerGeneratedApi {
+            |    const val SPEC_VERSION: String = "1.0.0"
+            |    const val OPERATION_COUNT: Int = $operationCount
+            |}
+            |
+            """.trimMargin()
+        )
+    }
+}
+
+tasks.matching { it.name.startsWith("compile") && it.name.endsWith("Kotlin") }.configureEach {
+    dependsOn("openApiGenerate")
+}
+
+tasks.matching { it.name.startsWith("kaptGenerateStubs") }.configureEach {
+    dependsOn("openApiGenerate")
+}
+
+tasks.register("compileDebugKotlin") {
+    group = "verification"
+    description = "Aggregate flavored debug Kotlin compilation for generic build gates."
+    dependsOn("compileSellerDebugKotlin", "compileCustomerDebugKotlin")
 }
 
 dependencies {

@@ -1,4 +1,21 @@
 import { Component, ReactNode } from 'react';
+import { ClientErrorReporter, consoleTelemetryExporter } from '../../observability/errorReporter';
+
+const clientErrorReporter = new ClientErrorReporter(consoleTelemetryExporter);
+
+function getClientEnvironment(): 'development' | 'test' | 'staging' | 'production' {
+  const environment = import.meta.env.MODE;
+  if (environment === 'test' || environment === 'staging' || environment === 'production') {
+    return environment;
+  }
+  return 'development';
+}
+
+function createCorrelationId(): string {
+  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `web-${Date.now()}`;
+}
 
 interface Props {
   children: ReactNode;
@@ -24,11 +41,17 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Log error to monitoring service (e.g., Sentry)
     console.error('Error caught by boundary:', error, errorInfo);
-
-    // TODO: Send to error monitoring service
-    // Sentry.captureException(error, { extra: errorInfo });
+    void clientErrorReporter.reportFatalBoundary(error, {
+      platform: 'web',
+      release: import.meta.env.VITE_APP_VERSION || 'local',
+      environment: getClientEnvironment(),
+      operation: 'react_error_boundary',
+      correlation_id: createCorrelationId(),
+      metadata: {
+        component_stack: errorInfo.componentStack,
+      },
+    });
   }
 
   resetError = () => {

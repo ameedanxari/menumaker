@@ -1,6 +1,7 @@
 package com.menumaker.data.remote.api
 
 import com.menumaker.data.remote.models.*
+import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -182,12 +183,6 @@ interface ApiService {
         @Query("business_id") businessId: String
     ): Response<IntegrationListResponse>
 
-    @POST("pos/connect")
-    suspend fun connectPOS(@Body request: Map<String, String>): Response<PaymentProcessorResponse>
-
-    @POST("delivery/connect")
-    suspend fun connectDelivery(@Body request: Map<String, String>): Response<PaymentProcessorResponse>
-
     @DELETE("integrations/{id}")
     suspend fun disconnectIntegration(@Path("id") id: String): Response<Unit>
 
@@ -216,6 +211,12 @@ interface ApiService {
 
     @POST("notifications/read-all")
     suspend fun markAllNotificationsAsRead(): Response<Unit>
+
+    @GET("settings")
+    suspend fun getUserSettings(): Response<Map<String, Any>>
+
+    @PATCH("settings")
+    suspend fun updateUserSettings(@Body settings: Map<String, Boolean>): Response<Map<String, Any>>
 
     // Payments (dev mock)
     @POST("payments/mock-charge")
@@ -246,6 +247,13 @@ interface ApiService {
 
     @PATCH("profile")
     suspend fun updateUserProfile(@Body updates: Map<String, Any>): Response<AuthResponse>
+
+    @POST("auth/photo")
+    suspend fun updateProfilePhoto(@Body request: Map<String, String>): Response<MeResponse>
+
+    @Multipart
+    @POST("media/upload")
+    suspend fun uploadMedia(@Part file: MultipartBody.Part): Response<MediaUploadResponse>
 
     // Analytics
     @GET("businesses/{businessId}/analytics")

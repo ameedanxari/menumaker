@@ -6,6 +6,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 
 // Explicit test files to avoid glob quirks/hanging runners
 const files = [
+  'src/observability/errorReporter.test.ts',
   'src/utils/validation.test.ts',
   'src/utils/mobile.test.ts',
   'src/utils/analytics.test.ts',

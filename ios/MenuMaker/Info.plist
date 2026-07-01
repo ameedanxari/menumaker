@@ -35,47 +35,23 @@
 	<!-- Privacy - Location -->
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>MenuMaker uses your location to help customers find your restaurant and calculate delivery distances.</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>MenuMaker uses your location to provide real-time order tracking and delivery updates.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>MenuMaker uses your location to help customers find your restaurant and provide real-time delivery tracking.</string>
-
 	<!-- Privacy - Notifications -->
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>MenuMaker sends you notifications about new orders, customer reviews, and important updates about your restaurant.</string>
-
-	<!-- Privacy - Contacts (if used for customer management) -->
-	<key>NSContactsUsageDescription</key>
-	<string>MenuMaker may access your contacts to help you quickly add customer information and manage orders.</string>
 
 	<!-- Privacy - Face ID -->
 	<key>NSFaceIDUsageDescription</key>
 	<string>MenuMaker uses Face ID to securely authenticate you and protect your restaurant account.</string>
 
-	<!-- Privacy - Bluetooth (if used for payment terminals) -->
-	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>MenuMaker uses Bluetooth to connect with payment terminals and receipt printers for your restaurant.</string>
-	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>MenuMaker uses Bluetooth to connect with payment terminals and receipt printers.</string>
-
-	<!-- Privacy - Microphone (if voice features added) -->
-	<key>NSMicrophoneUsageDescription</key>
-	<string>MenuMaker may use your microphone for voice-based order taking or customer support features.</string>
-
-	<!-- Privacy - Calendar (for reservation features) -->
-	<key>NSCalendarsUsageDescription</key>
-	<string>MenuMaker can add reservations and special events to your calendar to help you manage your restaurant schedule.</string>
-
 	<!-- Privacy - Network Usage -->
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>MenuMaker uses your local network to discover and connect with POS systems and printers in your restaurant.</string>
+	<string>MenuMaker uses your local network only for seller-owned printer discovery when that workflow is enabled.</string>
 
 	<!-- Background Modes -->
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
 		<string>remote-notification</string>
-		<string>processing</string>
 	</array>
 
 	<!-- Required device capabilities -->

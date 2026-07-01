@@ -5,11 +5,19 @@ import { api } from '../services/api';
 interface User {
   id: string;
   email: string;
+  role?: string;
   created_at: string;
+}
+
+export const ADMIN_OPERATOR_ROLES = new Set(['admin', 'super_admin', 'moderator', 'support_agent']);
+
+export function isAdminOperator(user: User | null | undefined): boolean {
+  return Boolean(user?.role && ADMIN_OPERATOR_ROLES.has(user.role));
 }
 
 interface AuthState {
   user: User | null;
+  /** Memory-only access token. Never persisted to browser storage. */
   accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -72,6 +80,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        void Promise.resolve(api.logout()).catch(() => undefined);
         api.setAccessToken(null);
         set({
           user: null,
@@ -81,23 +90,18 @@ export const useAuthStore = create<AuthState>()(
       },
 
       initAuth: async () => {
-        const { accessToken } = get();
+        try {
+          const response = await api.getCurrentUser();
 
-        if (accessToken) {
-          try {
-            api.setAccessToken(accessToken);
-            const response = await api.getCurrentUser();
-
-            if (response.success) {
-              set({
-                user: response.data.user,
-                isAuthenticated: true,
-              });
-            }
-          } catch (_error) {
-            // Token is invalid, clear auth state
-            get().logout();
+          if (response.success) {
+            set({
+              user: response.data.user,
+              isAuthenticated: true,
+            });
           }
+        } catch (_error) {
+          api.setAccessToken(null);
+          set({ user: null, accessToken: null, isAuthenticated: false });
         }
       },
     }),
@@ -105,7 +109,6 @@ export const useAuthStore = create<AuthState>()(
       name: 'auth-storage',
       partialize: (state) => ({
         user: state.user,
-        accessToken: state.accessToken,
         isAuthenticated: state.isAuthenticated,
       }),
     }

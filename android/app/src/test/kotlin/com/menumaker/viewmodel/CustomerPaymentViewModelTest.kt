@@ -11,7 +11,6 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -24,19 +23,17 @@ class CustomerPaymentViewModelTest {
 
     @Mock
     private lateinit var analyticsService: AnalyticsService
-    
+
     @Mock
     private lateinit var paymentRepository: PaymentRepository
 
     private lateinit var viewModel: CustomerPaymentViewModel
-
     private val testDispatcher = UnconfinedTestDispatcher()
 
     @Before
     fun setup() {
         MockitoAnnotations.openMocks(this)
         Dispatchers.setMain(testDispatcher)
-
         viewModel = CustomerPaymentViewModel(analyticsService, paymentRepository)
     }
 
@@ -46,224 +43,134 @@ class CustomerPaymentViewModelTest {
     }
 
     @Test
-    fun `initial state is correct`() {
+    fun `initial state has no fake saved cards`() {
         assertEquals(PaymentMethodType.CARD, viewModel.selectedPaymentMethod.value)
+        assertTrue(viewModel.savedCards.value.isEmpty())
+        assertTrue(viewModel.tokenizedPaymentMethods.value.isEmpty())
         assertFalse(viewModel.isPayButtonEnabled())
     }
 
     @Test
-    fun `updateCardNumber validates length`() {
-        viewModel.updateCardNumber("123")
-        assertEquals("123", viewModel.cardNumber.value)
-        
-        // Validation happens in updateCardNumber
-         assertEquals("Invalid card number", viewModel.cardValidationError.value)
-         
-         viewModel.updateCardNumber("1234567890123") // 13 digits
-         assertNull(viewModel.cardValidationError.value)
+    fun `raw card and cvv input is not retained in ViewModel state`() {
+        viewModel.updateCardNumber("4111-1111-1111-1111")
+        viewModel.updateCvv("123")
+
+        assertEquals("•••• 1111", viewModel.cardNumber.value)
+        assertEquals("", viewModel.cvv.value)
+        assertEquals("Security codes are collected only by the payment provider", viewModel.cardValidationError.value)
     }
 
     @Test
-    fun `isPayButtonEnabled checks all card fields`() {
-        viewModel.updateCardNumber("1234567890123456")
-        viewModel.updateCardHolderName("John Doe")
-        viewModel.updateExpiryDate("12/25")
-        viewModel.updateCvv("123")
-        
+    fun `tokenized card enables payment and exposes only summary fields`() {
+        viewModel.replaceTokenizedPaymentMethodsForTesting(listOf(validCard()))
+        viewModel.selectSavedCard(0)
+
         assertTrue(viewModel.isPayButtonEnabled())
+        assertEquals("4242", viewModel.savedCards.value.single().last4Digits)
+        assertFalse(viewModel.savedCards.value.single().cardHolderName.contains("4111"))
     }
-    
+
     @Test
-    fun `isPayButtonEnabled returns false if fields invalid`() {
-        viewModel.updateCardNumber("123") // Invalid
-        viewModel.updateCardHolderName("John Doe")
-        viewModel.updateExpiryDate("12/25")
-        viewModel.updateCvv("123")
-        
+    fun `expired tokenized card disables payment and fails closed`() = runTest {
+        viewModel.replaceTokenizedPaymentMethodsForTesting(listOf(validCard(expiryYear = 2020)))
+        viewModel.selectSavedCard(0)
+
         assertFalse(viewModel.isPayButtonEnabled())
+        viewModel.processPayment(42.0) {}
+
+        assertTrue(viewModel.showPaymentFailed.value)
+        assertEquals(PaymentIntentStatus.Failed, viewModel.paymentIntentStatus.value)
     }
 
     @Test
-    fun `updateUpiId validates format`() {
-        viewModel.setPaymentMethod(PaymentMethodType.UPI)
-        
-        viewModel.updateUpiId("invalid")
-        assertEquals("Invalid UPI ID format", viewModel.upiValidationError.value)
-        assertFalse(viewModel.isPayButtonEnabled())
-        
-        viewModel.updateUpiId("valid@upi")
-        assertNull(viewModel.upiValidationError.value)
-        assertTrue(viewModel.isPayButtonEnabled())
+    fun `tokenized card authorizes successful completion`() = runTest {
+        viewModel.replaceTokenizedPaymentMethodsForTesting(listOf(validCard()))
+        viewModel.selectSavedCard(0)
+
+        var callbackOrderId: String? = null
+        viewModel.processPayment(100.0) { callbackOrderId = it }
+
+        assertEquals(PaymentIntentStatus.Authorized, viewModel.paymentIntentStatus.value)
+        assertTrue(viewModel.showPaymentSuccess.value)
+        assertTrue(callbackOrderId!!.startsWith("PAY-"))
     }
 
     @Test
-    fun `processPayment works successfully`() = runTest {
-        // Set up valid state
-        viewModel.setPaymentMethod(PaymentMethodType.CASH)
-        
-        var successOrderId: String? = null
-        viewModel.processPayment(100.0) { orderId ->
-            successOrderId = orderId
-        }
-        
-        // Should eventually succeed
-        assertTrue(viewModel.isProcessing.value || viewModel.showPaymentSuccess.value)
-        
-        // Since we mock analytics, we assume it's called
-    }
-    
-    @Test
-    fun `resetForm clears all fields`() {
-        viewModel.updateCardNumber("123")
-        viewModel.updateCardHolderName("John")
-        
-        viewModel.resetForm()
-        
-        assertEquals("", viewModel.cardNumber.value)
-        assertEquals("", viewModel.cardHolderName.value)
-    }
+    fun `provider pending verification does not report terminal success`() = runTest {
+        viewModel.replaceTokenizedPaymentMethodsForTesting(listOf(validCard(requiresVerification = true)))
+        viewModel.selectSavedCard(0)
 
-    // MARK: - Enhanced Payment Validation Tests for Requirements 10.2
+        var callbackCalled = false
+        viewModel.processPayment(100.0) { callbackCalled = true }
 
-    @Test
-    fun `validateCardNumber with valid 16-digit number`() {
-        viewModel.updateCardNumber("1234567890123456")
-        assertNull(viewModel.cardValidationError.value)
+        assertEquals(PaymentIntentStatus.PendingVerification, viewModel.paymentIntentStatus.value)
+        assertFalse(viewModel.showPaymentSuccess.value)
+        assertFalse(callbackCalled)
     }
 
     @Test
-    fun `validateCardNumber with valid 13-digit number`() {
-        viewModel.updateCardNumber("1234567890123")
-        assertNull(viewModel.cardValidationError.value)
-    }
-
-    @Test
-    fun `validateCardNumber with too short number returns error`() {
-        viewModel.updateCardNumber("123456789012") // 12 digits
-        assertEquals("Invalid card number", viewModel.cardValidationError.value)
-    }
-
-    @Test
-    fun `validateCardNumber with too long number returns error`() {
-        // Card number is limited to 19 digits by the ViewModel
-        viewModel.updateCardNumber("12345678901234567890") // 20 digits - will be truncated
-        // After truncation to 19 digits, it should be valid
-        assertNull(viewModel.cardValidationError.value)
-    }
-
-    @Test
-    fun `validateExpiryDate with valid format MM-YY`() {
-        viewModel.updateExpiryDate("12/25")
-        // Expiry validation uses cardValidationError
-        assertNull(viewModel.cardValidationError.value)
-    }
-
-    @Test
-    fun `validateExpiryDate with invalid month returns error`() {
-        viewModel.updateExpiryDate("13/25") // Invalid month
-        assertEquals("Invalid expiry date", viewModel.cardValidationError.value)
-    }
-
-    @Test
-    fun `validateCvv with valid 3-digit CVV`() {
-        viewModel.updateCvv("123")
-        assertEquals("123", viewModel.cvv.value)
-    }
-
-    @Test
-    fun `validateCvv with valid 4-digit CVV for Amex`() {
-        viewModel.updateCvv("1234")
-        assertEquals("1234", viewModel.cvv.value)
-    }
-
-    @Test
-    fun `validateCvv truncates to 4 digits`() {
-        viewModel.updateCvv("12345")
-        assertEquals("1234", viewModel.cvv.value) // Truncated to 4
-    }
-
-    @Test
-    fun `isPayButtonEnabled returns false with invalid card number`() {
-        viewModel.updateCardNumber("123") // Invalid
-        viewModel.updateCardHolderName("John Doe")
-        viewModel.updateExpiryDate("12/25")
-        viewModel.updateCvv("123")
-        
-        assertFalse(viewModel.isPayButtonEnabled())
-    }
-
-    @Test
-    fun `isPayButtonEnabled returns false with invalid expiry`() {
-        viewModel.updateCardNumber("1234567890123456")
-        viewModel.updateCardHolderName("John Doe")
-        viewModel.updateExpiryDate("13/25") // Invalid month
-        viewModel.updateCvv("123")
-        
-        assertFalse(viewModel.isPayButtonEnabled())
-    }
-
-    @Test
-    fun `isPayButtonEnabled returns false with short CVV`() {
-        viewModel.updateCardNumber("1234567890123456")
-        viewModel.updateCardHolderName("John Doe")
-        viewModel.updateExpiryDate("12/25")
-        viewModel.updateCvv("12") // Too short
-        
-        assertFalse(viewModel.isPayButtonEnabled())
-    }
-
-    @Test
-    fun `isPayButtonEnabled returns false with empty card holder name`() {
-        viewModel.updateCardNumber("1234567890123456")
-        viewModel.updateCardHolderName("")
-        viewModel.updateExpiryDate("12/25")
-        viewModel.updateCvv("123")
-        
-        assertFalse(viewModel.isPayButtonEnabled())
-    }
-
-    @Test
-    fun `setPaymentMethod changes selected method`() {
-        viewModel.setPaymentMethod(PaymentMethodType.UPI)
-        assertEquals(PaymentMethodType.UPI, viewModel.selectedPaymentMethod.value)
-        
-        viewModel.setPaymentMethod(PaymentMethodType.CASH)
-        assertEquals(PaymentMethodType.CASH, viewModel.selectedPaymentMethod.value)
-    }
-
-    @Test
-    fun `UPI payment with valid UPI ID enables pay button`() {
+    fun `tokenized UPI method is required for UPI payment`() {
         viewModel.setPaymentMethod(PaymentMethodType.UPI)
         viewModel.updateUpiId("user@upi")
-        
-        assertTrue(viewModel.isPayButtonEnabled())
-    }
 
-    @Test
-    fun `UPI payment with invalid UPI ID disables pay button`() {
-        viewModel.setPaymentMethod(PaymentMethodType.UPI)
-        viewModel.updateUpiId("invalid-upi")
-        
         assertFalse(viewModel.isPayButtonEnabled())
-    }
 
-    @Test
-    fun `CASH payment always enables pay button`() {
-        viewModel.setPaymentMethod(PaymentMethodType.CASH)
-        
+        viewModel.replaceTokenizedPaymentMethodsForTesting(listOf(validUpi()))
+        viewModel.selectSavedCard(0)
+
         assertTrue(viewModel.isPayButtonEnabled())
     }
 
     @Test
-    fun `card number filters non-numeric characters`() {
-        viewModel.updateCardNumber("1234-5678-9012-3456")
-        // Should strip non-numeric
-        assertEquals("1234567890123456", viewModel.cardNumber.value)
+    fun `cash remains separately authorized`() = runTest {
+        viewModel.setPaymentMethod(PaymentMethodType.CASH)
+
+        var callbackOrderId: String? = null
+        viewModel.processPayment(25.0) { callbackOrderId = it }
+
+        assertEquals(PaymentIntentStatus.Authorized, viewModel.paymentIntentStatus.value)
+        assertTrue(viewModel.showPaymentSuccess.value)
+        assertTrue(callbackOrderId!!.startsWith("PAY-"))
     }
 
     @Test
-    fun `CVV filters non-numeric characters`() {
-        viewModel.updateCvv("12a3")
-        assertEquals("123", viewModel.cvv.value)
+    fun `resetForm clears non-sensitive summaries and status`() {
+        viewModel.replaceTokenizedPaymentMethodsForTesting(listOf(validCard()))
+        viewModel.selectSavedCard(0)
+        viewModel.updateCardNumber("4111111111111111")
+
+        viewModel.resetForm()
+
+        assertEquals("", viewModel.cardNumber.value)
+        assertNull(viewModel.selectedSavedCardIndex.value)
+        assertEquals(PaymentIntentStatus.Idle, viewModel.paymentIntentStatus.value)
     }
+
+    private fun validCard(
+        expiryYear: Int = 2035,
+        requiresVerification: Boolean = false
+    ) = TokenizedPaymentMethod(
+        id = "pm-card-1",
+        type = PaymentMethodType.CARD,
+        provider = "stripe",
+        tokenReference = "pm_safe_card",
+        brand = "visa",
+        last4 = "4242",
+        expiryMonth = 12,
+        expiryYear = expiryYear,
+        billingName = "Provider Customer",
+        requiresVerification = requiresVerification
+    )
+
+    private fun validUpi() = TokenizedPaymentMethod(
+        id = "pm-upi-1",
+        type = PaymentMethodType.UPI,
+        provider = "stripe",
+        tokenReference = "upi_safe_token",
+        brand = null,
+        last4 = null,
+        expiryMonth = null,
+        expiryYear = null,
+        billingName = "UPI Customer"
+    )
 }

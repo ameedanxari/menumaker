@@ -1,0 +1,14 @@
+{
+  "success": true,
+  "data": {
+    "id": "payment-intent-1",
+    "order_id": "order-created-1",
+    "amount_cents": 1899,
+    "currency": "usd",
+    "status": "requires_confirmation",
+    "provider": "stripe",
+    "client_secret": "pi_test_secret_redacted",
+    "created_at": "2024-02-01T10:00:00Z",
+    "updated_at": "2024-02-01T10:00:00Z"
+  }
+}

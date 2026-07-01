@@ -1,0 +1,5 @@
+exceptions:
+  - id: expired-test-exception
+    owner: security
+    reason: seeded violation
+    expires_at: 2020-01-01

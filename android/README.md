@@ -158,30 +158,33 @@ Output: `app/build/outputs/bundle/release/app-release.aab`
 - **Certificate Pinning**: Optional (configure in NetworkModule)
 - **Biometric Auth**: Android Keystore for secure storage
 
-## 📱 Features
+## 📱 Feature posture
 
-### Phase 1 - Core Features ✅
+Current Android release posture is governed by [../docs/product/status.md](../docs/product/status.md) and [../docs/product/capability-index.md](../docs/product/capability-index.md), not by historical phase labels.
+
+### Launch-scope Android features
 - ✅ User authentication (email/password + biometric)
 - ✅ Seller dashboard with real-time stats
 - ✅ Order management (list, detail, status updates)
 - ✅ Menu and dish management (CRUD operations)
 - ✅ Offline-first with Room caching
-
-### Phase 2 - Growth Features ✅
 - ✅ WhatsApp order notifications
-- ✅ OCR menu import with camera
-- ✅ Subscription management (Stripe integration)
 - ✅ Re-order functionality
 - ✅ Coupons and promotions
-
-### Phase 3 - Scale Features ✅
 - ✅ Multi-language support (English, Hindi, Tamil, Urdu, Arabic with RTL)
 - ✅ Payment processor integration (Razorpay, Stripe, Paytm, PhonePe)
 - ✅ Marketplace discovery with location
 - ✅ Reviews and ratings system
-- ✅ Referral program
-- ✅ POS and delivery integrations
+- ✅ Basic referral-code sharing without reward, leaderboard, or affiliate claims
 - ✅ Advanced analytics
+
+### Disabled until separately enabled and evidenced
+
+- ⛔ OCR menu import with camera
+- ⛔ Subscription management, paid-plan upgrades, trials, and billing portal flows
+- ⛔ Enhanced referral rewards, leaderboards, affiliate payouts, and prize campaigns
+- ⛔ POS sync and third-party delivery partner integrations
+- ⛔ Tax reporting / GST invoice generation
 
 ### Android-Specific ✅
 - ✅ Material You dynamic theming
@@ -276,7 +279,7 @@ MIT License - see [LICENSE](../LICENSE)
 
 ## 📊 Implementation Status
 
-**Current Status**: ✅ **Production Ready**
+**Current Status**: launch-scope local implementation evidence exists; public production readiness is governed by [../docs/product/status.md](../docs/product/status.md).
 
 - **Total Kotlin Files**: 76
 - **Total Lines of Code**: ~15,000+
@@ -298,4 +301,4 @@ MIT License - see [LICENSE](../LICENSE)
 ---
 
 **Built with Kotlin + Jetpack Compose for Android 11+**
-**Status**: Production Ready | **Version**: 1.0.0
+**Status**: See [../docs/product/status.md](../docs/product/status.md) | **Version**: 1.0.0

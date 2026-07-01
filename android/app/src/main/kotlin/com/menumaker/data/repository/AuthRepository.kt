@@ -18,6 +18,7 @@ interface AuthRepository {
     fun isAuthenticated(): Flow<Boolean>
     fun sendPasswordReset(email: String): Flow<Resource<Unit>>
     fun updateProfile(updates: Map<String, Any>): Flow<Resource<AuthData>>
+    fun updateProfilePhoto(photoUrl: String): Flow<Resource<UserDto>>
     fun changePassword(current: String, new: String): Flow<Resource<Unit>>
     fun getCurrentUser(): Flow<Resource<UserDto>>
 }
@@ -108,6 +109,23 @@ class AuthRepositoryImpl @Inject constructor(
                 emit(Resource.Success(authData))
             } else {
                 emit(Resource.Error(response.message() ?: "Failed to update profile"))
+            }
+        } catch (e: Exception) {
+            emit(Resource.Error(e.message ?: "An error occurred", e))
+        }
+    }
+
+    override fun updateProfilePhoto(photoUrl: String): Flow<Resource<UserDto>> = flow {
+        emit(Resource.Loading)
+        try {
+            val response = apiService.updateProfilePhoto(mapOf("photo_url" to photoUrl))
+            if (response.isSuccessful && response.body() != null) {
+                val user = response.body()!!.data.user
+                tokenDataStore.saveUserId(user.id)
+                tokenDataStore.saveUserEmail(user.email)
+                emit(Resource.Success(user))
+            } else {
+                emit(Resource.Error(response.message() ?: "Failed to update profile photo"))
             }
         } catch (e: Exception) {
             emit(Resource.Error(e.message ?: "An error occurred", e))

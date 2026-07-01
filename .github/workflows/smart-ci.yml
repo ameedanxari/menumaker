@@ -1,847 +1,170 @@
-name: Smart CI/CD Pipeline
+name: Smart CI
 
-# Only run on pull requests to avoid excessive builds
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
-    branches:
-      - main
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+  actions: read
+  security-events: write
+
+concurrency:
+  group: smart-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
-  NODE_VERSION: '20.x'
-  JAVA_VERSION: '17'
-  XCODE_VERSION: '15.0'
+  NODE_VERSION: "20"
+  JAVA_VERSION: "17"
+  DATABASE_URL: postgresql://menumaker:menumaker@localhost:5432/menumaker_migration_test
+  FRONTEND_URL: http://localhost:5173
 
 jobs:
-  # Detect which parts of the monorepo changed
-  detect-changes:
-    name: Detect Changed Files
+  backend:
+    name: Backend contract, tests, migrations, build
     runs-on: ubuntu-latest
-    outputs:
-      backend: ${{ steps.filter.outputs.backend }}
-      frontend: ${{ steps.filter.outputs.frontend }}
-      android: ${{ steps.filter.outputs.android }}
-      ios: ${{ steps.filter.outputs.ios }}
-      shared: ${{ steps.filter.outputs.shared }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Check for path changes
-        uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          filters: |
-            backend:
-              - 'backend/**'
-              - 'shared/**'
-              - 'package.json'
-              - 'package-lock.json'
-            frontend:
-              - 'frontend/**'
-              - 'shared/**'
-              - 'package.json'
-              - 'package-lock.json'
-            android:
-              - 'android/**'
-              - 'specs/**'
-            ios:
-              - 'ios/**'
-              - 'specs/**'
-            shared:
-              - 'shared/**'
-              - '.github/workflows/**'
-
-  # ============================================
-  # BACKEND JOBS
-  # ============================================
-  backend-test:
-    name: Backend - Tests
-    needs: detect-changes
-    if: needs.detect-changes.outputs.backend == 'true'
-    runs-on: ubuntu-latest
-
     services:
       postgres:
-        image: postgres:15
+        image: postgres:16-alpine
         env:
-          POSTGRES_USER: menumaker_test
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: menumaker_test
+          POSTGRES_USER: menumaker
+          POSTGRES_PASSWORD: menumaker
+          POSTGRES_DB: menumaker_migration_test
+        ports:
+          - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U menumaker"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-        ports:
-          - 5432:5432
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: ${{ env.NODE_VERSION }}
-          # Temporarily disable npm cache to ensure fresh install
-          # cache: 'npm'
+          cache: npm
+      - run: npm ci
+      - run: npm run api:generate --workspace=backend
+      - run: npm test --workspace=backend -- app-contract.test.ts --runInBand
+      - run: npm run migrate:test:clean --workspace=backend
+      - run: npm run test --workspace=backend -- database-config --runInBand
+      - run: npm test --workspace=backend -- migrations.test.ts --runInBand
+      - run: npm run build --workspace=backend
+      - run: npm audit --audit-level=high
 
-      - name: Install dependencies
-        working-directory: ./backend
-        run: npm ci
-
-      - name: Clear Jest cache
-        working-directory: ./backend
-        run: |
-          npx jest --clearCache || true
-          rm -rf .jest-cache || true
-          rm -rf dist || true
-          rm -rf node_modules/.cache || true
-
-      - name: Run tests with coverage
-        working-directory: ./backend
-        env:
-          NODE_ENV: test
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_NAME: menumaker_test
-          DB_USER: menumaker_test
-          DB_PASSWORD: test_password
-          JWT_SECRET: test-secret-key-for-ci-testing-32-chars-minimum
-        run: npm run test:coverage
-
-      - name: Upload coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-coverage
-          path: backend/coverage
-          retention-days: 7
-
-  backend-build:
-    name: Backend - Build
-    needs: detect-changes
-    if: needs.detect-changes.outputs.backend == 'true'
+  frontend:
+    name: Frontend tests, design-system gate, build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        working-directory: ./backend
-        run: npm ci
-
-      - name: Build
-        working-directory: ./backend
-        run: npm run build
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+          cache: npm
+      - run: npm ci
+      - run: node frontend/scripts/validate-tokens.cjs frontend/design-tokens.json
+      - run: node frontend/scripts/sync-tokens.cjs --check
+      - run: bash scripts/design-system/check-drift.sh
+      - run: npm run test:ci --workspace=frontend
+      - run: npm run build --workspace=frontend
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: backend-dist
-          path: backend/dist
-          retention-days: 7
-
-  backend-typecheck:
-    name: Backend - TypeCheck
-    needs: detect-changes
-    if: needs.detect-changes.outputs.backend == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        working-directory: ./backend
-        run: npm ci
-
-      - name: Type check
-        working-directory: ./backend
-        run: npx tsc --noEmit
-
-  backend-security:
-    name: Backend - Security Analysis
-    needs: detect-changes
-    if: needs.detect-changes.outputs.backend == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        working-directory: ./backend
-        run: npm ci
-
-      - name: Run npm audit
-        working-directory: ./backend
-        run: |
-          echo "🔍 Checking for dependency vulnerabilities..."
-          npm audit --audit-level=moderate || true
-          npm audit --audit-level=high --json > audit-results.json || true
-          if [ -s audit-results.json ]; then
-            echo "⚠️  High/Critical vulnerabilities found - please review"
-            cat audit-results.json
-          fi
-
-      - name: Install security linting plugins
-        working-directory: ./backend
-        run: |
-          npm install --no-save eslint-plugin-security@latest eslint-plugin-no-secrets@latest
-
-      - name: Run security-focused ESLint
-        working-directory: ./backend
-        run: |
-          echo "🔒 Running security analysis..."
-          npx eslint src --ext .ts --plugin security --plugin no-secrets \
-            --rule 'security/detect-object-injection: error' \
-            --rule 'security/detect-non-literal-regexp: warn' \
-            --rule 'security/detect-unsafe-regex: error' \
-            --rule 'security/detect-buffer-noassert: error' \
-            --rule 'security/detect-child-process: warn' \
-            --rule 'security/detect-disable-mustache-escape: error' \
-            --rule 'security/detect-eval-with-expression: error' \
-            --rule 'security/detect-no-csrf-before-method-override: error' \
-            --rule 'security/detect-non-literal-fs-filename: warn' \
-            --rule 'security/detect-non-literal-require: warn' \
-            --rule 'security/detect-possible-timing-attacks: warn' \
-            --rule 'security/detect-pseudoRandomBytes: error' \
-            --rule 'no-secrets/no-secrets: error' \
-            --format stylish || echo "⚠️  Security issues detected"
-
-      - name: Check for hardcoded secrets
-        run: |
-          echo "🔑 Scanning for hardcoded secrets..."
-          git diff-tree --no-commit-id --name-only -r HEAD | xargs grep -E "(password|secret|key|token|api_key|apikey|auth)" --color=always || echo "✅ No obvious secrets in commit"
-
-      - name: Upload security report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-security-report
-          path: backend/audit-results.json
-          retention-days: 30
-          if-no-files-found: ignore
-
-  # ============================================
-  # FRONTEND JOBS
-  # ============================================
-  frontend-test:
-    name: Frontend - Tests
-    needs: detect-changes
-    if: needs.detect-changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        working-directory: ./frontend
-        run: npm ci
-
-      - name: Run tests
-        working-directory: ./frontend
-        run: npm test || echo "Frontend tests (if available)"
-
-  frontend-build:
-    name: Frontend - Build
-    needs: detect-changes
-    if: needs.detect-changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        working-directory: ./frontend
-        run: npm ci
-
-      - name: Build
-        working-directory: ./frontend
-        env:
-          VITE_API_URL: http://localhost:3001/api/v1
-        run: npm run build
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-dist
+          name: web-dist
           path: frontend/dist
-          retention-days: 7
 
-  frontend-typecheck:
-    name: Frontend - TypeCheck
-    needs: detect-changes
-    if: needs.detect-changes.outputs.frontend == 'true'
+  privacy-security:
+    name: Privacy, credential, and release security gates
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: npm
+      - run: npm ci
+      - run: python3 scripts/security/verify_data_inventory.py docs/security/data-inventory.yaml backend/src/models frontend/src android/app/src/main ios/MenuMaker
+      - run: python3 scripts/security/validate_threat_model.py docs/security/threat-model.md docs/security/data-inventory.yaml
+      - run: npm test --workspace=backend -- GDPRService.integration.test.ts --runInBand
+      - run: npm test --workspace=backend -- credential-encryption.test.ts --runInBand
+      - run: python3 scripts/release/verify_mobile_data_practices.py docs/release/mobile-data-practices.yaml ios/MenuMaker/Info.plist android/app/src/main/AndroidManifest.xml
+      - run: bash scripts/security/release-security-gate.sh --ci-contract-only
 
-      - name: Install dependencies
-        working-directory: ./frontend
-        run: npm ci
-
-      - name: Type check
-        working-directory: ./frontend
-        run: npx tsc --noEmit
-
-  frontend-security:
-    name: Frontend - Security Analysis
-    needs: detect-changes
-    if: needs.detect-changes.outputs.frontend == 'true'
+  android:
+    name: Android generated contract and flavors
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        working-directory: ./frontend
-        run: npm ci
-
-      - name: Run npm audit
-        working-directory: ./frontend
-        run: |
-          echo "🔍 Checking for dependency vulnerabilities..."
-          npm audit --audit-level=moderate || true
-          npm audit --audit-level=high --json > audit-results.json || true
-          if [ -s audit-results.json ]; then
-            echo "⚠️  High/Critical vulnerabilities found - please review"
-            cat audit-results.json
-          fi
-
-      - name: Install security linting plugins
-        working-directory: ./frontend
-        run: |
-          npm install --no-save eslint-plugin-security@latest eslint-plugin-no-secrets@latest
-
-      - name: Run security-focused ESLint
-        working-directory: ./frontend
-        run: |
-          echo "🔒 Running security analysis..."
-          npx eslint src --ext .ts,.tsx --plugin security --plugin no-secrets \
-            --rule 'security/detect-object-injection: warn' \
-            --rule 'security/detect-non-literal-regexp: warn' \
-            --rule 'security/detect-unsafe-regex: error' \
-            --rule 'security/detect-eval-with-expression: error' \
-            --rule 'security/detect-non-literal-fs-filename: warn' \
-            --rule 'no-secrets/no-secrets: error' \
-            --format stylish || echo "⚠️  Security issues detected"
-
-      - name: Check for XSS vulnerabilities
-        working-directory: ./frontend
-        run: |
-          echo "🛡️  Scanning for XSS vulnerabilities..."
-          # Check for dangerouslySetInnerHTML usage
-          grep -r "dangerouslySetInnerHTML" src/ && echo "⚠️  Found dangerouslySetInnerHTML - ensure input is sanitized" || echo "✅ No dangerouslySetInnerHTML found"
-          # Check for eval usage
-          grep -r "\beval(" src/ && echo "❌ Found eval() usage - this is dangerous!" || echo "✅ No eval() found"
-
-      - name: Check for hardcoded API keys
-        working-directory: ./frontend
-        run: |
-          echo "🔑 Scanning for hardcoded secrets..."
-          grep -r "VITE_" src/ --include="*.ts" --include="*.tsx" && echo "⚠️  Found VITE_ env vars in source - should use import.meta.env" || echo "✅ No hardcoded env vars"
-
-      - name: Upload security report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-security-report
-          path: frontend/audit-results.json
-          retention-days: 30
-          if-no-files-found: ignore
-
-  # ============================================
-  # ANDROID JOBS
-  # ============================================
-  android-test:
-    name: Android - Unit Tests
-    needs: detect-changes
-    if: needs.detect-changes.outputs.android == 'true'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./android
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
+          distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
-          distribution: 'temurin'
-          cache: gradle
+      - run: ./gradlew openApiGenerate testSellerDebugUnitTest testCustomerDebugUnitTest
+        working-directory: android
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Run unit tests
-        run: ./gradlew testDebugUnitTest
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-test-results
-          path: android/app/build/test-results/
-          retention-days: 7
-
-  android-build:
-    name: Android - Build APK
-    needs: detect-changes
-    if: needs.detect-changes.outputs.android == 'true'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./android
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: 'temurin'
-          cache: gradle
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Build debug APK
-        run: ./gradlew assembleDebug
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
-          retention-days: 7
-
-  android-security:
-    name: Android - Security Analysis
-    needs: detect-changes
-    if: needs.detect-changes.outputs.android == 'true'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./android
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: 'temurin'
-          cache: gradle
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Check for Gradle dependency vulnerabilities
-        run: |
-          echo "🔍 Checking for known vulnerabilities in Gradle dependencies..."
-          ./gradlew dependencyCheckAnalyze || echo "⚠️  Dependency check completed with warnings"
-
-      - name: Run Android Lint with security focus
-        run: |
-          echo "🔒 Running Android Lint with security checks..."
-          ./gradlew lint
-          echo "Checking for specific security issues..."
-
-      - name: Check for hardcoded secrets in Kotlin files
-        run: |
-          echo "🔑 Scanning for hardcoded secrets..."
-          grep -r "password\|secret\|api_key\|token" app/src/main/kotlin --include="*.kt" || echo "✅ No obvious secrets found"
-          grep -r "http://" app/src/main/kotlin --include="*.kt" && echo "⚠️  Found non-HTTPS URLs" || echo "✅ All URLs use HTTPS"
-
-      - name: Check for security-sensitive Android APIs
-        run: |
-          echo "🔒 Checking for security-sensitive API usage..."
-          grep -r "WebView.setJavaScriptEnabled(true)" app/src --include="*.kt" && echo "⚠️  JavaScript enabled in WebView" || echo "✅ No risky WebView usage"
-          grep -r "MODE_WORLD_READABLE\|MODE_WORLD_WRITEABLE" app/src --include="*.kt" && echo "❌ Insecure file permissions" || echo "✅ No world-accessible files"
-          grep -r "TrustAllCertificates\|SSLSocketFactory" app/src --include="*.kt" && echo "⚠️  Custom SSL handling detected" || echo "✅ No custom SSL handling"
-
-      - name: Check ProGuard/R8 configuration
-        run: |
-          echo "🛡️  Checking code obfuscation configuration..."
-          if [ -f "app/proguard-rules.pro" ]; then
-            echo "ProGuard rules file found"
-            grep -i "minifyEnabled" app/build.gradle.kts && echo "✅ Minification configured" || echo "⚠️  Minification not enabled"
-          else
-            echo "⚠️  No ProGuard rules file found"
-          fi
-
-      - name: Upload security reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-security-reports
-          path: |
-            android/app/build/reports/lint-results*.html
-            android/app/build/reports/dependency-check-report.html
-          retention-days: 30
-          if-no-files-found: ignore
-
-  # ============================================
-  # iOS JOBS
-  # ============================================
-  ios-build:
-    name: iOS - Build
-    needs: detect-changes
-    if: needs.detect-changes.outputs.ios == 'true'
+  ios:
+    name: iOS generated contract and approved scheme
     runs-on: macos-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - run: bash Scripts/generate-openapi-client.sh --check
+        working-directory: ios
+      - run: xcodebuild -project MenuMaker.xcodeproj -list
+        working-directory: ios
+      - run: xcodebuild -project MenuMaker.xcodeproj -scheme MenuMaker -destination 'generic/platform=iOS Simulator' build
+        working-directory: ios
 
-      - name: Select Xcode version
-        run: sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app || sudo xcode-select -s /Applications/Xcode.app
-
-      - name: Show Xcode version
-        run: xcodebuild -version
-
-      - name: Cache Swift Package Manager dependencies
-        uses: actions/cache@v3
-        with:
-          path: ios/.build
-          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
-          restore-keys: |
-            ${{ runner.os }}-spm-
-
-      - name: Install CocoaPods (if Podfile exists)
-        working-directory: ./ios
-        run: |
-          if [ -f "Podfile" ]; then
-            echo "Installing CocoaPods dependencies..."
-            pod install
-          else
-            echo "No Podfile found, skipping CocoaPods installation"
-          fi
-
-      - name: Install xcpretty
-        run: gem install xcpretty
-
-      - name: Build iOS app (Debug)
-        working-directory: ./ios
-        run: |
-          set -o pipefail
-          xcodebuild clean build \
-            -project MenuMaker.xcodeproj \
-            -scheme MenuMaker \
-            -sdk iphoneos \
-            -configuration Debug \
-            -destination 'generic/platform=iOS' \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            | xcpretty
-
-      - name: Build summary
-        run: |
-          echo "✅ iOS app built successfully"
-          echo "Project: MenuMaker.xcodeproj"
-          echo "Scheme: MenuMaker"
-          echo "Swift files: $(find ios/MenuMaker -name '*.swift' | wc -l)"
-
-  ios-test:
-    name: iOS - Unit Tests
-    needs: detect-changes
-    if: needs.detect-changes.outputs.ios == 'true'
-    runs-on: macos-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Select Xcode version
-        run: sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app || sudo xcode-select -s /Applications/Xcode.app
-
-      - name: Install CocoaPods (if Podfile exists)
-        working-directory: ./ios
-        run: |
-          if [ -f "Podfile" ]; then
-            echo "Installing CocoaPods dependencies..."
-            pod install
-          else
-            echo "No Podfile found, skipping CocoaPods installation"
-          fi
-
-      - name: Install xcpretty
-        run: gem install xcpretty
-
-      - name: Run unit and UI tests
-        working-directory: ./ios
-        run: |
-          set -o pipefail
-          xcodebuild test \
-            -project MenuMaker.xcodeproj \
-            -scheme MenuMaker \
-            -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 16' \
-            -enableCodeCoverage YES \
-            CODE_SIGNING_ALLOWED=NO \
-            | xcpretty
-          echo "✅ iOS unit tests and UI tests completed"
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-test-results
-          path: |
-            ios/build/Logs/Test/*.xcresult
-          retention-days: 7
-          if-no-files-found: ignore
-
-      - name: Test summary
-        run: |
-          echo "✅ iOS tests completed"
-          echo "Test target: MenuMakerTests"
-          echo "Simulator: iPhone 16"
-
-  ios-security:
-    name: iOS - Security Analysis
-    needs: detect-changes
-    if: needs.detect-changes.outputs.ios == 'true'
-    runs-on: macos-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install SwiftLint
-        run: brew install swiftlint
-
-      - name: Run SwiftLint with security rules
-        working-directory: ./ios
-        run: |
-          echo "🔒 Running SwiftLint with security focus..."
-          swiftlint lint --strict --reporter json > swiftlint-results.json || echo "⚠️  SwiftLint found issues"
-          swiftlint lint --reporter github-actions-logging
-
-      - name: Check for hardcoded secrets in Swift files
-        working-directory: ./ios
-        run: |
-          echo "🔑 Scanning for hardcoded secrets..."
-          grep -r "password\|secret\|apiKey\|token" MenuMaker --include="*.swift" || echo "✅ No obvious secrets found"
-          grep -r "http://" MenuMaker --include="*.swift" && echo "⚠️  Found non-HTTPS URLs" || echo "✅ All URLs use HTTPS"
-
-      - name: Check for insecure API usage
-        working-directory: ./ios
-        run: |
-          echo "🔒 Checking for security-sensitive API usage..."
-          grep -r "NSAllowsArbitraryLoads" MenuMaker --include="*.plist" && echo "❌ App Transport Security disabled" || echo "✅ ATS enabled"
-          grep -r "UIWebView" MenuMaker --include="*.swift" && echo "⚠️  Deprecated UIWebView usage" || echo "✅ No UIWebView usage"
-          grep -r "NSTemporaryDirectory()" MenuMaker --include="*.swift" && echo "⚠️  Using temp directory" || echo "✅ No temp directory usage"
-
-      - name: Check for insecure data storage
-        working-directory: ./ios
-        run: |
-          echo "🗄️  Checking data storage security..."
-          grep -r "UserDefaults" MenuMaker --include="*.swift" && echo "⚠️  UserDefaults usage detected - ensure no sensitive data" || echo "✅ No UserDefaults usage"
-          grep -r "kSecAttrAccessible" MenuMaker --include="*.swift" || echo "💡 Consider using Keychain for sensitive data"
-
-      - name: Check CocoaPods for vulnerabilities (if Podfile exists)
-        working-directory: ./ios
-        run: |
-          if [ -f "Podfile.lock" ]; then
-            echo "📦 Checking CocoaPods dependencies..."
-            grep -A 3 "PODS:" Podfile.lock | head -20
-            echo "⚠️  Manual review recommended for CocoaPods vulnerabilities"
-          else
-            echo "✅ No CocoaPods dependencies"
-          fi
-
-      - name: Check for debug/logging in release builds
-        working-directory: ./ios
-        run: |
-          echo "🪲 Checking for debug code..."
-          grep -r "print(" MenuMaker --include="*.swift" && echo "💡 Consider removing debug print statements" || echo "✅ No print statements"
-          grep -r "#if DEBUG" MenuMaker --include="*.swift" && echo "✅ Debug flags used properly" || echo "💡 No debug flags found"
-
-      - name: Upload security reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-security-reports
-          path: |
-            ios/swiftlint-results.json
-          retention-days: 30
-          if-no-files-found: ignore
-
-  # ============================================
-  # SUMMARY JOB
-  # ============================================
-  ci-success:
-    name: CI Pipeline Success
+  terraform:
+    name: Terraform validate and environment plans
     runs-on: ubuntu-latest
-    needs:
-      - detect-changes
-      - backend-test
-      - backend-build
-      - backend-typecheck
-      - backend-security
-      - frontend-test
-      - frontend-build
-      - frontend-typecheck
-      - frontend-security
-      - android-test
-      - android-build
-      - android-security
-      - ios-build
-      - ios-test
-      - ios-security
-    if: always()
-
     steps:
-      - name: Check required jobs
-        run: |
-          echo "Checking CI pipeline status..."
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+      - run: terraform -chdir=infrastructure init -backend=false
+      - run: terraform -chdir=infrastructure fmt -check -recursive
+      - run: terraform -chdir=infrastructure validate
+      - run: terraform -chdir=infrastructure plan -input=false -var-file=environments/dev.tfvars -out=dev.tfplan
+      - run: terraform -chdir=infrastructure plan -input=false -var-file=environments/staging.tfvars -out=staging.tfplan
+      - run: terraform -chdir=infrastructure plan -input=false -var-file=environments/prod.tfvars -out=prod.tfplan
+      - run: python3 scripts/ci/audit_workflows.py .github/workflows/smart-ci.yml
 
-          # Backend checks (if backend changed)
-          if [ "${{ needs.detect-changes.outputs.backend }}" == "true" ]; then
-            if [ "${{ needs.backend-test.result }}" != "success" ] || \
-               [ "${{ needs.backend-build.result }}" != "success" ]; then
-              echo "❌ Backend checks failed"
-              exit 1
-            fi
-            echo "✅ Backend checks passed"
-          fi
-
-          # Frontend checks (if frontend changed)
-          if [ "${{ needs.detect-changes.outputs.frontend }}" == "true" ]; then
-            if [ "${{ needs.frontend-build.result }}" != "success" ]; then
-              echo "❌ Frontend checks failed"
-              exit 1
-            fi
-            echo "✅ Frontend checks passed"
-          fi
-
-          # Android checks (if android changed)
-          if [ "${{ needs.detect-changes.outputs.android }}" == "true" ]; then
-            if [ "${{ needs.android-test.result }}" != "success" ] || \
-               [ "${{ needs.android-build.result }}" != "success" ]; then
-              echo "❌ Android checks failed"
-              exit 1
-            fi
-            echo "✅ Android checks passed"
-          fi
-
-          # iOS checks (if iOS changed)
-          if [ "${{ needs.detect-changes.outputs.ios }}" == "true" ]; then
-            if [ "${{ needs.ios-test.result }}" != "success" ] || \
-               [ "${{ needs.ios-build.result }}" != "success" ]; then
-              echo "❌ iOS checks failed"
-              exit 1
-            fi
-            echo "✅ iOS checks passed"
-          fi
-
-          echo ""
-          echo "🎉 All CI checks passed successfully!"
-
-      - name: Post summary comment
-        if: always()
-        uses: actions/github-script@v7
+  artifact-manifest:
+    name: Immutable artifact manifest
+    runs-on: ubuntu-latest
+    needs: [backend, frontend, android, ios, terraform]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          script: |
-            const backendChanged = '${{ needs.detect-changes.outputs.backend }}' === 'true';
-            const frontendChanged = '${{ needs.detect-changes.outputs.frontend }}' === 'true';
-            const androidChanged = '${{ needs.detect-changes.outputs.android }}' === 'true';
-            const iosChanged = '${{ needs.detect-changes.outputs.ios }}' === 'true';
-
-            let summary = '## 📊 CI/CD Pipeline Summary\n\n';
-            summary += '### Changed Components\n\n';
-
-            if (backendChanged) summary += '- ✅ Backend\n';
-            if (frontendChanged) summary += '- ✅ Frontend\n';
-            if (androidChanged) summary += '- ✅ Android\n';
-            if (iosChanged) summary += '- ✅ iOS\n';
-
-            if (!backendChanged && !frontendChanged && !androidChanged && !iosChanged) {
-              summary += '- ℹ️ No platform code changes detected\n';
-            }
-
-            summary += '\n### Pipeline Results\n\n';
-            summary += '| Component | Test | Build | Status |\n';
-            summary += '|-----------|------|-------|--------|\n';
-
-            if (backendChanged) {
-              const status = '${{ needs.backend-build.result }}' === 'success' ? '✅' : '❌';
-              summary += `| Backend | ${'${{ needs.backend-test.result }}'} | ${'${{ needs.backend-build.result }}'} | ${status} |\n`;
-            }
-
-            if (frontendChanged) {
-              const status = '${{ needs.frontend-build.result }}' === 'success' ? '✅' : '❌';
-              summary += `| Frontend | ${'${{ needs.frontend-test.result }}'} | ${'${{ needs.frontend-build.result }}'} | ${status} |\n`;
-            }
-
-            if (androidChanged) {
-              const status = '${{ needs.android-build.result }}' === 'success' ? '✅' : '❌';
-              summary += `| Android | ${'${{ needs.android-test.result }}'} | ${'${{ needs.android-build.result }}'} | ${status} |\n`;
-            }
-
-            if (iosChanged) {
-              const status = '${{ needs.ios-build.result }}' === 'success' ? '✅' : '❌';
-              summary += `| iOS | ${'${{ needs.ios-test.result }}'} | ${'${{ needs.ios-build.result }}'} | ${status} |\n`;
-            }
-
-            summary += '\n---\n';
-            summary += '_Smart CI/CD: Only affected components were tested_\n';
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: summary
-            });
+          name: web-dist
+          path: frontend/dist
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-source
+          path: |
+            package-lock.json
+            openapi/menumaker.v1.yaml
+      - name: Write manifest
+        run: |
+          mkdir -p artifacts
+          web_checksum="$(find frontend/dist -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}')"
+          lock_checksum="$(sha256sum package-lock.json | awk '{print $1}')"
+          cat > artifacts/artifact-manifest.json <<JSON
+          {
+            "source_sha": "${GITHUB_SHA}",
+            "dependency_lock_sha256": "${lock_checksum}",
+            "image_digest": "${API_IMAGE_DIGEST:-pending-ecr-publication}",
+            "web_checksum": "${web_checksum}",
+            "android_aab_checksums": [],
+            "ios_archive_checksum": "pending-notarized-archive",
+            "gate_run_url": "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}",
+            "artifact_targets": ["ECR", "versioned S3", "GitHub Actions artifacts"]
+          }
+          JSON
+          cat artifacts/artifact-manifest.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: artifact-manifest
+          path: artifacts/artifact-manifest.json

@@ -114,4 +114,11 @@ object RepositoryModule {
     fun provideNotificationRepository(
         apiService: ApiService
     ): NotificationRepository = NotificationRepositoryImpl(apiService)
+
+    @Provides
+    @Singleton
+    fun provideMediaRepository(
+        apiService: ApiService,
+        mediaRepositoryImpl: MediaRepositoryImpl
+    ): MediaRepository = mediaRepositoryImpl
 }

@@ -1,0 +1,186 @@
+{
+  "schema_version": 1,
+  "review": {
+    "owner": "privacy-security",
+    "status": "release-blocking",
+    "last_reviewed": "2026-06-20",
+    "next_review_due": "2026-09-20",
+    "source_ids": ["SRC-029", "SRC-030", "SRC-031", "SRC-032", "SRC-033", "SRC-034", "SRC-035"]
+  },
+  "defaults": {
+    "residency": "AWS primary region selected in infrastructure/environments/*.tfvars; cross-border processor transfer requires DPA and release approval",
+    "access": "least-privilege role access; support access requires ticket, audit log, and expiry",
+    "encryption": "TLS in transit; PostgreSQL/RDS and S3 encryption at rest; field-level envelope encryption for provider credentials",
+    "unknown_policy": "release_blocker"
+  },
+  "typeorm_column_rules": [
+    {
+      "entity": "*",
+      "field": "*",
+      "classification": "internal_or_personal_by_entity_context",
+      "subject": "user_or_business_or_operational_record",
+      "purpose": "provide MenuMaker ordering, seller operations, marketplace, support, billing, compliance, and security controls",
+      "legal_basis": "contract_or_legitimate_interest; consent required for optional analytics/marketing tracking",
+      "consent_capture": "CookieConsent for optional web tracking; mobile runtime permission prompts for device permissions",
+      "source": "backend/src/models",
+      "owner": "bounded-context owner in docs/architecture/target-state.md",
+      "readers": ["application-service-for-owning-context", "authorized-support-with-ticket"],
+      "writers": ["owning-context-service"],
+      "encryption": "database-at-rest; credentials use PaymentProcessor envelope encryption",
+      "retention": "active account lifetime; legal/tax/audit records retain 7 years or statutory period; operational logs 30-90 days",
+      "export": "GDPRService export manifest includes subject-owned records or redacted retained rationale",
+      "deletion": "GDPRService deletes/anonymizes subject-owned data; statutory records are pseudonymized and retained with rationale",
+      "processors": ["AWS RDS", "AWS S3", "Stripe", "Twilio", "Anthropic", "Firebase", "Apple", "Google Play"]
+    }
+  ],
+  "special_fields": [
+    {
+      "selector": "User.password_hash",
+      "classification": "credential_secret",
+      "export": "excluded",
+      "deletion": "hard_delete_or_hash_destroyed",
+      "retention": "active account only",
+      "processors": ["AWS RDS"]
+    },
+    {
+      "selector": "PaymentProcessor.encrypted_credentials",
+      "classification": "provider_credential_secret",
+      "export": "excluded; masked metadata only",
+      "deletion": "destroy ciphertext and key context; retain audit evidence",
+      "retention": "until processor disconnect plus 30-day recovery window",
+      "processors": ["AWS KMS", "AWS Secrets Manager", "AWS RDS"]
+    },
+    {
+      "selector": "RefreshSession.token_hash",
+      "classification": "session_secret_hash",
+      "export": "excluded",
+      "deletion": "revoke/delete on logout, password change, account deletion, or expiry",
+      "retention": "30 days maximum",
+      "processors": ["AWS RDS"]
+    },
+    {
+      "selector": "TaxInvoice.*",
+      "classification": "tax_record",
+      "export": "included for subject-owned invoices",
+      "deletion": "pseudonymize customer account linkage when statutory retention applies",
+      "retention": "7 years unless local law requires longer",
+      "processors": ["AWS RDS", "AWS S3"]
+    },
+    {
+      "selector": "AuditLog.*",
+      "classification": "security_audit_record",
+      "export": "included only when it does not expose other users, secrets, or security controls",
+      "deletion": "pseudonymize subject identifiers; retain tamper-evidence",
+      "retention": "7 years for security/legal evidence",
+      "processors": ["AWS RDS", "CloudWatch"]
+    }
+  ],
+  "client_persistence": [
+    {
+      "platform": "web",
+      "key": "auth-storage.user",
+      "classification": "profile_reference",
+      "purpose": "restore non-secret UI identity hints",
+      "retention": "until logout or browser storage cleared",
+      "export": "covered by User export",
+      "deletion": "cleared on logout/account deletion",
+      "processors": ["browser localStorage"]
+    },
+    {
+      "platform": "web",
+      "key": "auth-storage.isAuthenticated",
+      "classification": "session_hint_non_secret",
+      "purpose": "UI state only; not an authorization credential",
+      "retention": "until logout or browser storage cleared",
+      "export": "not personal data alone",
+      "deletion": "cleared on logout/account deletion",
+      "processors": ["browser localStorage"]
+    },
+    {
+      "platform": "android",
+      "key": "secure_preferences.menumaker_tokens",
+      "classification": "credential_secret",
+      "purpose": "native refresh-session continuity",
+      "retention": "until logout, rotation failure, decryption failure, or account deletion",
+      "export": "excluded",
+      "deletion": "secure preference wipe and legacy DataStore key removal",
+      "processors": ["Android Keystore-backed storage"]
+    },
+    {
+      "platform": "ios",
+      "key": "keychain-access-groups",
+      "classification": "credential_secret",
+      "purpose": "native session continuity",
+      "retention": "until logout/account deletion",
+      "export": "excluded",
+      "deletion": "Keychain wipe on logout/account deletion",
+      "processors": ["iOS Keychain"]
+    },
+    {
+      "platform": "android",
+      "key": "cache/photos",
+      "classification": "user_content_media_cache",
+      "purpose": "temporary dish/menu photo capture before upload",
+      "retention": "ephemeral; cleared after upload or cache cleanup",
+      "export": "included through uploaded media object, not transient cache",
+      "deletion": "cache cleanup and object-storage deletion evidence",
+      "processors": ["device cache", "AWS S3"]
+    }
+  ],
+  "logs_and_traces": [
+    {
+      "name": "backend application logs",
+      "classification": "operational_security_metadata",
+      "purpose": "incident response, audit evidence, SLO diagnosis",
+      "redaction": "tokens, passwords, payment metadata, request bodies, address/phone/email values are redacted",
+      "retention": "30-90 days by environment",
+      "export": "excluded unless needed to explain account actions and safe to disclose",
+      "deletion": "expires by retention; legal hold blocks deletion with rationale",
+      "processors": ["CloudWatch"]
+    },
+    {
+      "name": "client telemetry",
+      "classification": "diagnostic_metadata",
+      "purpose": "crash/error reporting and release health",
+      "consent_capture": "optional analytics consent; crash diagnostics disclosed in mobile-data-practices",
+      "retention": "90 days",
+      "export": "aggregated or subject-linked events where available",
+      "deletion": "delete subject-linked events where provider supports it; record processor status",
+      "processors": ["Firebase", "Apple", "Google Play"]
+    }
+  ],
+  "uploads_and_blobs": [
+    {
+      "name": "dish and menu media",
+      "classification": "user_content",
+      "purpose": "seller menu presentation and OCR-assisted menu creation",
+      "retention": "until dish/menu/business deletion or seller removal",
+      "export": "signed manifest references plus object checksums",
+      "deletion": "S3 object deletion with evidence; CDN invalidation if published",
+      "processors": ["AWS S3", "CloudFront", "Anthropic OCR when enabled"]
+    },
+    {
+      "name": "export packages",
+      "classification": "privacy_export_sensitive",
+      "purpose": "data subject access response",
+      "retention": "7 days after user download or 30 days maximum",
+      "export": "manifest checksum signed by GDPRService",
+      "deletion": "expiry job removes package and records evidence",
+      "processors": ["AWS S3"]
+    }
+  ],
+  "third_party_processors": [
+    {"name": "AWS", "role": "hosting/storage/security logs", "purpose": "run application infrastructure, encrypted storage, logs, backups, and release evidence", "data": ["database", "media", "logs", "backups"], "retention": "by configured data category retention and backup expiry", "deletion": "delete/anonymize active stores; backup expiry and deletion replay after restore", "dpa_required": true},
+    {"name": "Stripe", "role": "payment processor", "purpose": "process payments, disputes, refunds, and webhook status", "data": ["payment metadata", "webhook events", "processor account IDs"], "retention": "provider statutory/payment retention; local metadata by tax/payment policy", "deletion": "processor deletion request/status where supported; local retained rationale for payment records", "dpa_required": true},
+    {"name": "Twilio", "role": "WhatsApp/SMS notifications", "purpose": "send order/account notifications", "data": ["phone", "message delivery metadata"], "retention": "provider message metadata retention plus local notification retention", "deletion": "processor deletion request/status where supported; local notification deletion", "dpa_required": true},
+    {"name": "Anthropic", "role": "OCR for uploaded menus when enabled", "purpose": "extract menu text from seller-provided media", "data": ["menu media"], "retention": "only provider/runtime retention disclosed for OCR path; local media by seller menu retention", "deletion": "delete local media and record processor status for OCR submissions", "dpa_required": true},
+    {"name": "Firebase", "role": "mobile push/crash diagnostics", "purpose": "deliver push notifications and mobile diagnostic telemetry", "data": ["device token", "diagnostics"], "retention": "device token until logout/account deletion; diagnostics 90 days", "deletion": "delete device token and subject-linked diagnostics where provider supports it", "dpa_required": true},
+    {"name": "Apple", "role": "App Store and push platform", "purpose": "app distribution, push routing, privacy declarations, and platform diagnostics", "data": ["privacy labels", "diagnostics", "device push"], "retention": "platform policy plus local account/device-token retention", "deletion": "delete local device token; platform account data handled through Apple controls", "dpa_required": true},
+    {"name": "Google Play", "role": "Play distribution/data safety", "purpose": "app distribution, data safety disclosures, crash/diagnostic reporting", "data": ["data safety declarations", "diagnostics"], "retention": "platform policy plus local account/device-token retention", "deletion": "delete local subject-linked data; platform account data handled through Google controls", "dpa_required": true}
+  ],
+  "release_blockers": [
+    "Any TypeORM column not matched by exactly one inventory rule.",
+    "Any persistence key, permission, processor, retention, purpose, export, or deletion field set to unknown.",
+    "Any credential field lacking envelope encryption and redacted export behavior."
+  ]
+}

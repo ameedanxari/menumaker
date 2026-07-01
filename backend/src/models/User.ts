@@ -47,10 +47,10 @@ export class User {
   referral_code?: string; // Generated on first access (e.g., "PRIYA2024")
 
   @Column({ type: 'integer', default: 0 })
-  account_credit_cents!: number; // Rs. balance for account credit rewards
+  account_credit_cents!: number; // Future account-credit balance; not surfaced while enhanced referrals are disabled
 
   @Column({ type: 'timestamp', nullable: true })
-  pro_tier_expires_at?: Date; // If gifted Pro via referral, expiration date
+  pro_tier_expires_at?: Date; // Future paid-plan grant expiry when enhanced referrals are enabled
 
   @Column({ type: 'varchar', length: 12, nullable: true })
   referred_by_code?: string; // Track who referred this user

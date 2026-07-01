@@ -1,28 +1,192 @@
 import { AppDataSource } from '../config/database.js';
 import { Referral } from '../models/Referral.js';
 import { User } from '../models/User.js';
+import { capabilityReadiness, getCapability } from '../config/capabilities.js';
 import crypto from 'crypto';
 
 /**
  * Referral Service (Phase 2.5)
  *
- * Handles seller-to-seller referral tracking and reward distribution.
+ * Handles seller-to-seller referral tracking. Reward distribution is launch-gated
+ * by the enhanced_referrals_affiliates capability.
  *
  * Funnel:
  * 1. Link clicked → track click (cookie stored)
  * 2. Signup completed → link referrer to referee
- * 3. First menu published → award rewards to both parties
+ * 3. First menu published → record qualification only while rewards are disabled
  *
  * Features:
  * - Referral code generation (FIRSTNAME + 4 digits)
  * - Click tracking with IP and device fingerprinting
  * - Fraud prevention (self-referral detection)
- * - Reward distribution (free Pro month OR account credit)
+ * - Reward distribution remains disabled until enhanced referrals have launch evidence
  */
 
 const REFERRAL_ENABLED = process.env.REFERRAL_ENABLED !== 'false'; // Default: enabled
 const ATTRIBUTION_WINDOW_DAYS = 30; // Referee must sign up within 30 days
 const MAX_REFERRALS_PER_MONTH = 50; // Anti-gaming limit
+const VALID_REFERRAL_STATUSES = new Set([
+  'link_clicked',
+  'signup_completed',
+  'first_menu_published',
+  'expired',
+]);
+const REFERRAL_READ_ROW_KEYS = new Set([
+  'id',
+  'referral_code',
+  'referrer',
+  'referrer_id',
+  'referee',
+  'referee_id',
+  'status',
+  'referee_email',
+  'referee_phone',
+  'reward_type',
+  'reward_value_cents',
+  'reward_claimed',
+  'reward_claimed_at',
+  'source',
+  'utm_source',
+  'click_ip',
+  'device_fingerprint',
+  'clicked_at',
+  'signup_completed_at',
+  'first_menu_published_at',
+  'created_at',
+  'updated_at',
+]);
+const UNSAFE_REFERRAL_TEXT_CONTROLS =
+  /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/u;
+
+function enhancedReferralRewardsEnabled(): boolean {
+  const definition = getCapability('enhanced_referrals_affiliates');
+  return definition ? capabilityReadiness(definition).enabled : false;
+}
+
+function assertNonEmptyString(label: string, value: unknown): string {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new Error(`${label} must be a non-empty string`);
+  }
+  return value.trim();
+}
+
+function assertSafeReferralString(label: string, value: unknown): string {
+  if (typeof value === 'string' && UNSAFE_REFERRAL_TEXT_CONTROLS.test(value)) {
+    throw new Error(`${label} contains unsafe control characters`);
+  }
+  const normalized = assertNonEmptyString(label, value);
+  if (UNSAFE_REFERRAL_TEXT_CONTROLS.test(normalized)) {
+    throw new Error(`${label} contains unsafe control characters`);
+  }
+  return normalized;
+}
+
+function assertOptionalSafeReferralString(label: string, value: unknown): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  return assertSafeReferralString(label, value);
+}
+
+function assertNonNegativeCents(label: string, value: unknown): number {
+  const numeric = typeof value === 'number' ? value : Number(value);
+  if (!Number.isInteger(numeric) || numeric < 0) {
+    throw new Error(`${label} must be a non-negative integer amount in cents`);
+  }
+  if (!Number.isSafeInteger(numeric)) {
+    throw new Error(`${label} must be a safe integer amount in cents`);
+  }
+  return numeric;
+}
+
+function assertNonNegativeSafeInteger(label: string, value: unknown): number {
+  const numeric = typeof value === 'number' ? value : Number(value);
+  if (!Number.isInteger(numeric) || numeric < 0) {
+    throw new Error(`${label} must be a non-negative integer`);
+  }
+  if (!Number.isSafeInteger(numeric)) {
+    throw new Error(`${label} must be a safe integer`);
+  }
+  return numeric;
+}
+
+function assertReferralStatus(label: string, value: unknown): string {
+  const normalized = assertSafeReferralString(label, value).toLowerCase();
+  if (!VALID_REFERRAL_STATUSES.has(normalized)) {
+    throw new Error(
+      `${label} must be link_clicked, signup_completed, first_menu_published, or expired`
+    );
+  }
+  return normalized;
+}
+
+function assertOptionalDate(label: string, value: unknown): void {
+  if (value === undefined || value === null) return;
+  const parsed = value instanceof Date ? value.getTime() : Date.parse(String(value));
+  if (Number.isNaN(parsed)) {
+    throw new Error(`${label} must be a valid Date`);
+  }
+}
+
+function assertReadableReferralRow(referral: Referral, requestedUserId: string, index: number): string {
+  const label = `Referral row ${index + 1}`;
+  const referralId = assertSafeReferralString(`${label} id`, referral.id);
+  const unsafeKeys = Object.keys(referral).filter((key) => UNSAFE_REFERRAL_TEXT_CONTROLS.test(key));
+  if (unsafeKeys.length > 0) {
+    throw new Error(`${label} for referral ${referralId} field names contain unsafe control characters`);
+  }
+  const unsupportedKeys = Object.keys(referral).filter((key) => !REFERRAL_READ_ROW_KEYS.has(key));
+  if (unsupportedKeys.length > 0) {
+    throw new Error(
+      `${label} for referral ${referralId} include unsupported field(s): ${unsupportedKeys.sort().join(', ')}`
+    );
+  }
+  const referrerId = assertSafeReferralString(`${label} referrer_id`, referral.referrer_id);
+  if (referrerId !== requestedUserId) {
+    throw new Error(`${label} referrer_id must match requested user for referral ${referralId}`);
+  }
+  assertReferralStatus(`${label} status for referral ${referralId}`, referral.status);
+  assertNonNegativeCents(`Reward value for referral ${referralId}`, referral.reward_value_cents);
+  if (typeof referral.reward_claimed !== 'boolean') {
+    throw new Error(`${label} reward_claimed for referral ${referralId} must be a boolean`);
+  }
+  assertOptionalSafeReferralString(`${label} referral_code for referral ${referralId}`, referral.referral_code);
+  assertOptionalSafeReferralString(`${label} referee_id for referral ${referralId}`, referral.referee_id);
+  assertOptionalSafeReferralString(`${label} referee_email for referral ${referralId}`, referral.referee_email);
+  assertOptionalSafeReferralString(`${label} referee_phone for referral ${referralId}`, referral.referee_phone);
+  assertOptionalSafeReferralString(`${label} source for referral ${referralId}`, referral.source);
+  assertOptionalSafeReferralString(`${label} utm_source for referral ${referralId}`, referral.utm_source);
+  assertOptionalSafeReferralString(`${label} click_ip for referral ${referralId}`, referral.click_ip);
+  assertOptionalSafeReferralString(`${label} device_fingerprint for referral ${referralId}`, referral.device_fingerprint);
+  assertOptionalDate(`${label} clicked_at for referral ${referralId}`, referral.clicked_at);
+  assertOptionalDate(`${label} signup_completed_at for referral ${referralId}`, referral.signup_completed_at);
+  assertOptionalDate(`${label} first_menu_published_at for referral ${referralId}`, referral.first_menu_published_at);
+  assertOptionalDate(`${label} reward_claimed_at for referral ${referralId}`, referral.reward_claimed_at);
+  return referralId;
+}
+
+function assertUniqueReadableReferralEvidence(referrals: Referral[]): void {
+  const referralIds = new Set<string>();
+  const completedRefereeIds = new Set<string>();
+
+  referrals.forEach((referral, index) => {
+    const label = `Referral row ${index + 1}`;
+    const referralId = assertSafeReferralString(`${label} id`, referral.id);
+    if (referralIds.has(referralId)) {
+      throw new Error(`${label} id duplicates an earlier referral row`);
+    }
+    referralIds.add(referralId);
+
+    if (
+      (referral.status === 'signup_completed' || referral.status === 'first_menu_published') &&
+      referral.referee_id
+    ) {
+      const refereeId = assertSafeReferralString(`${label} referee_id for referral ${referralId}`, referral.referee_id);
+      if (completedRefereeIds.has(refereeId)) {
+        throw new Error(`${label} referee_id must be unique for completed referral evidence`);
+      }
+      completedRefereeIds.add(refereeId);
+    }
+  });
+}
 
 export interface ReferralTrackClickParams {
   referral_code: string;
@@ -65,11 +229,12 @@ export class ReferralService {
 
     // If user already has a code, return it
     if (user.referral_code) {
-      return user.referral_code;
+      return assertSafeReferralString('Existing referral code', user.referral_code);
     }
 
     // Extract first name from email (before @)
-    const emailPrefix = user.email.split('@')[0];
+    const email = assertSafeReferralString('Referral user email', user.email);
+    const emailPrefix = email.split('@')[0];
     const firstName = emailPrefix.split(/[._-]/)[0].toUpperCase();
 
     // Generate 4 random alphanumeric characters
@@ -116,7 +281,14 @@ export class ReferralService {
     }
 
     try {
-      const { referral_code, source, utm_source, click_ip, device_fingerprint } = params;
+      const referral_code = assertSafeReferralString('Referral click code', params.referral_code);
+      const source = assertOptionalSafeReferralString('Referral click source', params.source);
+      const utm_source = assertOptionalSafeReferralString('Referral click utm_source', params.utm_source);
+      const click_ip = assertOptionalSafeReferralString('Referral click IP', params.click_ip);
+      const device_fingerprint = assertOptionalSafeReferralString(
+        'Referral click device fingerprint',
+        params.device_fingerprint
+      );
 
       // Find referrer by code
       const userRepo = AppDataSource.getRepository(User);
@@ -182,7 +354,11 @@ export class ReferralService {
     }
 
     try {
-      const { referral_code, referee_id, referee_email, referee_phone } = params;
+      const referral_code = assertSafeReferralString('Referral signup code', params.referral_code);
+      const referee_id = assertSafeReferralString('Referral signup referee_id', params.referee_id);
+      const referee_email = assertSafeReferralString('Referral signup referee_email', params.referee_email);
+      const referee_phone = assertOptionalSafeReferralString('Referral signup referee_phone', params.referee_phone);
+      assertOptionalSafeReferralString('Referral signup IP', params.signup_ip);
 
       const referralRepo = AppDataSource.getRepository(Referral);
       const userRepo = AppDataSource.getRepository(User);
@@ -267,7 +443,8 @@ export class ReferralService {
 
       console.log(`✅ Referral applied: ${referrer.email} → ${referee_email}`);
 
-      // TODO: Send notification to referrer (future enhancement)
+      // Launch exception: simple-referral notification is tracked in
+      // docs/product/capability-registry.yaml under notification_outbox before rewards launch review.
 
       return { success: true };
     } catch (error: any) {
@@ -277,8 +454,8 @@ export class ReferralService {
   }
 
   /**
-   * Trigger reward when referee publishes first menu
-   * Awards rewards to both referrer and referee
+   * Record first-menu referral qualification.
+   * Reward credits/free-tier grants are disabled until enhanced referrals are enabled.
    */
   static async triggerRewardOnFirstMenu(userId: string): Promise<{ success: boolean; message?: string }> {
     if (!REFERRAL_ENABLED) {
@@ -286,13 +463,14 @@ export class ReferralService {
     }
 
     try {
+      const normalizedUserId = assertSafeReferralString('Referral reward user_id', userId);
       const referralRepo = AppDataSource.getRepository(Referral);
       const userRepo = AppDataSource.getRepository(User);
 
       // Find referral where this user is the referee
       const referral = await referralRepo.findOne({
         where: {
-          referee_id: userId,
+          referee_id: normalizedUserId,
           status: 'signup_completed',
         },
         relations: ['referrer', 'referee'],
@@ -303,23 +481,30 @@ export class ReferralService {
         return { success: false, message: 'No referral found for this user' };
       }
 
+      referral.status = 'first_menu_published';
+      referral.first_menu_published_at = new Date();
+      await referralRepo.save(referral);
+
+      if (!enhancedReferralRewardsEnabled()) {
+        return {
+          success: true,
+          message: 'Referral qualified. Reward credits are disabled for this launch build.',
+        };
+      }
+
       // Check if reward already claimed
       if (referral.reward_claimed) {
         console.warn('⚠️  Reward already claimed for referral:', referral.id);
         return { success: false, message: 'Reward already claimed' };
       }
 
-      // Update referral status
-      referral.status = 'first_menu_published';
-      referral.first_menu_published_at = new Date();
       referral.reward_claimed = true;
       referral.reward_claimed_at = new Date();
-
       await referralRepo.save(referral);
 
-      // Award rewards based on reward_type
+      // Apply enhanced referral grants based on reward_type. This branch is unreachable while
+      // enhanced_referrals_affiliates is disabled in the capability registry.
       if (referral.reward_type === 'free_pro_month') {
-        // Award 1 month free Pro to both parties
         const oneMonthFromNow = new Date();
         oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
 
@@ -328,7 +513,7 @@ export class ReferralService {
         if (referrer) {
           referrer.pro_tier_expires_at = oneMonthFromNow;
           await userRepo.save(referrer);
-          console.log(`✅ Awarded Pro tier to referrer: ${referrer.email}`);
+          console.log(`✅ Applied enhanced referral grant to referrer: ${referrer.email}`);
         }
 
         // Referee reward
@@ -336,18 +521,17 @@ export class ReferralService {
         if (referee) {
           referee.pro_tier_expires_at = oneMonthFromNow;
           await userRepo.save(referee);
-          console.log(`✅ Awarded Pro tier to referee: ${referee.email}`);
+          console.log(`✅ Applied enhanced referral grant to referee: ${referee.email}`);
         }
       } else if (referral.reward_type === 'account_credit') {
-        // Award Rs. 500 account credit to both parties
-        const creditAmount = referral.reward_value_cents || 50000; // Default Rs. 500
+        const creditAmount = referral.reward_value_cents || 50000; // Future enhanced-referral grant fallback
 
         // Referrer reward
         const referrer = await userRepo.findOne({ where: { id: referral.referrer_id } });
         if (referrer) {
           referrer.account_credit_cents += creditAmount;
           await userRepo.save(referrer);
-          console.log(`✅ Added Rs. ${creditAmount / 100} credit to referrer: ${referrer.email}`);
+          console.log(`✅ Applied enhanced referral grant to referrer: ${referrer.email}`);
         }
 
         // Referee reward
@@ -355,13 +539,14 @@ export class ReferralService {
         if (referee) {
           referee.account_credit_cents += creditAmount;
           await userRepo.save(referee);
-          console.log(`✅ Added Rs. ${creditAmount / 100} credit to referee: ${referee.email}`);
+          console.log(`✅ Applied enhanced referral grant to referee: ${referee.email}`);
         }
       }
 
       console.log(`🎉 Referral reward distributed: ${referral.id}`);
 
-      // TODO: Send congratulations notifications to both parties (future enhancement)
+      // Launch exception: reward congratulations notifications are tracked in
+      // docs/product/capability-registry.yaml under notification_outbox before rewards launch review.
 
       return { success: true };
     } catch (error: any) {
@@ -374,11 +559,16 @@ export class ReferralService {
    * Get referral stats for a user
    */
   static async getStats(userId: string): Promise<ReferralStats> {
+    const normalizedUserId = assertSafeReferralString('Referral stats user_id', userId);
     const referralRepo = AppDataSource.getRepository(Referral);
 
     const referrals = await referralRepo.find({
-      where: { referrer_id: userId },
+      where: { referrer_id: normalizedUserId },
     });
+    referrals.forEach((referral, index) =>
+      assertReadableReferralRow(referral, normalizedUserId, index)
+    );
+    assertUniqueReadableReferralEvidence(referrals);
 
     const total_referrals = referrals.length;
     const link_clicked = referrals.filter((r) => r.status === 'link_clicked').length;
@@ -388,7 +578,7 @@ export class ReferralService {
     const first_menu_published = referrals.filter((r) => r.status === 'first_menu_published').length;
 
     const total_rewards_earned_cents = referrals
-      .filter((r) => r.reward_claimed)
+      .filter((r) => enhancedReferralRewardsEnabled() && r.reward_claimed)
       .reduce((sum, r) => sum + (r.reward_value_cents || 0), 0);
 
     const conversion_rate = link_clicked > 0 ? signup_completed / link_clicked : 0;
@@ -406,26 +596,39 @@ export class ReferralService {
   /**
    * Get all referrals made by a user
    */
-  static async getReferrals(userId: string, limit: number = 20, offset: number = 0): Promise<Referral[]> {
+  static async getReferrals(userId: string, limit: number = 20, offset: number = 0, status?: string): Promise<Referral[]> {
+    const normalizedUserId = assertSafeReferralString('Referral list user_id', userId);
+    const normalizedLimit = assertNonNegativeSafeInteger('Referral list limit', limit);
+    const normalizedOffset = assertNonNegativeSafeInteger('Referral list offset', offset);
+    const normalizedStatus = status === undefined ? undefined : assertReferralStatus('Referral list status', status);
     const referralRepo = AppDataSource.getRepository(Referral);
 
-    return await referralRepo.find({
-      where: { referrer_id: userId },
+    const referrals = await referralRepo.find({
+      where: {
+        referrer_id: normalizedUserId,
+        ...(normalizedStatus ? { status: normalizedStatus } : {}),
+      },
       order: { created_at: 'DESC' },
-      take: limit,
-      skip: offset,
+      take: normalizedLimit,
+      skip: normalizedOffset,
       relations: ['referee'],
     });
+    referrals.forEach((referral, index) =>
+      assertReadableReferralRow(referral, normalizedUserId, index)
+    );
+    assertUniqueReadableReferralEvidence(referrals);
+    return referrals;
   }
 
   /**
    * Validate referral code (check if it exists)
    */
   static async validateCode(referral_code: string): Promise<{ valid: boolean; referrer_email?: string }> {
+    const normalizedReferralCode = assertSafeReferralString('Referral validation code', referral_code);
     const userRepo = AppDataSource.getRepository(User);
 
     const referrer = await userRepo.findOne({
-      where: { referral_code },
+      where: { referral_code: normalizedReferralCode },
     });
 
     if (!referrer) {
@@ -434,7 +637,7 @@ export class ReferralService {
 
     return {
       valid: true,
-      referrer_email: referrer.email,
+      referrer_email: assertSafeReferralString('Referral validation referrer email', referrer.email),
     };
   }
 }

@@ -25,6 +25,7 @@ enum AppConstants {
             static let updateProfile = "/auth/profile"
             static let changePassword = "/auth/change-password"
             static let updatePhoto = "/auth/photo"
+            static let mediaUpload = "/media/upload"
 
             // Business
             static let businesses = "/businesses"
@@ -76,14 +77,8 @@ enum AppConstants {
             static func favorite(_ id: String) -> String { "/favorites/\(id)" }
             static func favoriteBusiness(_ businessId: String) -> String { "/favorites/business/\(businessId)" }
 
-            // Subscriptions
-            static let subscriptions = "/subscriptions"
-            static let currentSubscription = "/subscriptions/current"
-
             // Integrations
             static let integrations = "/integrations"
-            static let posIntegrations = "/pos"
-            static let deliveryIntegrations = "/delivery"
 
             // Analytics
             static let analytics = "/analytics"
@@ -176,34 +171,4 @@ enum AppConstants {
         }
     }
 
-    // MARK: - Subscription Tiers
-    enum SubscriptionTier: String, CaseIterable {
-        case free
-        case starter
-        case pro
-
-        var displayName: String {
-            switch self {
-            case .free: return "Free"
-            case .starter: return "Starter"
-            case .pro: return "Pro"
-            }
-        }
-
-        var price: Int {
-            switch self {
-            case .free: return 0
-            case .starter: return 49900 // Rs. 499
-            case .pro: return 99900 // Rs. 999
-            }
-        }
-
-        var maxOrders: Int {
-            switch self {
-            case .free: return 20
-            case .starter: return 100
-            case .pro: return -1 // unlimited
-            }
-        }
-    }
 }

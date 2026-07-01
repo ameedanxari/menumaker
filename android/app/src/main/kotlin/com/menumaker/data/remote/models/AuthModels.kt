@@ -40,6 +40,18 @@ data class MeData(
     @SerializedName("user") val user: UserDto
 )
 
+data class MediaUploadResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: MediaUploadData
+)
+
+data class MediaUploadData(
+    @SerializedName("url") val url: String,
+    @SerializedName("filename") val filename: String?,
+    @SerializedName("mimeType") val mimeType: String?,
+    @SerializedName("size") val size: Long?
+)
+
 data class UserDto(
     @SerializedName("id") val id: String,
     @SerializedName("email") val email: String,

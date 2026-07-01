@@ -64,18 +64,19 @@ export class Referral {
   referee_phone?: string;
 
   /**
-   * Reward type:
-   * - free_pro_month: 1 month free Pro tier (Rs. 299 value)
-   * - account_credit: Rs. 500 account credit
+   * Enhanced referral grant type, inactive unless the
+   * enhanced_referrals_affiliates capability is enabled with launch evidence:
+   * - free_pro_month: future paid-plan grant
+   * - account_credit: future account-credit grant
    */
   @Column({ type: 'varchar', length: 50, default: 'free_pro_month' })
   reward_type!: string;
 
   @Column({ type: 'integer', default: 29900 })
-  reward_value_cents!: number; // Rs. 299 for Pro, Rs. 500 for credit (50000)
+  reward_value_cents!: number; // Future enhanced-referral grant value; ignored while rewards are disabled
 
   @Column({ type: 'boolean', default: false })
-  reward_claimed!: boolean; // True when reward applied to both parties
+  reward_claimed!: boolean; // True only when an enabled enhanced referral grant is applied
 
   @Column({ type: 'timestamp', nullable: true })
   reward_claimed_at?: Date;

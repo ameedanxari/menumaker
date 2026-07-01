@@ -1,0 +1,22 @@
+[
+  {
+    "path": "sample-android/src/main/kotlin/com/example/DynamicScreen.kt",
+    "category": "android-resource-reference",
+    "classification": "keep"
+  },
+  {
+    "path": "sample-ios/TargetOnly.swift",
+    "category": "xcode-target-reference",
+    "classification": "keep"
+  },
+  {
+    "path": "sample-web/src/unused.ts",
+    "category": "unreferenced",
+    "classification": "delete-candidate"
+  },
+  {
+    "path": "sample-web/src/used.ts",
+    "category": "referenced",
+    "classification": "keep"
+  }
+]

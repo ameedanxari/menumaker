@@ -58,8 +58,13 @@ class ReferralViewModel @Inject constructor(
                     is Resource.Loading -> _isLoading.value = true
                     is Resource.Success -> {
                         resource.data?.let { data ->
-                            _stats.value = data.stats
-                            _leaderboard.value = data.leaderboard
+                            _stats.value = data.stats.copy(
+                                totalEarningsCents = 0,
+                                availableCreditsCents = 0,
+                                pendingRewardsCents = 0,
+                                leaderboardPosition = null
+                            )
+                            _leaderboard.value = emptyList()
                         }
                     }
                     is Resource.Error -> {
@@ -123,10 +128,10 @@ class ReferralViewModel @Inject constructor(
                     is Resource.Success -> {
                         resource.data?.let { result ->
                             if (result.success) {
-                                _referralCodeMessage.value = result.message ?: "Referral code applied successfully! ₹50 credit added."
+                                _referralCodeMessage.value = "Referral code applied successfully. Reward credits are disabled for this launch build."
                                 _referralCodeSuccess.value = true
 
-                                // Refresh data to show updated credits
+                                // Refresh data to show updated referral status.
                                 loadReferralData()
                             } else {
                                 _referralCodeMessage.value = result.message ?: "Invalid or expired referral code"

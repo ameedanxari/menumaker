@@ -1,0 +1,17 @@
+{
+  "schema_version": "fixture",
+  "brand": { "namespace": "bad" },
+  "primitives": {
+    "color": {
+      "neutral": { "0": "#ffffff", "900": "#111111" }
+    }
+  },
+  "semantic": {
+    "light": {
+      "background": { "canvas": "{color.neutral.0}" },
+      "text": { "primary": "{color.neutral.0}" }
+    }
+  },
+  "components": {},
+  "states": {}
+}

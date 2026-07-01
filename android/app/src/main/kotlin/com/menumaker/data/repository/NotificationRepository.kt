@@ -15,7 +15,17 @@ interface NotificationRepository {
     fun getNotifications(): Flow<Resource<NotificationListData>>
     fun markNotificationAsRead(notificationId: String): Flow<Resource<NotificationDto>>
     fun markAllNotificationsAsRead(): Flow<Resource<Unit>>
+    fun getNotificationPreferences(): Flow<Resource<NotificationPreferences>>
+    fun updateNotificationPreferences(preferences: NotificationPreferences): Flow<Resource<NotificationPreferences>>
 }
+
+data class NotificationPreferences(
+    val orderNotificationsEnabled: Boolean = true,
+    val promotionNotificationsEnabled: Boolean = true,
+    val reviewNotificationsEnabled: Boolean = true,
+    val pushNotificationsEnabled: Boolean = true,
+    val emailNotificationsEnabled: Boolean = false
+)
 
 /**
  * Implementation of NotificationRepository
@@ -65,6 +75,60 @@ class NotificationRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             emit(Resource.Error(e.message ?: "An error occurred", e))
+        }
+    }
+
+    override fun getNotificationPreferences(): Flow<Resource<NotificationPreferences>> = flow {
+        emit(Resource.Loading)
+        try {
+            val response = apiService.getUserSettings()
+            if (response.isSuccessful && response.body() != null) {
+                emit(Resource.Success(parsePreferences(response.body()!!)))
+            } else {
+                emit(Resource.Error(response.message() ?: "Failed to load notification preferences"))
+            }
+        } catch (e: Exception) {
+            emit(Resource.Error(e.message ?: "An error occurred", e))
+        }
+    }
+
+    override fun updateNotificationPreferences(preferences: NotificationPreferences): Flow<Resource<NotificationPreferences>> = flow {
+        emit(Resource.Loading)
+        try {
+            val response = apiService.updateUserSettings(
+                mapOf(
+                    "notifications_enabled" to preferences.pushNotificationsEnabled,
+                    "order_notifications" to preferences.orderNotificationsEnabled,
+                    "promotion_notifications" to preferences.promotionNotificationsEnabled,
+                    "review_notifications" to preferences.reviewNotificationsEnabled
+                )
+            )
+            if (response.isSuccessful) {
+                emit(Resource.Success(preferences))
+            } else {
+                emit(Resource.Error(response.message() ?: "Failed to update notification preferences"))
+            }
+        } catch (e: Exception) {
+            emit(Resource.Error(e.message ?: "An error occurred", e))
+        }
+    }
+
+    private fun parsePreferences(response: Map<String, Any>): NotificationPreferences {
+        val settings = ((response["data"] as? Map<*, *>)?.get("settings") as? Map<*, *>) ?: response
+        return NotificationPreferences(
+            orderNotificationsEnabled = settings.booleanValue("order_notifications", true),
+            promotionNotificationsEnabled = settings.booleanValue("promotion_notifications", true),
+            reviewNotificationsEnabled = settings.booleanValue("review_notifications", true),
+            pushNotificationsEnabled = settings.booleanValue("notifications_enabled", true),
+            emailNotificationsEnabled = settings.booleanValue("email_notifications", false)
+        )
+    }
+
+    private fun Map<*, *>.booleanValue(key: String, defaultValue: Boolean): Boolean {
+        return when (val value = this[key]) {
+            is Boolean -> value
+            is String -> value.equals("true", ignoreCase = true)
+            else -> defaultValue
         }
     }
 }

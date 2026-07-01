@@ -51,6 +51,9 @@ export class BusinessSettings {
   currency!: string;
 
   // Order Defaults
+  @Column({ type: 'integer', default: 0 })
+  min_order_value_cents!: number;
+
   @Column({ type: 'boolean', default: false })
   auto_confirm_orders!: boolean;
 

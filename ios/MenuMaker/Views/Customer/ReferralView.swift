@@ -18,7 +18,7 @@ struct ReferralView: View {
                         // Referral Code Card
                         referralCodeCard
 
-                        // Credits and Rewards Section
+                        // Reward credits are launch-gated for this build.
                         creditsRewardsSection
 
                         // Stats Cards
@@ -33,14 +33,14 @@ struct ReferralView: View {
                         // Information Section
                         informationSection
 
-                        // Leaderboard
-                        leaderboardSection
+                        // Enhanced referral campaigns
+                        enhancedReferralCampaignSection
                     }
                 }
                 .padding()
             }
             .background(Color.theme.background)
-            .navigationTitle("Refer & Earn")
+            .navigationTitle("Referrals")
             .accessibilityIdentifier("referral-screen")
             .refreshable {
                 await viewModel.refreshData()
@@ -65,12 +65,12 @@ struct ReferralView: View {
                 .font(.system(size: 48))
                 .foregroundColor(.theme.primary)
 
-            Text("Invite Friends, Get Rewards!")
+            Text("Invite Friends")
                 .font(.title3)
                 .fontWeight(.bold)
                 .accessibilityIdentifier("referral-title")
 
-            Text("Share your referral code and earn rewards when your friends sign up")
+            Text("Share your referral code with friends. Reward credits and campaigns are launch-gated for this build.")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -118,53 +118,18 @@ struct ReferralView: View {
     }
 
     private var creditsRewardsSection: some View {
-        HStack(spacing: 12) {
-            // Available Credits
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Available Credits")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Reward credits disabled")
+                .font(.headline)
 
-                if let stats = viewModel.stats {
-                    Text(formatCurrency(stats.availableCreditsCents))
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.green)
-                } else {
-                    Text("₹0")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
-            .background(Color.white)
-            .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
-
-            // Pending Rewards
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Pending Rewards")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-
-                if let stats = viewModel.stats {
-                    Text(formatCurrency(stats.pendingRewardsCents))
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.orange)
-                } else {
-                    Text("₹0")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
-            .background(Color.white)
-            .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+            Text("Basic referral-code sharing is available. Credits, bonuses, ranked campaigns, and prize payouts require a separate enhanced-referral launch decision.")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Color.theme.surface)
+        .cornerRadius(12)
     }
 
     private var statsSection: some View {
@@ -184,10 +149,10 @@ struct ReferralView: View {
                     .accessibilityIdentifier("total-referrals-stat")
 
                     ReferralStatCard(
-                        title: "Rewards Earned",
-                        value: formatCurrency(stats.totalEarningsCents),
+                        title: "Reward Credits",
+                        value: "Disabled",
                         icon: "indianrupeesign.circle.fill",
-                        color: .green
+                        color: .gray
                     )
                     .accessibilityIdentifier("total-rewards-stat")
                 }
@@ -322,10 +287,10 @@ struct ReferralView: View {
         }
     }
 
-    private var leaderboardSection: some View {
+    private var enhancedReferralCampaignSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text("Leaderboard")
+                Text("Enhanced Referral Campaigns")
                     .font(.headline)
                     .accessibilityIdentifier("leaderboard-title")
 
@@ -335,25 +300,15 @@ struct ReferralView: View {
                     .foregroundColor(.yellow)
             }
 
-            if viewModel.leaderboard.isEmpty {
-                Text("No leaderboard data yet")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding()
-                    .accessibilityIdentifier("empty-leaderboard")
-            } else {
-                VStack(spacing: 8) {
-                    ForEach(Array(viewModel.leaderboard.enumerated()), id: \.element.id) { index, entry in
-                        LeaderboardRow(rank: index + 1, entry: entry)
-                            .accessibilityIdentifier("leaderboard-row-\(index)")
-                    }
-                }
+            Text("Leaderboards, affiliate campaigns, and prize payouts are disabled for this launch build.")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
                 .padding()
                 .background(Color.white)
                 .cornerRadius(16)
                 .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
-            }
+                .accessibilityIdentifier("empty-leaderboard")
         }
     }
 
@@ -364,16 +319,12 @@ struct ReferralView: View {
 
     private func generateShareMessage(code: String) -> String {
         """
-        Join me on MenuMaker! Use my referral code \(code) and get special rewards.
+        Join me on MenuMaker! Use my referral code \(code) when you sign up.
 
         Download the app now!
         """
     }
 
-    private func formatCurrency(_ cents: Int) -> String {
-        let rupees = Double(cents) / 100.0
-        return String(format: "₹%.0f", rupees)
-    }
 }
 
 private struct ReferralStatCard: View {
@@ -476,20 +427,13 @@ struct ReferralHistoryRow: View {
                     .foregroundColor(referral.status.color)
                     .cornerRadius(8)
 
-                if referral.rewardAmountCents > 0 {
-                    Text(formatCurrency(referral.rewardAmountCents))
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.green)
-                }
+                Text("Rewards disabled")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.secondary)
             }
         }
         .padding(.vertical, 8)
-    }
-
-    private func formatCurrency(_ cents: Int) -> String {
-        let rupees = Double(cents) / 100.0
-        return String(format: "₹%.0f", rupees)
     }
 }
 
@@ -519,24 +463,24 @@ struct HowItWorksView: View {
 
                         HowItWorksStep(
                             number: 3,
-                            title: "You Both Earn Rewards",
-                            description: "You receive ₹100 credit and your friend gets ₹50 off their first order!"
+                            title: "Enhanced Rewards",
+                            description: "Reward credits are disabled until enhanced referrals are enabled with launch evidence."
                         )
 
                         HowItWorksStep(
                             number: 4,
-                            title: "Use Your Credits",
-                            description: "Use your earned credits on any future orders. No minimum order value required!"
+                            title: "Future Enablement",
+                            description: "Credits, bonuses, leaderboards, and prizes require a separate enablement decision."
                         )
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Bonus Rewards")
+                        Text("Launch-gated rewards")
                             .font(.headline)
 
-                        Text("• Refer 5 friends: Get an extra ₹200 bonus")
-                        Text("• Refer 10 friends: Get an extra ₹500 bonus")
-                        Text("• Top monthly referrer: Win exciting prizes!")
+                        Text("• Reward credits are disabled in this launch build")
+                        Text("• Bonus campaigns require enablement evidence")
+                        Text("• Leaderboards and prizes are not available")
                     }
                     .font(.subheadline)
                     .padding()
@@ -601,25 +545,25 @@ struct TermsAndConditionsView: View {
                             .font(.headline)
                             .padding(.top)
 
-                        Text("The referral program is open to all registered MenuMaker users. You cannot refer yourself or use multiple accounts to claim rewards fraudulently.")
+                        Text("The referral code-sharing program is open to registered MenuMaker users. You cannot refer yourself or use multiple accounts to abuse the program.")
 
-                        Text("2. Referral Rewards")
+                        Text("2. Reward Availability")
                             .font(.headline)
                             .padding(.top)
 
-                        Text("Referrer receives ₹100 credit after the referred user completes their first order of minimum ₹200. The referred user receives ₹50 off on their first order.")
+                        Text("Referral credits, bonuses, leaderboards, affiliate campaigns, and prize payouts are disabled for this launch build and require a separate enablement decision.")
 
                         Text("3. Credit Validity")
                             .font(.headline)
                             .padding(.top)
 
-                        Text("Referral credits are valid for 90 days from the date of credit. Unused credits will expire after this period and cannot be redeemed.")
+                        Text("Credit validity terms will be published only if referral credits are enabled.")
 
                         Text("4. Credit Usage")
                             .font(.headline)
                             .padding(.top)
 
-                        Text("Credits can be used on any order with no minimum order value required. Credits cannot be transferred or exchanged for cash.")
+                        Text("Credits cannot be redeemed, transferred, or exchanged for cash while reward credits are disabled.")
 
                         Text("5. Fraud Prevention")
                             .font(.headline)

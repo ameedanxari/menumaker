@@ -1,6 +1,16 @@
 import { Client as MinioClient } from 'minio';
 import crypto from 'crypto';
 import path from 'path';
+
+export interface UploadMetadata {
+  filename: string;
+  mimeType: string;
+}
+
+const UNSAFE_UPLOAD_METADATA_CONTROLS = /[\u0000-\u001F\u007F-\u009F\u00AD\u061C\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/u;
+const FORBIDDEN_UPLOAD_FILENAME_CHARACTERS = /["\\/:;]/;
+const FORBIDDEN_UPLOAD_MIME_CHARACTERS = /["\\;,]/;
+
 export class MediaService {
   private minioClient: MinioClient;
   private bucketName: string;
@@ -73,12 +83,14 @@ export class MediaService {
   async uploadFile(
     file: Buffer,
     originalName: string,
-    mimeType: string
+    mimeType: string,
+    ownerUserId: string
   ): Promise<string> {
     try {
+      const metadata = this.normalizeUploadMetadata(originalName, mimeType);
       await this.ensureBucketExists();
 
-      const fileName = this.generateFileName(originalName);
+      const fileName = this.generateFileName(metadata.filename);
 
       // Upload file to MinIO
       await this.minioClient.putObject(
@@ -87,7 +99,8 @@ export class MediaService {
         file,
         file.length,
         {
-          'Content-Type': mimeType,
+          'Content-Type': metadata.mimeType,
+          'x-amz-meta-owner-user-id': ownerUserId,
         }
       );
 
@@ -116,34 +129,117 @@ export class MediaService {
     return `${protocol}://${endpoint}/${this.bucketName}/${fileName}`;
   }
 
-  async deleteFile(fileUrl: string, _userId: string): Promise<void> {
-    try {
-      // Security: Validate that the URL belongs to this bucket and is properly formatted
-      const expectedPrefix = this.getPublicUrl('');
-      if (!fileUrl.startsWith(expectedPrefix)) {
-        throw new Error('Invalid file URL: does not belong to this storage bucket');
-      }
+  async deleteFile(fileUrl: string, userId: string): Promise<void> {
+    const fileName = this.extractOwnedFileName(fileUrl);
+    const stat = await this.minioClient.statObject(this.bucketName, fileName);
+    const metadata = (stat as unknown as { metaData?: Record<string, string>; metadata?: Record<string, string> }).metaData
+      ?? (stat as unknown as { metadata?: Record<string, string> }).metadata
+      ?? {};
 
-      // Extract filename from URL (after bucket name)
-      const fileName = fileUrl.replace(expectedPrefix, '');
-      if (!fileName || fileName.includes('..') || fileName.includes('/')) {
-        throw new Error('Invalid file URL: potential path traversal detected');
-      }
+    const ownerUserId = metadata['owner-user-id']
+      ?? metadata['x-amz-meta-owner-user-id']
+      ?? metadata['Owner-User-Id'];
 
-      // TODO: Add database check to verify file ownership by userId
-      // For now, we validate the URL format to prevent path traversal
-
-      await this.minioClient.removeObject(this.bucketName, fileName);
-    } catch (error) {
-      console.error('Error deleting file:', error);
-      // Don't throw error - file might already be deleted
+    if (!ownerUserId || ownerUserId !== userId) {
+      const error = new Error('File does not belong to the authenticated user') as Error & {
+        statusCode: number;
+        code: string;
+      };
+      error.statusCode = 403;
+      error.code = 'MEDIA_OWNERSHIP_MISMATCH';
+      throw error;
     }
+
+    await this.minioClient.removeObject(this.bucketName, fileName);
   }
 
-  validateImageFile(mimeType: string, fileSize: number): void {
+  private extractOwnedFileName(fileUrl: string): string {
+    const expectedPrefix = this.getPublicUrl('');
+    if (!fileUrl.startsWith(expectedPrefix)) {
+      const error = new Error('Invalid file URL: does not belong to this storage bucket') as Error & {
+        statusCode: number;
+        code: string;
+      };
+      error.statusCode = 400;
+      error.code = 'INVALID_MEDIA_URL';
+      throw error;
+    }
+
+    const fileName = fileUrl.replace(expectedPrefix, '');
+    if (!fileName || fileName.includes('..') || fileName.includes('/')) {
+      const error = new Error('Invalid file URL: potential path traversal detected') as Error & {
+        statusCode: number;
+        code: string;
+      };
+      error.statusCode = 400;
+      error.code = 'INVALID_MEDIA_URL';
+      throw error;
+    }
+
+    return fileName;
+  }
+
+  normalizeUploadMetadata(originalName: string, mimeType: string): UploadMetadata {
+    return {
+      filename: this.normalizeUploadFileName(originalName),
+      mimeType: this.normalizeUploadMimeType(mimeType),
+    };
+  }
+
+  private normalizeUploadFileName(originalName: string): string {
+    if (UNSAFE_UPLOAD_METADATA_CONTROLS.test(originalName)) {
+      this.throwInvalidUploadMetadata('Upload file name contains unsafe control characters');
+    }
+
+    const filename = originalName.trim();
+    if (!filename) {
+      this.throwInvalidUploadMetadata('Upload file name is required');
+    }
+
+    if (FORBIDDEN_UPLOAD_FILENAME_CHARACTERS.test(filename)) {
+      this.throwInvalidUploadMetadata('Upload file name contains unsupported multipart header characters');
+    }
+
+    return filename;
+  }
+
+  private normalizeUploadMimeType(mimeType: string): string {
+    if (UNSAFE_UPLOAD_METADATA_CONTROLS.test(mimeType)) {
+      this.throwInvalidUploadMetadata('Upload MIME type contains unsafe control characters');
+    }
+
+    const normalizedMimeType = mimeType.trim();
+    if (!normalizedMimeType) {
+      this.throwInvalidUploadMetadata('Upload MIME type is required');
+    }
+
+    if (/\s/.test(normalizedMimeType) || FORBIDDEN_UPLOAD_MIME_CHARACTERS.test(normalizedMimeType)) {
+      this.throwInvalidUploadMetadata('Upload MIME type contains unsafe control characters');
+    }
+
+    const mimeParts = normalizedMimeType.split('/');
+    if (mimeParts.length !== 2 || !mimeParts[0] || !mimeParts[1]) {
+      this.throwInvalidUploadMetadata('Upload MIME type is invalid');
+    }
+
+    return normalizedMimeType;
+  }
+
+  private throwInvalidUploadMetadata(message: string): never {
+    const error = new Error(message) as Error & {
+      statusCode: number;
+      code: string;
+    };
+    error.statusCode = 400;
+    error.code = 'INVALID_UPLOAD_METADATA';
+    throw error;
+  }
+
+  validateImageFile(mimeType: string, fileSize: number): string {
     // Validate mime type
+    const normalizedMimeType = this.normalizeUploadMimeType(mimeType);
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (!allowedTypes.includes(mimeType)) {
+    if (!allowedTypes.includes(normalizedMimeType)) {
       const error = new Error('Invalid file type. Only JPEG, PNG, WebP, and GIF images are allowed.') as Error & {
         statusCode: number;
         code: string;
@@ -164,5 +260,7 @@ export class MediaService {
       error.code = 'FILE_TOO_LARGE';
       throw error;
     }
+
+    return normalizedMimeType;
   }
 }

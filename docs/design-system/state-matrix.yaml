@@ -1,0 +1,160 @@
+schema_version: 1
+owner: design-system
+source_tokens: frontend/design-tokens.json
+global_accessibility:
+  touch_targets:
+    web: "44px minimum"
+    android: "48dp minimum"
+    ios: "44pt minimum"
+  requirements:
+    - keyboard_focus_order_matches_visual_order
+    - focus_ring_uses_semantic_focus_token
+    - voiceover_talkback_labels_for_icon_controls
+    - reduced_motion_respected
+    - zoom_and_dynamic_type_preserve_layout
+    - rtl_layout_mirrors_order_without_losing_meaning
+    - status_never_uses_color_only
+  evidence:
+    automated:
+      - axe critical/serious violations: 0 required before release
+      - Android Compose semantics violations: 0 required before release
+      - XCTest accessibility violations: 0 required before release
+    manual:
+      - keyboard traversal recorded for web primary flows
+      - VoiceOver checkout/menu-order pass
+      - TalkBack seller menu/order pass
+
+state_contract:
+  default:
+    copy: "Content is ready."
+    live_announcement: none
+    recovery_action: none
+  loading:
+    copy: "Loading…"
+    live_announcement: polite
+    recovery_action: "Cancel or wait; duplicate submit disabled."
+  empty:
+    copy: "No items yet."
+    live_announcement: polite
+    recovery_action: "Create, browse, or retry based on flow."
+  error:
+    copy: "Something went wrong."
+    live_announcement: assertive
+    recovery_action: "Retry, edit input, or contact support."
+  disabled:
+    copy: "Action unavailable."
+    live_announcement: none
+    recovery_action: "Explain prerequisite near the disabled control."
+  success:
+    copy: "Done."
+    live_announcement: polite
+    recovery_action: "Continue to the next step."
+  offline:
+    copy: "You are offline."
+    live_announcement: polite
+    recovery_action: "Keep local work and retry sync."
+  pending:
+    copy: "Pending sync or confirmation."
+    live_announcement: polite
+    recovery_action: "Show current status and refresh option."
+
+flows:
+  auth:
+    description: "Signup, login, logout, profile session checks."
+    states: [default, loading, empty, error, disabled, success, offline, pending]
+    recovery_actions:
+      error: "Retry credentials, reset password, or contact support."
+      offline: "Preserve typed form values and retry when online."
+    copy: "Errors identify the field; success confirms the authenticated destination."
+    web_components: [Input, Button, Feedback, LoadingState, ErrorState, SuccessState]
+    android_components: [TextField, Button, Snackbar, CircularProgressIndicator]
+    ios_components: [TextField, Button, Alert, ProgressView]
+    accessibility: [keyboard, focus_order, voiceover_label, talkback_label, reduced_motion, rtl, no_color_only]
+  public_menu:
+    description: "Customer-facing menu browsing and dish selection."
+    states: [default, loading, empty, error, disabled, success, offline, pending]
+    recovery_actions:
+      empty: "Show seller unavailable copy and link back to marketplace/search."
+      error: "Retry loading the menu."
+    copy: "Menu item availability and sold-out states are text plus icon."
+    web_components: [Card, Button, EmptyState, ErrorState, LoadingState]
+    android_components: [MenuCard, EmptyContent, ErrorBanner]
+    ios_components: [MenuCardView, EmptyStateView, ErrorBannerView]
+    accessibility: [keyboard, image_alt_text, voiceover_label, talkback_label, dynamic_type, rtl, no_color_only]
+  cart_checkout:
+    description: "Cart review, checkout, payment handoff, order confirmation."
+    states: [default, loading, empty, error, disabled, success, offline, pending]
+    recovery_actions:
+      error: "Retry payment or choose another method."
+      pending: "Show payment/order status and refresh."
+    copy: "Amounts use minor-unit formatted currency and explicit payment status."
+    web_components: [Table, Button, Feedback, ErrorState, SuccessState]
+    android_components: [CartRow, PaymentSheet, Snackbar]
+    ios_components: [CartRowView, PaymentSheetView, Alert]
+    accessibility: [keyboard, focus_restore, voiceover_label, talkback_label, reduced_motion, no_color_only]
+  seller_dashboard:
+    description: "Seller KPI, filters, chart, table, tooltip, and legend behavior."
+    states: [default, loading, empty, error, disabled, success, offline, pending]
+    recovery_actions:
+      empty: "Prompt seller to publish menu or share public link."
+      error: "Retry analytics fetch and preserve selected filters."
+    copy: "KPI, filter, chart, table, tooltip, and legend all expose text equivalents."
+    web_components: [Card, Table, Select, Feedback, LoadingState, EmptyState]
+    android_components: [MetricCard, FilterChip, ChartSummary, DataTable]
+    ios_components: [MetricCardView, FilterPicker, ChartSummaryView, DataTableView]
+    accessibility: [keyboard, focus_order, screen_reader_chart_summary, voiceover_label, talkback_label, dynamic_type, rtl, no_color_only]
+  seller_menu:
+    description: "Dish creation, menu editing, publishing, image upload."
+    states: [default, loading, empty, error, disabled, success, offline, pending]
+    recovery_actions:
+      error: "Return validation errors to fields and keep unsaved edits."
+      offline: "Queue edits locally and show pending sync."
+    copy: "Validation copy appears below the field and in summary."
+    web_components: [Input, Select, Textarea, Button, Modal, Feedback]
+    android_components: [OutlinedTextField, Button, Dialog, Snackbar]
+    ios_components: [TextField, Picker, TextEditor, Sheet, Alert]
+    accessibility: [keyboard, focus_first_error, voiceover_label, talkback_label, reduced_motion, no_color_only]
+  seller_orders:
+    description: "Seller order queue, status updates, cancellation, fulfillment."
+    states: [default, loading, empty, error, disabled, success, offline, pending]
+    recovery_actions:
+      error: "Retry status mutation and expose support contact for stuck orders."
+      pending: "Mark optimistic update pending until server confirmation."
+    copy: "Order status uses label, icon, and timestamp."
+    web_components: [Table, Button, Feedback, LoadingState, ErrorState]
+    android_components: [OrderCard, StatusChip, Snackbar]
+    ios_components: [OrderCardView, StatusBadge, Alert]
+    accessibility: [keyboard, focus_order, live_region_status, voiceover_label, talkback_label, no_color_only]
+  payments:
+    description: "Processor setup, checkout payment status, refunds, payouts."
+    states: [default, loading, empty, error, disabled, success, offline, pending]
+    recovery_actions:
+      error: "Retry, switch method, or contact support with request id."
+      disabled: "Explain missing processor or permission prerequisite."
+    copy: "Financial state never depends on color only and includes request id when failed."
+    web_components: [Card, Button, Feedback, Table, ErrorState, SuccessState]
+    android_components: [PaymentCard, Button, Snackbar, StatusChip]
+    ios_components: [PaymentCardView, Button, Alert, StatusBadge]
+    accessibility: [keyboard, focus_restore, voiceover_label, talkback_label, reduced_motion, no_color_only]
+  settings:
+    description: "Profile, business, notification, locale, and theme settings."
+    states: [default, loading, empty, error, disabled, success, offline, pending]
+    recovery_actions:
+      error: "Retry save and keep edited values."
+      success: "Confirm saved section."
+    copy: "Changed settings announce saved state and validation errors inline."
+    web_components: [Input, Select, Textarea, Button, Feedback]
+    android_components: [SettingsRow, Switch, Snackbar]
+    ios_components: [SettingsRowView, Toggle, Alert]
+    accessibility: [keyboard, focus_order, voiceover_label, talkback_label, dynamic_type, rtl, no_color_only]
+  admin:
+    description: "Admin user list, content flags, support tickets, audits."
+    states: [default, loading, empty, error, disabled, success, offline, pending]
+    recovery_actions:
+      error: "Retry admin action and preserve filters."
+      disabled: "Explain missing permission."
+    copy: "Moderation actions state irreversible effects before confirmation."
+    web_components: [Table, Modal, Button, Feedback, ErrorState]
+    android_components: [AdminTable, Dialog, Snackbar]
+    ios_components: [AdminListView, ConfirmationDialog, Alert]
+    accessibility: [keyboard, focus_trap, screen_reader_confirmation, voiceover_label, talkback_label, no_color_only]

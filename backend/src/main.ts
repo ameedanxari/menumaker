@@ -1,4 +1,4 @@
-import Fastify from 'fastify';
+import Fastify, { type FastifyInstance, type FastifyPluginAsync } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
@@ -6,7 +6,7 @@ import multipart from '@fastify/multipart';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import dotenv from 'dotenv';
-import { AppDataSource } from './config/database.js';
+import { AppDataSource, assertNoPendingMigrationsForAppStartup } from './config/database.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authRoutes } from './routes/auth.js';
 import { businessRoutes } from './routes/businesses.js';
@@ -37,12 +37,14 @@ import { notificationRoutes } from './routes/notifications.js'; // iOS: Notifica
 import { cartRoutes } from './routes/cart.js'; // iOS: Shopping cart
 import { settingsRoutes } from './routes/settings.js'; // iOS: User settings
 import { env } from './config/env.js';
+import { requireCapability } from './config/capabilities.js';
 
 // Load environment variables
 dotenv.config();
 
 const PORT = env.PORT;
 const HOST = process.env.HOST || '0.0.0.0';
+const WEBHOOK_RAW_BODY_LIMIT_BYTES = 1024 * 1024;
 
 // Create Fastify instance
 const fastify = Fastify({
@@ -68,8 +70,39 @@ const fastify = Fastify({
   // Disable default request logging (we'll use our custom middleware)
   disableRequestLogging: env.NODE_ENV === 'production',
 });
+
+export function shouldCaptureRawWebhookBody(url: string): boolean {
+  const path = url.split('?')[0];
+  return path === '/api/v1/payments/webhook' || path === '/api/v1/subscriptions/webhook';
+}
+
+export function assertWebhookSecretsConfigured(envVars: NodeJS.ProcessEnv = process.env): void {
+  if (!['staging', 'production'].includes(envVars.NODE_ENV ?? '')) return;
+  const missing = ['STRIPE_WEBHOOK_SECRET', 'STRIPE_WEBHOOK_SECRET_SUBSCRIPTIONS']
+    .filter((name) => !envVars[name]);
+  if (missing.length) {
+    throw new Error(`Missing required webhook signing secret references: ${missing.join(', ')}`);
+  }
+}
+
 // Register plugins
 async function registerPlugins() {
+  assertWebhookSecretsConfigured();
+  fastify.addContentTypeParser('application/json', {
+    parseAs: 'buffer',
+    bodyLimit: WEBHOOK_RAW_BODY_LIMIT_BYTES,
+  }, (request, body, done) => {
+    try {
+      if (shouldCaptureRawWebhookBody(request.url)) {
+        (request as any).rawBody = Buffer.from(body);
+      }
+      const text = body.toString('utf8');
+      done(null, text.length ? JSON.parse(text) : {});
+    } catch (error) {
+      done(error as Error, undefined);
+    }
+  });
+
   // CORS
   await fastify.register(cors, {
     origin: env.FRONTEND_URL,
@@ -166,6 +199,41 @@ async function registerPlugins() {
   });
 }
 
+interface CapabilityGateOptions {
+  bypassPaths?: string[];
+}
+
+export function shouldBypassCapabilityGate(
+  requestUrl: string,
+  gatedPrefix: string,
+  bypassPaths: string[] = []
+): boolean {
+  const path = requestUrl.split('?')[0];
+  return bypassPaths.some((bypassPath) => {
+    const normalizedBypass = bypassPath.startsWith('/') ? bypassPath : `/${bypassPath}`;
+    return path === normalizedBypass || path === `${gatedPrefix}${normalizedBypass}`;
+  });
+}
+
+async function registerCapabilityGatedRoutes(
+  app: FastifyInstance,
+  routes: FastifyPluginAsync,
+  prefix: string,
+  capability: string,
+  options: CapabilityGateOptions = {}
+): Promise<void> {
+  await app.register(async (scoped) => {
+    const capabilityGate = requireCapability(capability);
+    scoped.addHook('preHandler', async (request, reply) => {
+      if (shouldBypassCapabilityGate(request.url, prefix, options.bypassPaths)) {
+        return;
+      }
+      return capabilityGate(request, reply);
+    });
+    await scoped.register(routes);
+  }, { prefix });
+}
+
 // Register routes
 async function registerRoutes() {
   // Global request logging hook
@@ -226,17 +294,17 @@ async function registerRoutes() {
   await fastify.register(paymentRoutes, { prefix: '/api/v1/payments' });
   await fastify.register(paymentProcessorRoutes, { prefix: '/api/v1/payment-processors' }); // Phase 3: Multi-processor support
   await fastify.register(payoutRoutes, { prefix: '/api/v1/payouts' }); // Phase 3: Automated Payouts
-  await fastify.register(taxReportRoutes, { prefix: '/api/v1/tax' }); // Phase 3: Tax Compliance & Reporting
+  await registerCapabilityGatedRoutes(fastify, taxReportRoutes, '/api/v1/tax', 'tax_reporting'); // Disabled until tax reporting is launched.
   await fastify.register(i18nRoutes, { prefix: '/api/v1/i18n' }); // Phase 3: Multi-Language Support
   await fastify.register(reviewRoutes, { prefix: '/api/v1/reviews' }); // Phase 3: Review & Complaint Workflow
   await fastify.register(marketplaceRoutes, { prefix: '/api/v1/marketplace' }); // Phase 3: Marketplace & Seller Discovery
-  await fastify.register(posRoutes, { prefix: '/api/v1/pos' }); // Phase 3: POS System Integration
-  await fastify.register(deliveryRoutes, { prefix: '/api/v1/delivery' }); // Phase 3: Delivery Partner Integration
+  await registerCapabilityGatedRoutes(fastify, posRoutes, '/api/v1/pos', 'pos_sync'); // Disabled until POS certification evidence is recorded.
+  await registerCapabilityGatedRoutes(fastify, deliveryRoutes, '/api/v1/delivery', 'delivery_partner'); // Disabled until delivery provider launch evidence is recorded.
   await fastify.register(couponRoutes, { prefix: '/api/v1/coupons' }); // Phase 3: Promotions & Coupons
-  await fastify.register(enhancedReferralRoutes, { prefix: '/api/v1' }); // Phase 3: Enhanced Referral & Viral Features
-  await fastify.register(subscriptionRoutes, { prefix: '/api/v1/subscriptions' });
+  await registerCapabilityGatedRoutes(fastify, enhancedReferralRoutes, '/api/v1', 'enhanced_referrals_affiliates'); // Disabled until enhanced referral launch evidence is recorded.
+  await registerCapabilityGatedRoutes(fastify, subscriptionRoutes, '/api/v1/subscriptions', 'subscriptions', { bypassPaths: ['/webhook'] }); // Billing lifecycle APIs disabled; signed Stripe webhooks remain verifiable.
   await fastify.register(whatsappRoutes, { prefix: '/api/v1/whatsapp' });
-  await fastify.register(ocrRoutes, { prefix: '/api/v1/ocr' });
+  await registerCapabilityGatedRoutes(fastify, ocrRoutes, '/api/v1/ocr', 'ocr_import'); // Disabled until OCR provider and privacy evidence are recorded.
   await fastify.register(referralRoutes, { prefix: '/api/v1/referrals' });
   await fastify.register(gdprRoutes, { prefix: '/api/v1/gdpr' });
   await fastify.register(reorderRoutes, { prefix: '/api/v1/reorder' });
@@ -261,6 +329,7 @@ async function registerRoutes() {
 async function initializeDatabase() {
   try {
     await AppDataSource.initialize();
+    await assertNoPendingMigrationsForAppStartup(AppDataSource);
     fastify.log.info('Database connection established');
   } catch (error) {
     fastify.log.error({ err: error }, 'Failed to connect to database');
@@ -309,5 +378,7 @@ const gracefulShutdown = async (signal: string) => {
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-// Start the server
-start();
+// Start the server only when this module is the process entry point.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  start();
+}

@@ -1,0 +1,28 @@
+{
+  "success": true,
+  "data": {
+    "id": "report-dashboard",
+    "kpis": {
+      "orders": 12,
+      "revenue_cents": 42800,
+      "payment_success_rate": 0.98
+    },
+    "filters": {
+      "range": "7d",
+      "business_id": "business-1"
+    },
+    "charts": [
+      {
+        "id": "revenue-by-day",
+        "legend": "Revenue",
+        "tooltip": "Daily settled revenue in minor units",
+        "points": [{ "label": "Mon", "value": 6200 }]
+      }
+    ],
+    "table": [
+      { "label": "Pending orders", "value": 3 }
+    ],
+    "created_at": "2024-02-01T00:00:00Z",
+    "updated_at": "2024-02-01T00:00:00Z"
+  }
+}

@@ -2,3 +2,4 @@
 export * from './types/index.js';
 export * from './validation/index.js';
 export * from './utils/date.js';
+export type { components, operations, paths } from './generated/api.js';

@@ -234,7 +234,7 @@ export class AdminService {
       ip_address,
     });
 
-    // TODO: Send email notification to user
+    // Notify the user through the current admin email adapter.
     await EmailService.sendAdminNotification(
       user.email,
       'Your MenuMaker account is reinstated',

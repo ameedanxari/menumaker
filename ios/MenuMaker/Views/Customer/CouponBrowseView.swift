@@ -114,7 +114,7 @@ struct CouponBrowseView: View {
         }
         .onAppear {
             if ProcessInfo.processInfo.arguments.contains("UI-Testing") && viewModel.availableCoupons.isEmpty {
-                let seeded = CouponRepository.shared.loadFixtureCoupons() ?? APIClient.mockCoupons
+                let seeded = CouponRepository.shared.loadFixtureCoupons() ?? []
                 viewModel.availableCoupons = seeded.filter { $0.isActive && !$0.isExpired }
                 viewModel.searchResults = viewModel.availableCoupons
             }

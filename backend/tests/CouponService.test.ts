@@ -34,6 +34,9 @@ describe('CouponService', () => {
 
     mockPromotionRepository = {
       find: jest.fn(),
+      findOne: jest.fn(),
+      create: jest.fn(),
+      save: jest.fn(),
     };
 
     mockOrderRepository = {
@@ -75,7 +78,12 @@ describe('CouponService', () => {
       });
       expect(result.code).toBe('SAVE20');
       expect(result.status).toBe('active');
-      expect(result.qr_code_data).toBe('https://menumaker.app/coupon/SAVE20');
+      expect(JSON.parse(Buffer.from(result.qr_code_data, 'base64url').toString('utf8'))).toEqual({
+        type: 'coupon_redemption',
+        business_id: 'business-123',
+        code: 'SAVE20',
+        destination: 'https://menumaker.app/coupon/SAVE20',
+      });
     });
 
     it('should throw error if coupon code already exists', async () => {
@@ -166,6 +174,87 @@ describe('CouponService', () => {
         })
       );
     });
+
+    it('rejects unsafe coupon text controls before coupon lookup or persistence', async () => {
+      const businessId = 'business-123';
+      const baseCouponData = {
+        code: 'SAFE20',
+        name: 'Safe Coupon',
+        description: 'Launch offer',
+        discount_type: 'percentage' as DiscountType,
+        discount_value: 20,
+        valid_from: new Date('2024-01-01'),
+        valid_until: new Date('2024-12-31'),
+      };
+      const cases = [
+        {
+          data: { code: '\uFEFFSAFE20' },
+          expectedError: 'Coupon code must not include unsafe control characters',
+        },
+        {
+          data: { name: 'Safe\u200BCoupon' },
+          expectedError: 'Coupon name must not include unsafe control characters',
+        },
+        {
+          data: { description: 'Launch\u2060offer' },
+          expectedError: 'Coupon description must not include unsafe control characters',
+        },
+      ];
+
+      for (const { data, expectedError } of cases) {
+        mockCouponRepository.findOne.mockClear();
+        mockCouponRepository.create.mockClear();
+        mockCouponRepository.save.mockClear();
+
+        await expect(
+          couponService.createCoupon(businessId, { ...baseCouponData, ...data })
+        ).rejects.toThrow(expectedError);
+        expect(mockCouponRepository.findOne).not.toHaveBeenCalled();
+        expect(mockCouponRepository.create).not.toHaveBeenCalled();
+        expect(mockCouponRepository.save).not.toHaveBeenCalled();
+      }
+    });
+
+    it('rejects limited coupon creation without matching positive limit evidence before persistence', async () => {
+      const businessId = 'business-123';
+      const baseCouponData = {
+        code: 'LIMITED',
+        name: 'Limited',
+        discount_type: 'percentage' as DiscountType,
+        discount_value: 10,
+        valid_from: new Date('2024-01-01'),
+        valid_until: new Date('2024-12-31'),
+      };
+      const cases = [
+        {
+          data: { usage_limit_type: 'total_limit' as UsageLimitType },
+          expectedError: 'Coupon LIMITED total_usage_limit must be an integer count',
+        },
+        {
+          data: { usage_limit_type: 'per_customer' as UsageLimitType },
+          expectedError: 'Coupon LIMITED usage_limit_per_customer must be an integer count',
+        },
+        {
+          data: { usage_limit_type: 'per_month' as UsageLimitType },
+          expectedError: 'Coupon LIMITED usage_limit_per_month must be an integer count',
+        },
+        {
+          data: { usage_limit_type: 'total_limit' as UsageLimitType, total_usage_limit: 0 },
+          expectedError: 'Coupon LIMITED total_usage_limit must be greater than zero',
+        },
+      ];
+
+      for (const { data, expectedError } of cases) {
+        mockCouponRepository.findOne.mockResolvedValue(null);
+        mockCouponRepository.create.mockImplementation((input) => input);
+        mockCouponRepository.save.mockClear();
+
+        await expect(
+          couponService.createCoupon(businessId, { ...baseCouponData, ...data })
+        ).rejects.toThrow(expectedError);
+        expect(mockCouponRepository.save).not.toHaveBeenCalled();
+      }
+    });
   });
 
   describe('validateCoupon', () => {
@@ -210,6 +299,130 @@ describe('CouponService', () => {
       expect(result.discount_amount_cents).toBeDefined();
     });
 
+    it('rejects cross-business coupon rows before returning validation success', async () => {
+      const validStart = new Date();
+      validStart.setDate(validStart.getDate() - 1);
+      const validEnd = new Date();
+      validEnd.setFullYear(validEnd.getFullYear() + 1);
+      const mockCoupon = {
+        id: 'coupon-123',
+        code: 'VALID20',
+        business_id: 'business-other',
+        discount_type: 'percentage' as DiscountType,
+        discount_value: 20,
+        min_order_value_cents: 1000,
+        valid_from: validStart,
+        valid_until: validEnd,
+        status: 'active',
+        usage_limit_type: 'unlimited' as UsageLimitType,
+        applicable_to: 'all_dishes' as any,
+      };
+
+      mockCouponRepository.findOne.mockResolvedValue(mockCoupon);
+
+      await expect(
+        couponService.validateCoupon('VALID20', 'customer-123', 'business-123', 2000, ['dish-1'])
+      ).rejects.toThrow('Coupon coupon-123 business_id must match requested business');
+      expect(mockUsageRepository.count).not.toHaveBeenCalled();
+    });
+
+    it('rejects corrupt persisted discount configuration before calculating discounts', async () => {
+      const validStart = new Date();
+      validStart.setDate(validStart.getDate() - 1);
+      const validEnd = new Date();
+      validEnd.setFullYear(validEnd.getFullYear() + 1);
+      const mockCoupon = {
+        id: 'coupon-123',
+        code: 'VALID20',
+        business_id: 'business-123',
+        discount_type: 'mystery' as DiscountType,
+        discount_value: 20,
+        min_order_value_cents: 1000,
+        valid_from: validStart,
+        valid_until: validEnd,
+        status: 'active',
+        usage_limit_type: 'unlimited' as UsageLimitType,
+        applicable_to: 'all_dishes' as any,
+      };
+
+      mockCouponRepository.findOne.mockResolvedValue(mockCoupon);
+
+      await expect(
+        couponService.validateCoupon('VALID20', 'customer-123', 'business-123', 2000, ['dish-1'])
+      ).rejects.toThrow('Coupon coupon-123 discount_type has an invalid discount type');
+      expect(mockUsageRepository.count).not.toHaveBeenCalled();
+    });
+
+    it('rejects unsafe persisted coupon enum controls before calculating discounts', async () => {
+      const validStart = new Date();
+      validStart.setDate(validStart.getDate() - 1);
+      const validEnd = new Date();
+      validEnd.setFullYear(validEnd.getFullYear() + 1);
+      const mockCoupon = {
+        id: 'coupon-123',
+        code: 'VALID20',
+        business_id: 'business-123',
+        discount_type: '\uFEFFpercentage' as DiscountType,
+        discount_value: 20,
+        min_order_value_cents: 1000,
+        valid_from: validStart,
+        valid_until: validEnd,
+        status: 'active',
+        usage_limit_type: 'unlimited' as UsageLimitType,
+        applicable_to: 'all_dishes' as any,
+      };
+
+      mockCouponRepository.findOne.mockResolvedValue(mockCoupon);
+
+      await expect(
+        couponService.validateCoupon('VALID20', 'customer-123', 'business-123', 2000, ['dish-1'])
+      ).rejects.toThrow('Coupon coupon-123 discount_type must not include unsafe control characters');
+      expect(mockUsageRepository.count).not.toHaveBeenCalled();
+    });
+
+    it('rejects persisted coupon usage-limit modes missing required limit evidence before counting usage', async () => {
+      const validStart = new Date();
+      validStart.setDate(validStart.getDate() - 1);
+      const validEnd = new Date();
+      validEnd.setFullYear(validEnd.getFullYear() + 1);
+
+      const cases = [
+        {
+          usage_limit_type: 'total_limit' as UsageLimitType,
+          expectedError: 'Coupon coupon-123 total_usage_limit must be an integer count',
+        },
+        {
+          usage_limit_type: 'per_customer' as UsageLimitType,
+          expectedError: 'Coupon coupon-123 usage_limit_per_customer must be an integer count',
+        },
+        {
+          usage_limit_type: 'per_month' as UsageLimitType,
+          expectedError: 'Coupon coupon-123 usage_limit_per_month must be an integer count',
+        },
+      ];
+
+      for (const { usage_limit_type, expectedError } of cases) {
+        mockCouponRepository.findOne.mockResolvedValue({
+          id: 'coupon-123',
+          code: 'LIMITED',
+          business_id: 'business-123',
+          discount_type: 'percentage' as DiscountType,
+          discount_value: 20,
+          min_order_value_cents: 1000,
+          valid_from: validStart,
+          valid_until: validEnd,
+          status: 'active',
+          usage_limit_type,
+          applicable_to: 'all_dishes' as any,
+        });
+
+        await expect(
+          couponService.validateCoupon('LIMITED', 'customer-123', 'business-123', 2000, ['dish-1'])
+        ).rejects.toThrow(expectedError);
+        expect(mockUsageRepository.count).not.toHaveBeenCalled();
+      }
+    });
+
     it('should return error if coupon not found', async () => {
       mockCouponRepository.findOne.mockResolvedValue(null);
 
@@ -234,7 +447,7 @@ describe('CouponService', () => {
       const mockCoupon = {
         id: 'coupon-123',
         code: 'INACTIVE',
-        status: 'inactive',
+        status: 'expired',
         valid_from: validStart,
         valid_until: validEnd,
       };
@@ -256,13 +469,15 @@ describe('CouponService', () => {
     it('should return error if coupon not yet valid', async () => {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 10);
+      const futureEnd = new Date(futureDate);
+      futureEnd.setDate(futureEnd.getDate() + 10);
 
       const mockCoupon = {
         id: 'coupon-123',
         code: 'FUTURE',
         status: 'active',
         valid_from: futureDate,
-        valid_until: new Date('2024-12-31'),
+        valid_until: futureEnd,
       };
 
       mockCouponRepository.findOne.mockResolvedValue(mockCoupon);
@@ -550,6 +765,17 @@ describe('CouponService', () => {
         order: { created_at: 'DESC' },
       });
     });
+
+    it('rejects cross-business coupon rows before returning business coupon lists', async () => {
+      mockCouponRepository.find.mockResolvedValue([
+        { id: 'coupon-1', code: 'CODE1', business_id: 'business-123' },
+        { id: 'coupon-2', code: 'CODE2', business_id: 'business-other' },
+      ]);
+
+      await expect(couponService.getBusinessCoupons('business-123')).rejects.toThrow(
+        'Coupon row 2 business_id must match requested business'
+      );
+    });
   });
 
   describe('getPublicCoupons', () => {
@@ -563,6 +789,81 @@ describe('CouponService', () => {
       const result = await couponService.getPublicCoupons('business-123');
 
       expect(result).toEqual(mockCoupons);
+    });
+
+    it('rejects corrupt public coupon validity rows before menu exposure', async () => {
+      mockCouponRepository.find.mockResolvedValue([
+        {
+          id: 'coupon-1',
+          code: 'PUBLIC1',
+          business_id: 'business-123',
+          is_public: true,
+          status: 'active',
+          valid_from: new Date('2026-07-01T00:00:00.000Z'),
+          valid_until: new Date('2026-06-01T00:00:00.000Z'),
+        },
+      ]);
+
+      await expect(couponService.getPublicCoupons('business-123')).rejects.toThrow(
+        'Public coupon row 1 valid_from must be before valid_until'
+      );
+    });
+
+    it('rejects unsafe persisted public coupon strings before menu exposure', async () => {
+      mockCouponRepository.find.mockResolvedValue([
+        {
+          id: 'coupon-1',
+          code: 'PUBLIC1',
+          name: 'Public\u200BDeal',
+          business_id: 'business-123',
+          is_public: true,
+          status: 'active',
+          valid_from: new Date('2026-06-01T00:00:00.000Z'),
+          valid_until: new Date('2026-07-01T00:00:00.000Z'),
+        },
+      ]);
+
+      await expect(couponService.getPublicCoupons('business-123')).rejects.toThrow(
+        'Public coupon row 1 name must not include unsafe control characters'
+      );
+    });
+
+    it('rejects unsafe persisted public coupon field names before unsupported-field diagnostics', async () => {
+      mockCouponRepository.find.mockResolvedValue([
+        {
+          id: 'coupon-1',
+          code: 'PUBLIC1',
+          business_id: 'business-123',
+          is_public: true,
+          status: 'active',
+          valid_from: new Date('2026-06-01T00:00:00.000Z'),
+          valid_until: new Date('2026-07-01T00:00:00.000Z'),
+          ['provider_trace_id\uFEFF']: 'trace-123',
+        },
+      ]);
+
+      await expect(couponService.getPublicCoupons('business-123')).rejects.toThrow(
+        'Public coupon row 1 field names contain unsafe control characters'
+      );
+    });
+
+    it('rejects unsupported persisted public coupon fields before menu exposure', async () => {
+      mockCouponRepository.find.mockResolvedValue([
+        {
+          id: 'coupon-1',
+          code: 'PUBLIC1',
+          business_id: 'business-123',
+          is_public: true,
+          status: 'active',
+          valid_from: new Date('2026-06-01T00:00:00.000Z'),
+          valid_until: new Date('2026-07-01T00:00:00.000Z'),
+          provider_trace_id: 'trace-123',
+        },
+      ]);
+
+      await expect(couponService.getPublicCoupons('business-123')).rejects.toThrow(
+        'Public coupon row 1 include unsupported field(s): provider_trace_id'
+      );
     });
   });
 
@@ -605,14 +906,44 @@ describe('CouponService', () => {
     it('should return coupon analytics', async () => {
       const mockCoupon = {
         id: 'coupon-123',
+        business_id: 'business-123',
+        code: 'SAVE20',
+        discount_type: 'percentage' as DiscountType,
+        discount_value: 20,
         total_usage_count: 50,
         total_discount_given_cents: 1000000, // 10000 in dollars
         total_revenue_generated_cents: 5000000, // 50000 in dollars
       };
 
       const mockUsages = [
-        { used_at: new Date('2025-01-15'), discount_amount_cents: 500 },
-        { used_at: new Date('2025-01-20'), discount_amount_cents: 300 },
+        {
+          id: 'usage-1',
+          coupon_id: 'coupon-123',
+          order_id: 'order-1',
+          customer_id: 'customer-1',
+          business_id: 'business-123',
+          coupon_code: 'SAVE20',
+          discount_type: 'percentage' as DiscountType,
+          discount_value: 20,
+          discount_amount_cents: 500,
+          order_subtotal_cents: 2500,
+          order_total_cents: 2000,
+          created_at: new Date('2025-01-20'),
+        },
+        {
+          id: 'usage-2',
+          coupon_id: 'coupon-123',
+          order_id: 'order-2',
+          customer_id: 'customer-2',
+          business_id: 'business-123',
+          coupon_code: 'SAVE20',
+          discount_type: 'percentage' as DiscountType,
+          discount_value: 20,
+          discount_amount_cents: 300,
+          order_subtotal_cents: 1500,
+          order_total_cents: 1200,
+          created_at: new Date('2025-01-15'),
+        },
       ];
 
       mockCouponRepository.findOne.mockResolvedValue(mockCoupon);
@@ -624,6 +955,93 @@ describe('CouponService', () => {
       expect(result.total_discount_given).toBe(10000); // Converted from cents to dollars
       expect(result.total_revenue_generated).toBe(50000); // Converted from cents to dollars
       expect(result.avg_order_value).toBe(1000); // 50000 / 50
+    });
+
+    it('rejects corrupt persisted coupon analytics before loading recent usage rows', async () => {
+      const mockCoupon = {
+        id: 'coupon-123',
+        total_usage_count: 1,
+        total_discount_given_cents: Number.MAX_SAFE_INTEGER + 1,
+        total_revenue_generated_cents: 5000,
+      };
+
+      mockCouponRepository.findOne.mockResolvedValue(mockCoupon);
+
+      await expect(couponService.getCouponAnalytics('coupon-123')).rejects.toThrow(
+        'Coupon coupon-123 total_discount_given_cents must be a safe integer number of cents'
+      );
+      expect(mockUsageRepository.find).not.toHaveBeenCalled();
+    });
+
+    it('rejects corrupt recent usage evidence before returning coupon analytics', async () => {
+      const mockCoupon = {
+        id: 'coupon-123',
+        business_id: 'business-123',
+        code: 'SAVE20',
+        discount_type: 'percentage' as DiscountType,
+        discount_value: 20,
+        total_usage_count: 1,
+        total_discount_given_cents: 500,
+        total_revenue_generated_cents: 2000,
+      };
+
+      mockCouponRepository.findOne.mockResolvedValue(mockCoupon);
+      mockUsageRepository.find.mockResolvedValue([
+        {
+          id: 'usage-1',
+          coupon_id: 'coupon-123',
+          order_id: 'order-1',
+          customer_id: 'customer-1',
+          business_id: 'business-123',
+          coupon_code: 'SAVE20',
+          discount_type: 'percentage' as DiscountType,
+          discount_value: 20,
+          discount_amount_cents: 2500,
+          order_subtotal_cents: 2000,
+          order_total_cents: 0,
+          created_at: new Date('2025-01-20'),
+        },
+      ]);
+
+      await expect(couponService.getCouponAnalytics('coupon-123')).rejects.toThrow(
+        'Coupon usage row 1 discount_amount_cents must not exceed order_subtotal_cents'
+      );
+    });
+
+    it('rejects unsafe recent usage field names before returning coupon analytics', async () => {
+      const mockCoupon = {
+        id: 'coupon-123',
+        business_id: 'business-123',
+        code: 'SAVE20',
+        discount_type: 'percentage' as DiscountType,
+        discount_value: 20,
+        total_usage_count: 1,
+        total_discount_given_cents: 500,
+        total_revenue_generated_cents: 2000,
+      };
+
+      mockCouponRepository.findOne.mockResolvedValue(mockCoupon);
+      mockUsageRepository.find.mockResolvedValue([
+        {
+          id: 'usage-1',
+          coupon_id: 'coupon-123',
+          order_id: 'order-1',
+          customer_id: 'customer-1',
+          business_id: 'business-123',
+          coupon_code: 'SAVE20',
+          discount_type: 'percentage' as DiscountType,
+          discount_value: 20,
+          discount_amount_cents: 500,
+          order_subtotal_cents: 2000,
+          order_total_cents: 1500,
+          created_at: new Date('2025-01-20'),
+          ['provider_trace_id\uFEFF']: 'trace-123',
+        },
+      ]);
+
+      await expect(couponService.getCouponAnalytics('coupon-123')).rejects.toThrow(
+        'Coupon usage row 1 field names contain unsafe control characters'
+      );
     });
 
     it('should throw error if coupon not found', async () => {
@@ -642,13 +1060,15 @@ describe('CouponService', () => {
           id: 'coupon-1',
           status: 'active',
           total_usage_count: 100,
-          total_revenue_impact_cents: 50000,
+          total_discount_given_cents: 5000,
+          total_revenue_generated_cents: 50000,
         },
         {
           id: 'coupon-2',
           status: 'active',
           total_usage_count: 50,
-          total_revenue_impact_cents: 25000,
+          total_discount_given_cents: 2500,
+          total_revenue_generated_cents: 25000,
         },
       ];
 
@@ -659,6 +1079,29 @@ describe('CouponService', () => {
 
       expect(result.total_coupons).toBe(2);
       expect(result.total_redemptions).toBe(150);
+    });
+
+    it('rejects corrupt persisted coupon rows before returning business stats', async () => {
+      mockCouponRepository.find.mockResolvedValue([
+        {
+          id: 'coupon-1',
+          status: 'active',
+          total_usage_count: 100,
+          total_discount_given_cents: 5000,
+          total_revenue_generated_cents: 50000,
+        },
+        {
+          id: 'coupon-2',
+          status: 'mystery',
+          total_usage_count: 50,
+          total_discount_given_cents: 2500,
+          total_revenue_generated_cents: 25000,
+        },
+      ]);
+
+      await expect(couponService.getBusinessCouponStats('business-123')).rejects.toThrow(
+        'Coupon row 2 status has an invalid status'
+      );
     });
   });
 
@@ -681,7 +1124,8 @@ describe('CouponService', () => {
         discount_type: 'percentage' as DiscountType,
         discount_value: 20,
         total_usage_count: 0,
-        total_revenue_impact_cents: 0,
+        total_discount_given_cents: 0,
+        total_revenue_generated_cents: 0,
       };
 
       mockCouponRepository.findOne.mockResolvedValue(mockCoupon);
@@ -693,6 +1137,72 @@ describe('CouponService', () => {
 
       expect(mockUsageRepository.save).toHaveBeenCalled();
       expect(mockCouponRepository.save).toHaveBeenCalled();
+    });
+
+    it('rejects cross-business coupon rows before recording coupon usage', async () => {
+      const mockCoupon = {
+        id: 'coupon-123',
+        business_id: 'business-other',
+        code: 'SAVE20',
+        status: 'active',
+        discount_type: 'percentage' as DiscountType,
+        discount_value: 20,
+        total_usage_count: 0,
+        total_discount_given_cents: 0,
+        total_revenue_generated_cents: 0,
+      };
+
+      mockCouponRepository.findOne.mockResolvedValue(mockCoupon);
+
+      await expect(
+        couponService.applyCoupon('order-123', 'coupon-123', 'customer-123', 'business-123', 10000, 2000)
+      ).rejects.toThrow('Coupon coupon-123 business_id must match requested business');
+
+      expect(mockUsageRepository.create).not.toHaveBeenCalled();
+      expect(mockUsageRepository.save).not.toHaveBeenCalled();
+      expect(mockCouponRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('rejects duplicate coupon usage for the same order before counter updates', async () => {
+      const mockCoupon = {
+        id: 'coupon-123',
+        business_id: 'business-123',
+        code: 'SAVE20',
+        status: 'active',
+        discount_type: 'percentage' as DiscountType,
+        discount_value: 20,
+        total_usage_count: 5,
+        total_discount_given_cents: 10000,
+        total_revenue_generated_cents: 90000,
+      };
+
+      mockCouponRepository.findOne.mockResolvedValue(mockCoupon);
+      mockUsageRepository.findOne.mockResolvedValue({
+        id: 'usage-existing',
+        coupon_id: 'coupon-123',
+        order_id: 'order-123',
+        business_id: 'business-123',
+      });
+
+      await expect(
+        couponService.applyCoupon('order-123', 'coupon-123', 'customer-123', 'business-123', 10000, 2000)
+      ).rejects.toThrow('Coupon usage for this order has already been recorded');
+
+      expect(mockUsageRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          coupon_id: 'coupon-123',
+          order_id: 'order-123',
+          business_id: 'business-123',
+        },
+      });
+      expect(mockUsageRepository.create).not.toHaveBeenCalled();
+      expect(mockUsageRepository.save).not.toHaveBeenCalled();
+      expect(mockCouponRepository.save).not.toHaveBeenCalled();
+      expect(mockCoupon).toMatchObject({
+        total_usage_count: 5,
+        total_discount_given_cents: 10000,
+        total_revenue_generated_cents: 90000,
+      });
     });
 
     it('should handle fixed amount coupon and update analytics', async () => {
@@ -708,7 +1218,6 @@ describe('CouponService', () => {
         discount_type: 'fixed' as DiscountType,
         discount_value: 5000,
         total_usage_count: 0,
-        total_revenue_impact_cents: 0,
         total_discount_given_cents: 0,
         total_revenue_generated_cents: 0,
       };
@@ -731,6 +1240,54 @@ describe('CouponService', () => {
       expect(mockCoupon.total_usage_count).toBe(1);
       expect(mockCoupon.total_discount_given_cents).toBe(5000);
       expect(mockCoupon.total_revenue_generated_cents).toBe(5000);
+    });
+
+    it('rejects invalid redemption money before recording coupon usage', async () => {
+      await expect(
+        couponService.applyCoupon(
+          'order-789',
+          'coupon-456',
+          'customer-789',
+          'business-789',
+          10000,
+          10001
+        )
+      ).rejects.toThrow('Discount amount cents cannot exceed order subtotal cents');
+
+      expect(mockCouponRepository.findOne).not.toHaveBeenCalled();
+      expect(mockUsageRepository.create).not.toHaveBeenCalled();
+      expect(mockUsageRepository.save).not.toHaveBeenCalled();
+      expect(mockCouponRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('rejects corrupt persisted coupon counters before recording coupon usage', async () => {
+      const mockCoupon = {
+        id: 'coupon-456',
+        code: 'FLAT50',
+        status: 'active',
+        discount_type: 'fixed' as DiscountType,
+        discount_value: 5000,
+        total_usage_count: Number.MAX_SAFE_INTEGER + 1,
+        total_discount_given_cents: 0,
+        total_revenue_generated_cents: 0,
+      };
+
+      mockCouponRepository.findOne.mockResolvedValue(mockCoupon);
+
+      await expect(
+        couponService.applyCoupon(
+          'order-789',
+          'coupon-456',
+          'customer-789',
+          'business-789',
+          10000,
+          5000
+        )
+      ).rejects.toThrow('Coupon coupon-456 total_usage_count must be a safe integer count');
+
+      expect(mockUsageRepository.create).not.toHaveBeenCalled();
+      expect(mockUsageRepository.save).not.toHaveBeenCalled();
+      expect(mockCouponRepository.save).not.toHaveBeenCalled();
     });
   });
 
@@ -758,6 +1315,144 @@ describe('CouponService', () => {
       await expect(
         couponService.updateCoupon('nonexistent', { name: 'New' })
       ).rejects.toThrow('Coupon not found');
+    });
+
+    it('rejects unsafe coupon update strings before saving', async () => {
+      const mockCoupon = {
+        id: 'coupon-123',
+        code: 'SAVE20',
+        name: 'Old Name',
+      };
+
+      mockCouponRepository.findOne.mockResolvedValue(mockCoupon);
+
+      await expect(
+        couponService.updateCoupon('coupon-123', { name: '\uFEFFNew Name' })
+      ).rejects.toThrow('Coupon name must not include unsafe control characters');
+
+      expect(mockCoupon.name).toBe('Old Name');
+      expect(mockCouponRepository.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('automatic promotions', () => {
+    it('rejects unsafe automatic-promotion text controls before persistence', async () => {
+      const businessId = 'business-123';
+      const basePromotionData = {
+        name: 'Free Delivery',
+        description: 'Weekend offer',
+        type: 'free_item' as const,
+        free_dish_id: 'dish-123',
+        valid_from: new Date('2026-06-01T00:00:00.000Z'),
+        valid_until: new Date('2026-07-01T00:00:00.000Z'),
+      };
+      const cases = [
+        {
+          data: { name: 'Free\u200BDelivery' },
+          expectedError: 'Promotion name must not include unsafe control characters',
+        },
+        {
+          data: { description: 'Weekend\u2060offer' },
+          expectedError: 'Promotion description must not include unsafe control characters',
+        },
+        {
+          data: { free_dish_id: '\uFEFFdish-123' },
+          expectedError: 'Promotion free_dish_id must not include unsafe control characters',
+        },
+      ];
+
+      for (const { data, expectedError } of cases) {
+        mockPromotionRepository.create.mockClear();
+        mockPromotionRepository.save.mockClear();
+
+        await expect(
+          couponService.createAutomaticPromotion(businessId, {
+            ...basePromotionData,
+            ...data,
+          })
+        ).rejects.toThrow(expectedError);
+        expect(mockPromotionRepository.create).not.toHaveBeenCalled();
+        expect(mockPromotionRepository.save).not.toHaveBeenCalled();
+      }
+    });
+
+    it('rejects unsafe persisted automatic-promotion strings before menu exposure', async () => {
+      mockPromotionRepository.find.mockResolvedValue([
+        {
+          id: 'promotion-123',
+          business_id: 'business-123',
+          name: 'Free\u200BDelivery',
+          type: 'free_delivery',
+          valid_from: new Date('2026-06-01T00:00:00.000Z'),
+          valid_until: new Date('2026-07-01T00:00:00.000Z'),
+          is_active: true,
+          is_public: true,
+        },
+      ]);
+
+      await expect(couponService.getActivePromotions('business-123')).rejects.toThrow(
+        'Promotion row 1 name must not include unsafe control characters'
+      );
+    });
+
+    it('rejects unsafe persisted automatic-promotion field names before unsupported-field diagnostics', async () => {
+      mockPromotionRepository.find.mockResolvedValue([
+        {
+          id: 'promotion-123',
+          business_id: 'business-123',
+          name: 'Free Delivery',
+          type: 'free_delivery',
+          valid_from: new Date('2026-06-01T00:00:00.000Z'),
+          valid_until: new Date('2026-07-01T00:00:00.000Z'),
+          is_active: true,
+          is_public: true,
+          ['provider_trace_id\uFEFF']: 'trace-123',
+        },
+      ]);
+
+      await expect(couponService.getActivePromotions('business-123')).rejects.toThrow(
+        'Promotion row 1 field names contain unsafe control characters'
+      );
+    });
+
+    it('rejects unsupported persisted automatic-promotion fields before menu exposure', async () => {
+      mockPromotionRepository.find.mockResolvedValue([
+        {
+          id: 'promotion-123',
+          business_id: 'business-123',
+          name: 'Free Delivery',
+          type: 'free_delivery',
+          valid_from: new Date('2026-06-01T00:00:00.000Z'),
+          valid_until: new Date('2026-07-01T00:00:00.000Z'),
+          is_active: true,
+          is_public: true,
+          provider_trace_id: 'trace-123',
+        },
+      ]);
+
+      await expect(couponService.getActivePromotions('business-123')).rejects.toThrow(
+        'Promotion row 1 include unsupported field(s): provider_trace_id'
+      );
+    });
+
+    it('rejects unsafe automatic-promotion update strings before saving', async () => {
+      const mockPromotion = {
+        id: 'promotion-123',
+        business_id: 'business-123',
+        name: 'Free Delivery',
+        type: 'free_delivery',
+        valid_from: new Date('2026-06-01T00:00:00.000Z'),
+        valid_until: new Date('2026-07-01T00:00:00.000Z'),
+      };
+
+      mockPromotionRepository.findOne.mockResolvedValue(mockPromotion);
+
+      await expect(
+        couponService.updatePromotion('promotion-123', { description: '\uFEFFUnsafe' })
+      ).rejects.toThrow('Promotion description must not include unsafe control characters');
+
+      expect(mockPromotion.description).toBeUndefined();
+      expect(mockPromotionRepository.save).not.toHaveBeenCalled();
     });
   });
 });

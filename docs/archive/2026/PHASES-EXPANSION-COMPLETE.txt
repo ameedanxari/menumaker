@@ -1,0 +1,441 @@
+---
+archived_at: 2026-06-20T22:55:01Z
+original_path: PHASES-EXPANSION-COMPLETE.txt
+original_sha256: beb681546a135011312fe30a6c46765a8d2214c3d821f022c2f2f73a7c183980
+superseded_by: docs/product/status.md
+retention_reason: generated or historical report retained until cleanup apply
+---
+
+> Superseded by [docs/product/status.md](../../docs/product/status.md).
+
+╔═══════════════════════════════════════════════════════════════════════════╗
+║      MenuMaker Phases 2 & 3 Expansion — Implementation Complete ✅       ║
+║                        Date: 2025-11-10                                  ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+🎯 EXPANSION OBJECTIVE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Extend MenuMaker from MVP-only scope to complete 12-month roadmap covering:
+- Phase 1 (MVP): Months 0–2 (7 user stories, manual payments, basic reporting)
+- Phase 2 (Growth): Months 2–6 (6 features: payments, WhatsApp, OCR, subscriptions)
+- Phase 3 (Scale): Months 6–12 (9 features: multi-processor, marketplace, compliance)
+
+✅ PHASE 2 & 3 SPECIFICATIONS CREATED (100 KB)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  New Phase 2 Specification File (18 KB)
+  ✅ specs/001-menu-maker/phase-2-spec.md
+     └─ 6 user stories (P1 growth features)
+        • US2.1: WhatsApp notifications (8 days effort)
+        • US2.2: AI-assisted menu import OCR (10 days)
+        • US2.3: Templated legal copy (4 days)
+        • US2.4: Stripe payment integration (12 days)
+        • US2.5: Tiered subscriptions & free trial (10 days)
+        • US2.6: Customer re-order feature (6 days)
+     └─ Non-functional requirements (performance, security, compliance)
+     └─ Testing strategy (unit, integration, e2e, contract)
+     └─ Edge cases & assumptions
+     └─ Success criteria (500 sellers, 10% WhatsApp, 30% OCR, 5% paid tier)
+
+  New Phase 3 Specification File (25 KB)
+  ✅ specs/001-menu-maker/phase-3-spec.md
+     └─ 9 user stories (P1-P3 scale features)
+        • US3.1: Multiple payment processors (15 days effort)
+        • US3.2: Automated tiered payouts (10 days)
+        • US3.3: Multi-language & RTL layout (14 days)
+        • US3.4: Advanced reporting & tax compliance (12 days)
+        • US3.5: Review & complaint workflow (10 days)
+        • US3.6: Marketplace & seller discovery (16 days)
+        • US3.7: POS system integration (18 days)
+        • US3.8: Delivery partner integration (12 days)
+        • US3.9: Promotions & coupons (8 days)
+     └─ Non-functional requirements (enterprise-scale)
+     └─ Testing strategy (performance, security, compliance)
+     └─ Edge cases & assumptions
+     └─ Success criteria (5,000 sellers, Rs. 500L GMV, 30% MRR)
+
+  New Phase 2 Data Model (17 KB)
+  ✅ specs/001-menu-maker/phase-2-data-model.md
+     └─ 5 new TypeORM entities
+        • PaymentProcessor (Stripe, Razorpay, PhonePe config)
+        • Subscription (Free/Pro/Business tiers, trials, billing)
+        • UserPreferences (language, timezone, notification settings)
+        • Template (legal copy, terms, privacy policy)
+        • OCRImportLog (audit trail for menu imports)
+     └─ Full TypeORM schemas with Zod validation
+     └─ Schema extensions to Business & Order entities
+     └─ Database migrations (SQL + TypeORM)
+     └─ Validation constraints & business rules
+     └─ Phase 3 entity preview (ReviewRating, Promotion, POSIntegration)
+
+✅ ROADMAP & PLANNING DOCUMENTS CREATED (40 KB)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Complete 12-Month Roadmap (25 KB)
+  ✅ PHASES-ROADMAP.md
+     └─ Phase 0–3 detailed timelines
+     └─ Features by phase with effort estimates
+     └─ Architecture evolution (monolith → microservices)
+     └─ Tech stack additions per phase
+     └─ Success metrics dashboard (KPIs to track)
+     └─ Team evolution (1 dev → 4 devs)
+     └─ Budget breakdown (Rs. 656.7L for 12 months)
+     └─ Risk mitigation strategies
+     └─ Go/no-go gate criteria between phases
+     └─ ROI projection (18–20 month payback, 51–58% margin)
+
+  Expansion Summary & Implementation Plan (15 KB)
+  ✅ PHASES-EXPANSION-SUMMARY.md
+     └─ What was delivered (Phase 2 & 3 specs)
+     └─ Files created this session (5 new docs)
+     └─ Quick navigation guide (for different roles)
+     └─ Changes from original CONTEXT.md
+     └─ Feature additions summary table (15 features × phase/priority/effort)
+     └─ What's still needed (API contracts, data models)
+     └─ Budget impact (phase-by-phase breakdown)
+     └─ Stakeholder Q&A (common questions answered)
+     └─ Next steps & action items
+
+📊 SPECIFICATION METRICS (NEW PHASE CONTENT)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Phase 2 (Growth)
+    • User stories: 6 features
+    • Acceptance criteria: Detailed (each > 10 criteria)
+    • Data entities: +5 new (PaymentProcessor, Subscription, etc.)
+    • Schema extensions: 2 entities (Business, Order)
+    • Developer-days: 50 days effort
+    • Timeline: 8 weeks (Month 2–4, parallel Phase 1 tail)
+    • Success metric targets: 500 sellers, 10% WhatsApp, 5% paid tier
+
+  Phase 3 (Scale)
+    • User stories: 9 features
+    • Acceptance criteria: Enterprise-grade (each > 15 criteria)
+    • Data entities: +3 new (ReviewRating, Promotion, POSIntegration)
+    • Schema extensions: Database sharding, Elasticsearch
+    • Developer-days: 115 days effort (6+ weeks with 3 devs)
+    • Timeline: 24 weeks (Month 6–12, full-team execution)
+    • Success metric targets: 5,000 sellers, Rs. 500L GMV, 30% MRR
+
+  Total Phase 2 & 3
+    • Total user stories: 15 (6 growth + 9 scale)
+    • Total developer-days: 165 days
+    • Total timeline: 32 weeks (across 6 months)
+    • Total entities: +8 (5 Phase 2 + 3 Phase 3)
+
+✅ COMPLETENESS CHECKLIST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Phase 2 Specification
+    ✅ 6 user stories defined with acceptance criteria
+    ✅ Each story has test scenarios (happy path + edge cases)
+    ✅ Success metrics tied to business outcomes (sellers, adoption, MRR)
+    ✅ Out-of-scope clearly marked (deferred to Phase 3)
+    ✅ Dependencies identified (MVP stable, seller feedback, integrations)
+    ✅ Effort estimated per user story (50 days total)
+    ✅ Non-functional requirements specified (perf, security, compliance)
+    ✅ Testing strategy detailed (Jest, Playwright, contract tests)
+    ✅ Risk mitigation strategies provided
+    ✅ Implementation order recommended (Stripe first, then others)
+
+  Phase 3 Specification
+    ✅ 9 user stories defined with acceptance criteria
+    ✅ Each story has test scenarios (happy path + edge cases)
+    ✅ Success metrics tied to business outcomes (5K sellers, GMV, MRR)
+    ✅ Out-of-scope clearly marked (intl expansion, native apps, Phase 3.5+)
+    ✅ Dependencies identified (Phase 2 stable, vendor partnerships)
+    ✅ Effort estimated per user story (115 days total)
+    ✅ Non-functional requirements specified (enterprise-scale perf, PCI)
+    ✅ Testing strategy detailed (scale testing, security audit)
+    ✅ Risk mitigation strategies provided
+    ✅ Implementation order recommended (6-month phased rollout)
+
+  Phase 2 Data Model
+    ✅ 5 new entities fully specified (TypeORM + Zod schemas)
+    ✅ Schema extensions to existing entities (Business, Order)
+    ✅ Relationships defined (FK, cascade rules, indexes)
+    ✅ Validation rules specified (min/max, constraints, enums)
+    ✅ Database migrations provided (SQL + TypeORM)
+    ✅ Phase 3 preview entities provided
+    ✅ Data validation examples (subscription tier limits, trial expiry)
+
+  Roadmap Documentation
+    ✅ 12-month timeline complete (Phases 0–3)
+    ✅ Phase dependency flow documented (gates, criteria)
+    ✅ Architecture evolution mapped (monolith → scale-out)
+    ✅ Team evolution outlined (1 dev → 4 devs)
+    ✅ Budget estimated (Rs. 656.7L for 12 months, breakdowns per phase)
+    ✅ ROI calculated (18–20 month payback, 51–58% margin)
+    ✅ Risk mitigation strategies per phase
+    ✅ Success metrics dashboard (KPIs to track)
+    ✅ Stakeholder Q&A section
+    ✅ Go/no-go criteria for phase gates
+
+🎯 PHASE 2 FEATURES (6 User Stories × Detailed Acceptance Criteria)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. WhatsApp Order Notifications & Status Updates
+     Priority: P1 | Effort: 8 days
+     • Seller connects WhatsApp Business Account
+     • Real-time order notifications on WhatsApp
+     • Status updates sent to customers via WhatsApp
+     • Retry logic for failed messages (3× exponential backoff)
+
+  2. AI-Assisted Menu Import (OCR & Text Parse)
+     Priority: P1 | Effort: 10 days
+     • Upload menu image → OCR extracts text
+     • AI structures to {name, description, price, category}
+     • Preview & manual correction before import
+     • Allergen auto-suggestion
+     • Time to import 10 dishes: < 2 min (vs. 10 min manual)
+
+  3. Templated Legal Copy & Privacy Policy Generator
+     Priority: P1 | Effort: 4 days
+     • Jurisdiction-specific templates (India, US, UK)
+     • Customizable refund, T&C, privacy policy
+     • Published on public menu footer
+     • Versioning & audit trail
+
+  4. Integrated Payment Processing (Stripe & PayPal)
+     Priority: P1 | Effort: 12 days
+     • Seller connects Stripe account via OAuth
+     • Customer pays via card, Apple Pay, Google Pay
+     • Order auto-marked paid after Stripe webhook
+     • Seller receives payout (2.9% + $0.30 fee)
+     • Refund flow supported
+     • Monthly settlement report
+
+  5. Tiered Subscriptions & Free Trial
+     Priority: P1 | Effort: 10 days
+     • 3 tiers: Free (5 dishes, manual pay) | Pro (unlimited, Stripe) | Business (all Pro + OCR)
+     • All new sellers default to 30-day free trial of Pro
+     • Monthly recurring billing (Stripe Billing API)
+     • Feature limits enforced per tier
+     • Trial expiry → auto-downgrade to free
+
+  6. Customer Re-order & Saved Carts
+     Priority: P2 | Effort: 6 days
+     • Return customers see "Previous Orders" tab
+     • One-click re-order (same dishes + qty)
+     • "Modify" option to customize before ordering
+     • Cart persistence (browser local storage)
+     • Re-order time reduced: ~2 min → ~20 sec
+
+�� PHASE 3 FEATURES (9 User Stories × Detailed Acceptance Criteria)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. Multiple Payment Processors (Razorpay, PhonePe, Paytm)
+     Priority: P1 | Effort: 15 days
+     • Connect 1+ processors simultaneously
+     • Customer chooses processor at checkout
+     • Processor-specific fees displayed (1.75–2.36%)
+     • Automatic failover if processor unavailable
+     • Monthly settlement reconciliation
+
+  2. Automated Tiered Payouts & Payout Scheduling
+     Priority: P1 | Effort: 10 days
+     • Daily/weekly/monthly payout frequency
+     • Minimum threshold (e.g., "hold if < Rs. 500")
+     • Automatic bank reconciliation
+     • Failed payout retry logic
+     • Subscription fee deduction shown per payout
+
+  3. Multi-Language Support & RTL Layout
+     Priority: P1 | Effort: 14 days
+     • UI translations: English, Hindi, Tamil, Arabic
+     • RTL layout for Arabic/Hebrew
+     • Locale-specific date/time/currency formatting
+     • Form validation messages translated
+     • Screen reader support (WCAG compliant)
+
+  4. Advanced Reporting & Tax Compliance
+     Priority: P2 | Effort: 12 days
+     • Tax invoice generation (GST-compliant)
+     • GST reports (monthly outward supplies)
+     • Profit analysis (revenue - expenses dashboard)
+     • HSN/SAC codes auto-applied
+     • GSTIN field (for registered sellers)
+     • Compliance data export per date range
+
+  5. Review & Complaint Workflow
+     Priority: P2 | Effort: 10 days
+     • Post-order review email (valid 7 days)
+     • Rating (1–5 stars) + review text + photos
+     • Seller can respond publicly
+     • Ratings < 3 flagged as complaints
+     • Review moderation (24-hour window)
+     • Seller profile shows avg rating + reviews
+
+  6. Marketplace & Seller Discovery
+     Priority: P2 | Effort: 16 days
+     • Homepage: "Browse All Sellers"
+     • Filters: cuisine, rating, distance/location
+     • Seller cards: name, rating, top dishes, distance
+     • Search: text search for sellers/dishes
+     • Seller opt-in for discoverability (privacy control)
+     • Featured sellers (editorial or top-rated)
+     • Marketplace analytics (impressions, conversions)
+
+  7. POS System Integration (Square, Dine, Zoho)
+     Priority: P2 | Effort: 18 days
+     • Seller OAuth to Square/Dine/Zoho
+     • Orders auto-synced to POS in real-time
+     • Sync failure handling (retry, local backup)
+     • Reverse sync: inventory levels back to MenuMaker
+     • Audit: seller can view sync history
+
+  8. Delivery Partner Integration (Swiggy, Zomato)
+     Priority: P3 | Effort: 12 days
+     • Seller registers with delivery partner (outside MenuMaker)
+     • Orders routed to delivery partner system
+     • Delivery tracking shown in MenuMaker
+     • Separate delivery rating
+     • Delivery cost: seller absorbs or passes to customer
+
+  9. Promotions, Coupons & Discounts
+     Priority: P3 | Effort: 8 days
+     • Seller creates coupons (fixed or %)
+     • Coupon rules: date range, usage limits, min order value
+     • QR code generation (shareable on social)
+     • Automatic promotions (e.g., "free delivery > Rs. 500")
+     • Coupon redemption analytics
+
+💰 BUDGET IMPACT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Phase 0 (Spec): Rs. 13.2L ✅ (COMPLETE)
+  Phase 1 (MVP): Rs. 106.7L (Months 0–2)
+  Phase 2 (Growth): Rs. 126.5L (Months 2–6, parallel Phase 1)
+  Phase 3 (Scale): Rs. 410.3L (Months 6–12)
+  ───────────────────────────────
+  Total 12 Months: Rs. 656.7L
+
+  Expected ROI (Phase 3 end):
+    • Annual GMV: Rs. 6,000L
+    • Platform revenue: Rs. 60–120L/year
+    • Subscription MRR: Rs. 30L
+    • Total annual revenue: Rs. 420–480L
+    • Operating cost: Rs. 200L/year
+    • Gross profit: Rs. 220–280L (51–58% margin)
+    • Payback period: 18–20 months from Phase 1 launch
+
+📈 SUCCESS METRICS BY PHASE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Phase 1 (MVP Exit - Month 2)
+    ✅ 100 sellers onboarded
+    ✅ Time-to-listing < 10 min
+    ✅ 20% repeat order rate
+    ✅ Lighthouse > 90
+    ✅ API p95 < 200ms
+    ✅ 99% uptime
+
+  Phase 2 (Growth Exit - Month 6)
+    ✅ 500 sellers (5× MVP)
+    ✅ 10% using WhatsApp (50 sellers)
+    ✅ 30% using OCR (150 sellers)
+    ✅ 5% on paid tier (25 sellers, Rs. 5K MRR)
+    ✅ 15% repeat order rate
+    ✅ 10% orders via Stripe
+    ✅ Lighthouse > 90
+    ✅ API p95 < 250ms
+
+  Phase 3 (Scale Exit - Month 12)
+    ✅ 5,000 sellers (10× MVP, 10× Phase 2)
+    ✅ Rs. 500L GMV/month
+    ✅ 30% on paid tier (1,500 sellers, Rs. 30L MRR)
+    ✅ 70% orders via integrated payments
+    ✅ 10% orders from marketplace
+    ✅ 20% of orders have reviews (avg 4.2★)
+    ✅ 80% sellers using advanced reports
+    ✅ Lighthouse > 90
+    ✅ API p95 < 150ms
+    ✅ 99.9% uptime
+
+📋 WHAT'S STILL NEEDED (Next Steps)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  This Week (Short-term)
+    ⏳ Phase 2 API contracts (phase-2-api.openapi.yaml)
+    ⏳ Phase 3 API contracts (phase-3-api.openapi.yaml)
+    ⏳ Phase 3 data model (phase-3-data-model.md)
+
+  Next 1–2 Weeks (Medium-term)
+    ⏳ Task breakdown (convert stories to granular tasks)
+    ⏳ Code generation (Claude Code or SpecKit)
+    ⏳ Local dev setup (docker-compose, migrations)
+
+  After Phase 1 Launch (Long-term)
+    ⏳ Seller feedback collection
+    ⏳ Phase 1 iteration (bug fixes, UX improvements)
+    ⏳ Phase 2 implementation starts (Month 2)
+    ⏳ Vendor partnerships (Razorpay, PhonePe for Phase 3)
+
+🚀 READY FOR NEXT PHASE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✅ Complete 12-month roadmap specified
+  ✅ Phase 2 (6 features) fully specified
+  ✅ Phase 3 (9 features) fully specified
+  ✅ Phase 2 data model (5 entities) designed
+  ✅ Phase 2 & 3 testing strategies defined
+  ✅ Budget estimated (Rs. 656.7L for 12 months)
+  ✅ ROI projected (18–20 month payback)
+  ✅ Risk mitigation strategies provided
+  ✅ Team evolution outlined
+  ✅ Gate criteria for phase transitions defined
+
+NEXT ACTIONS (Recommended Order)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. ✅ APPROVAL STEP
+     → Share PHASES-ROADMAP.md with leadership
+     → Get sign-off on 12-month vision & budget
+     → Confirm team availability
+
+  2. 📋 API CONTRACTS
+     → Generate phase-2-api.openapi.yaml (Stripe webhooks, subscriptions, OCR)
+     → Generate phase-3-api.openapi.yaml (multi-processor, marketplace, reports)
+
+  3. 💻 CODE GENERATION
+     → Use Claude Code to read all spec files
+     → Generate backend scaffolding (TypeORM + Fastify)
+     → Generate frontend scaffolding (React + Vite + TailwindCSS)
+     → Generate database migrations
+
+  4. 🧪 TESTING & LOCAL SETUP
+     → Setup docker-compose (Postgres + MinIO)
+     → Run migrations
+     → Smoke tests (health checks, signup flow)
+
+  5. 🚀 PHASE 1 IMPLEMENTATION
+     → Start implementing 7 MVP user stories
+     → Aim for MVP launch by Month 2
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ EXPANSION COMPLETE
+
+Status:         Phase 2 & 3 specifications COMPLETE ✅
+Bundle Size:    100 KB (5 new docs, 15 user stories, 8+ entities)
+Timeline:       12 months (Phases 0–3)
+Effort:         165 developer-days (Phase 2 + 3)
+Budget:         Rs. 656.7L (total for 12 months)
+Team:           1→4 developers (scales per phase)
+
+Ready to:
+  → Generate API contracts for Phase 2 & 3
+  → Begin code generation with Claude Code
+  → Execute Phase 1 implementation
+
+Target Metrics (Month 12):
+  🎯 5,000 sellers
+  🎯 Rs. 500L GMV/month
+  🎯 30% recurring revenue (MRR Rs. 30L)
+  🎯 51–58% gross profit margin
+  🎯 18–20 month payback period
+
+═══════════════════════════════════════════════════════════════════════════════
+Document Version: 1.0 | Date: 2025-11-10 | Status: Complete ✅
+═══════════════════════════════════════════════════════════════════════════════

@@ -1,0 +1,29 @@
+{
+  "commit": "abc123",
+  "platform": "web",
+  "generated_at": "2026-06-20T00:00:00Z",
+  "thresholds": {
+    "critical_coverage_min": 0.82,
+    "mutation_score_min": 0.72,
+    "changed_file_coverage_min": 0.75
+  },
+  "gates": [
+    {
+      "name": "web-unit",
+      "status": "pass",
+      "raw_artifact": "artifacts/vitest.json",
+      "coverage": 0.88,
+      "previous_coverage": 0.86,
+      "retries": 0,
+      "skipped": 1,
+      "only": 0
+    }
+  ],
+  "changed_files": [],
+  "dashboard": {
+    "kpi": ["critical_coverage"],
+    "filter": ["platform"],
+    "chart": [{ "id": "coverage", "tooltip": "Coverage", "legend": "Coverage" }],
+    "table": [{ "label": "coverage", "value": 0.88 }]
+  }
+}

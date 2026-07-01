@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.menumaker.data.common.Resource
 import com.menumaker.data.remote.models.NotificationDto
 import com.menumaker.data.remote.models.NotificationListData
+import com.menumaker.data.repository.NotificationPreferences
 import com.menumaker.data.repository.NotificationRepository
 import com.menumaker.services.AnalyticsService
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -57,6 +58,7 @@ class NotificationViewModel @Inject constructor(
 
     init {
         loadNotifications()
+        loadNotificationPreferences()
     }
 
     /**
@@ -177,28 +179,71 @@ class NotificationViewModel @Inject constructor(
      * Notification settings setter methods (used by UI)
      */
     fun setOrderNotificationsEnabled(enabled: Boolean) {
-        _orderNotificationsEnabled.value = enabled
-        // TODO: Save to preferences or API
+        updateNotificationPreferences(currentPreferences().copy(orderNotificationsEnabled = enabled))
     }
 
     fun setPromotionNotificationsEnabled(enabled: Boolean) {
-        _promotionNotificationsEnabled.value = enabled
-        // TODO: Save to preferences or API
+        updateNotificationPreferences(currentPreferences().copy(promotionNotificationsEnabled = enabled))
     }
 
     fun setReviewNotificationsEnabled(enabled: Boolean) {
-        _reviewNotificationsEnabled.value = enabled
-        // TODO: Save to preferences or API
+        updateNotificationPreferences(currentPreferences().copy(reviewNotificationsEnabled = enabled))
     }
 
     fun setPushNotificationsEnabled(enabled: Boolean) {
-        _pushNotificationsEnabled.value = enabled
-        // TODO: Save to preferences or API
+        updateNotificationPreferences(currentPreferences().copy(pushNotificationsEnabled = enabled))
     }
 
     fun setEmailNotificationsEnabled(enabled: Boolean) {
-        _emailNotificationsEnabled.value = enabled
-        // TODO: Save to preferences or API
+        updateNotificationPreferences(currentPreferences().copy(emailNotificationsEnabled = enabled))
+    }
+
+    private fun loadNotificationPreferences() {
+        viewModelScope.launch {
+            repository.getNotificationPreferences().collect { result ->
+                when (result) {
+                    is Resource.Loading -> Unit
+                    is Resource.Success -> applyPreferences(result.data)
+                    is Resource.Error -> _errorMessage.value = result.message
+                }
+            }
+        }
+    }
+
+    private fun updateNotificationPreferences(next: NotificationPreferences) {
+        val previous = currentPreferences()
+        applyPreferences(next)
+        viewModelScope.launch {
+            repository.updateNotificationPreferences(next).collect { result ->
+                when (result) {
+                    is Resource.Loading -> Unit
+                    is Resource.Success -> {
+                        applyPreferences(result.data)
+                        analyticsService.track("notification_preferences_updated", emptyMap())
+                    }
+                    is Resource.Error -> {
+                        applyPreferences(previous)
+                        _errorMessage.value = result.message
+                    }
+                }
+            }
+        }
+    }
+
+    private fun currentPreferences() = NotificationPreferences(
+        orderNotificationsEnabled = _orderNotificationsEnabled.value,
+        promotionNotificationsEnabled = _promotionNotificationsEnabled.value,
+        reviewNotificationsEnabled = _reviewNotificationsEnabled.value,
+        pushNotificationsEnabled = _pushNotificationsEnabled.value,
+        emailNotificationsEnabled = _emailNotificationsEnabled.value
+    )
+
+    private fun applyPreferences(preferences: NotificationPreferences) {
+        _orderNotificationsEnabled.value = preferences.orderNotificationsEnabled
+        _promotionNotificationsEnabled.value = preferences.promotionNotificationsEnabled
+        _reviewNotificationsEnabled.value = preferences.reviewNotificationsEnabled
+        _pushNotificationsEnabled.value = preferences.pushNotificationsEnabled
+        _emailNotificationsEnabled.value = preferences.emailNotificationsEnabled
     }
 
     /**

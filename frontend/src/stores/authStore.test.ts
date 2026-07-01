@@ -9,6 +9,7 @@ vi.mock('../services/api', () => {
       signup: vi.fn(),
       getCurrentUser: vi.fn(),
       setAccessToken: vi.fn(),
+      logout: vi.fn(),
     },
   };
 });
@@ -18,6 +19,7 @@ const mockedApi = api as unknown as {
   signup: ReturnType<typeof vi.fn>;
   getCurrentUser: ReturnType<typeof vi.fn>;
   setAccessToken: ReturnType<typeof vi.fn>;
+  logout: ReturnType<typeof vi.fn>;
 };
 
 const resetStore = () => {
@@ -36,7 +38,7 @@ describe('authStore', () => {
     resetStore();
   });
 
-  it('logs in and stores token/user', async () => {
+  it('logs in and keeps access token memory scoped', async () => {
     mockedApi.login.mockResolvedValue({
       success: true,
       data: {
@@ -50,8 +52,11 @@ describe('authStore', () => {
     const state = useAuthStore.getState();
     expect(state.isAuthenticated).toBe(true);
     expect(state.user?.id).toBe('u1');
+    expect(state.accessToken).toBe('token-123');
     expect(mockedApi.setAccessToken).toHaveBeenCalledWith('token-123');
     expect(state.isLoading).toBe(false);
+    const persisted = JSON.stringify(localStorage);
+    expect(persisted).not.toContain('token-123');
   });
 
   it('clears state on logout', () => {
@@ -69,12 +74,13 @@ describe('authStore', () => {
     expect(state.accessToken).toBeNull();
     expect(state.isAuthenticated).toBe(false);
     expect(mockedApi.setAccessToken).toHaveBeenCalledWith(null);
+    expect(mockedApi.logout).toHaveBeenCalled();
   });
 
-  it('initAuth hydrates when token is present', async () => {
+  it('initAuth hydrates identity through cookie-backed /auth/me without persisted bearer token', async () => {
     useAuthStore.setState({
       user: null,
-      accessToken: 'token',
+      accessToken: null,
       isAuthenticated: false,
       isLoading: false,
     });
@@ -86,9 +92,26 @@ describe('authStore', () => {
     await useAuthStore.getState().initAuth();
 
     const state = useAuthStore.getState();
-    expect(mockedApi.setAccessToken).toHaveBeenCalledWith('token');
+    expect(mockedApi.setAccessToken).not.toHaveBeenCalledWith('token');
     expect(state.user?.id).toBe('u2');
     expect(state.isAuthenticated).toBe(true);
+  });
+
+  it('does not persist access or refresh tokens after login and reload', async () => {
+    mockedApi.login.mockResolvedValue({
+      success: true,
+      data: {
+        user: { id: 'u3', email: 'reload@example.com', created_at: 'now' },
+        tokens: { accessToken: 'jwt.header.payload', refreshToken: 'native-only-refresh' },
+      },
+    });
+
+    await useAuthStore.getState().login('reload@example.com', 'pass');
+
+    const persisted = localStorage.getItem('auth-storage') ?? '';
+    expect(persisted).not.toContain('jwt.header.payload');
+    expect(persisted).not.toContain('native-only-refresh');
+    expect(persisted).not.toMatch(/accessToken|refreshToken|session/i);
   });
 
   it('surface errors on failed login and stops loading', async () => {

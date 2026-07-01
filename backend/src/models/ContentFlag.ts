@@ -31,6 +31,9 @@ export class ContentFlag {
   @Column({ type: 'varchar', length: 50 })
   flag_type!: string; // 'review' | 'dish' | 'image' | 'profile' | 'menu'
 
+  @Column({ type: 'varchar', length: 50 })
+  target_type!: string; // Entity/table discriminator for the flagged target
+
   @Column({ type: 'uuid' })
   target_id!: string; // ID of flagged content
 

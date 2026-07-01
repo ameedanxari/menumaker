@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "openapi": "openapi/menumaker.v1.yaml",
+  "policy": "Central API fixtures live under shared/mocks/api/v1/<operationId>/<status>.json. Platform-only UI state may remain outside API fixtures.",
+  "fixtures": [
+    {
+      "operation_id": "auth_signup",
+      "status": 201,
+      "schema_hash": "9934def047c20fc9cba47a1c933ca95d14fd6cfd979bed036a405481cb17ddfa",
+      "scenario": "customer_signup_success",
+      "source": "canonical-fake-backend",
+      "path": "shared/mocks/api/v1/auth_signup/201.json",
+      "consumers": ["web-e2e", "android-smoke", "ios-smoke"]
+    },
+    {
+      "operation_id": "auth_login",
+      "status": 200,
+      "schema_hash": "9934def047c20fc9cba47a1c933ca95d14fd6cfd979bed036a405481cb17ddfa",
+      "scenario": "customer_login_success",
+      "source": "canonical-fake-backend",
+      "path": "shared/mocks/api/v1/auth_login/200.json",
+      "consumers": ["web-e2e", "android-smoke", "ios-smoke"]
+    },
+    {
+      "operation_id": "auth_get_me",
+      "status": 200,
+      "schema_hash": "d94c666ca1b6d0b44da676ed678bcc3d43cfd62151ca48e407954a9e752d149b",
+      "scenario": "authenticated_customer",
+      "source": "canonical-fake-backend",
+      "path": "shared/mocks/api/v1/auth_get_me/200.json",
+      "consumers": ["web-e2e", "android-smoke", "ios-smoke"]
+    },
+    {
+      "operation_id": "business_list",
+      "status": 200,
+      "schema_hash": "4c239da73676c8c89faa0eb7b25ad5a9a407abd931ef3c730bc46747cccf0bcf",
+      "scenario": "seller_catalog",
+      "source": "canonical-fake-backend",
+      "path": "shared/mocks/api/v1/business_list/200.json",
+      "consumers": ["web-e2e", "android-smoke", "ios-smoke"]
+    },
+    {
+      "operation_id": "menu_list",
+      "status": 200,
+      "schema_hash": "4c239da73676c8c89faa0eb7b25ad5a9a407abd931ef3c730bc46747cccf0bcf",
+      "scenario": "published_menu",
+      "source": "canonical-fake-backend",
+      "path": "shared/mocks/api/v1/menu_list/200.json",
+      "consumers": ["web-e2e", "android-smoke", "ios-smoke"]
+    },
+    {
+      "operation_id": "order_list",
+      "status": 200,
+      "schema_hash": "4c239da73676c8c89faa0eb7b25ad5a9a407abd931ef3c730bc46747cccf0bcf",
+      "scenario": "customer_order_history",
+      "source": "canonical-fake-backend",
+      "path": "shared/mocks/api/v1/order_list/200.json",
+      "consumers": ["web-e2e", "android-smoke", "ios-smoke"]
+    },
+    {
+      "operation_id": "order_create",
+      "status": 201,
+      "schema_hash": "9934def047c20fc9cba47a1c933ca95d14fd6cfd979bed036a405481cb17ddfa",
+      "scenario": "checkout_success",
+      "source": "canonical-fake-backend",
+      "path": "shared/mocks/api/v1/order_create/201.json",
+      "consumers": ["web-e2e", "android-smoke", "ios-smoke"]
+    },
+    {
+      "operation_id": "payment_create_intent",
+      "status": 201,
+      "schema_hash": "9934def047c20fc9cba47a1c933ca95d14fd6cfd979bed036a405481cb17ddfa",
+      "scenario": "tokenized_payment_intent",
+      "source": "canonical-fake-backend",
+      "path": "shared/mocks/api/v1/payment_create_intent/201.json",
+      "consumers": ["web-e2e", "android-smoke", "ios-smoke"]
+    },
+    {
+      "operation_id": "coupon_list",
+      "status": 200,
+      "schema_hash": "4c239da73676c8c89faa0eb7b25ad5a9a407abd931ef3c730bc46747cccf0bcf",
+      "scenario": "active_promotions",
+      "source": "canonical-fake-backend",
+      "path": "shared/mocks/api/v1/coupon_list/200.json",
+      "consumers": ["web-e2e", "android-smoke", "ios-smoke"]
+    },
+    {
+      "operation_id": "notification_list",
+      "status": 200,
+      "schema_hash": "4c239da73676c8c89faa0eb7b25ad5a9a407abd931ef3c730bc46747cccf0bcf",
+      "scenario": "recent_notifications",
+      "source": "canonical-fake-backend",
+      "path": "shared/mocks/api/v1/notification_list/200.json",
+      "consumers": ["web-e2e", "android-smoke", "ios-smoke"]
+    },
+    {
+      "operation_id": "report_dashboard",
+      "status": 200,
+      "schema_hash": "d94c666ca1b6d0b44da676ed678bcc3d43cfd62151ca48e407954a9e752d149b",
+      "scenario": "seller_dashboard_kpis",
+      "source": "canonical-fake-backend",
+      "path": "shared/mocks/api/v1/report_dashboard/200.json",
+      "consumers": ["web-e2e", "android-smoke", "ios-smoke"]
+    }
+  ]
+}

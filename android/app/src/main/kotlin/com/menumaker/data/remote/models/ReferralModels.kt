@@ -21,7 +21,7 @@ enum class ReferralStatus(val value: String) {
         get() = when (this) {
             PENDING -> "Pending"
             COMPLETED -> "Completed"
-            CREDITED -> "Credited"
+            CREDITED -> "Completed"
             EXPIRED -> "Expired"
         }
 }
@@ -40,13 +40,13 @@ data class ReferralStatsDto(
     @SerializedName("leaderboard_position") val leaderboardPosition: Int?
 ) {
     val totalEarnings: Double
-        get() = totalEarningsCents / 100.0
+        get() = 0.0
 
     val availableCredits: Double
-        get() = availableCreditsCents / 100.0
+        get() = 0.0
 
     val pendingRewards: Double
-        get() = pendingRewardsCents / 100.0
+        get() = 0.0
 
     val successRate: Double
         get() = if (totalReferrals > 0) {
@@ -54,7 +54,7 @@ data class ReferralStatsDto(
         } else 0.0
 
     val leaderboardDisplay: String
-        get() = leaderboardPosition?.let { "#$it" } ?: "Not ranked"
+        get() = "Not ranked"
 }
 
 data class ReferralLeaderboardDto(
@@ -82,13 +82,13 @@ data class ReferralHistoryDto(
     @SerializedName("reward_cents") val rewardCents: Int
 ) {
     val reward: Double
-        get() = rewardCents / 100.0
+        get() = 0.0
 
     val formattedReward: String
-        get() = String.format("₹%.2f", reward)
+        get() = "Rewards disabled"
 
     val rewardAmountCents: Int
-        get() = rewardCents
+        get() = 0
 
     val createdAt: String
         get() = referredAt

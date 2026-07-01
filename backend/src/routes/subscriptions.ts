@@ -3,16 +3,488 @@ import { SubscriptionService } from '../services/SubscriptionService.js';
 import { authenticate } from '../middleware/auth.js';
 import { SubscriptionTier, SUBSCRIPTION_TIERS } from '../models/Subscription.js';
 import { logSecurityEvent } from '../utils/logger.js';
+import { requireCapability } from '../config/capabilities.js';
+
+export const processedSubscriptionEventIds = new Set<string>();
+
+const UNSAFE_SUBSCRIPTION_ROUTE_TEXT_CONTROLS =
+  /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/u;
+const MAX_SUBSCRIPTION_BUSINESS_ID_CHARS = 255;
+const MAX_SUBSCRIPTION_USER_ID_CHARS = 255;
+const MAX_SUBSCRIPTION_CUSTOMER_EMAIL_CHARS = 254;
+const MAX_SUBSCRIPTION_PORTAL_RETURN_URL_CHARS = 2048;
+const MAX_SUBSCRIPTION_WEBHOOK_SIGNATURE_CHARS = 4096;
+const MAX_SUBSCRIPTION_WEBHOOK_EVENT_ID_CHARS = 255;
+const MAX_SUBSCRIPTION_WEBHOOK_EVENT_TYPE_CHARS = 255;
+const SUPPORTED_SUBSCRIPTION_WEBHOOK_EVENT_TYPES = new Set([
+  'customer.subscription.created',
+  'customer.subscription.updated',
+  'customer.subscription.deleted',
+  'customer.subscription.trial_will_end',
+]);
+
+function hasUnsafeSubscriptionRouteTextControls(value: string): boolean {
+  return UNSAFE_SUBSCRIPTION_ROUTE_TEXT_CONTROLS.test(value);
+}
+
+export function normalizeSubscriptionWebhookEventId(eventId: unknown): string {
+  if (typeof eventId !== 'string') {
+    throw new Error('Stripe subscription webhook event id must be a non-empty string');
+  }
+
+  if (hasUnsafeSubscriptionRouteTextControls(eventId)) {
+    throw new Error('Stripe subscription webhook event id must not include unsafe control characters');
+  }
+
+  const normalizedEventId = eventId.trim();
+  if (normalizedEventId.length === 0) {
+    throw new Error('Stripe subscription webhook event id must be a non-empty string');
+  }
+
+  if (normalizedEventId.length > MAX_SUBSCRIPTION_WEBHOOK_EVENT_ID_CHARS) {
+    throw new Error(
+      `Stripe subscription webhook event id must be at most ${MAX_SUBSCRIPTION_WEBHOOK_EVENT_ID_CHARS} characters`
+    );
+  }
+
+  return normalizedEventId;
+}
+
+export function normalizeSubscriptionWebhookEventType(eventType: unknown): string {
+  if (typeof eventType !== 'string') {
+    throw new Error('Stripe subscription webhook event type must be a non-empty string');
+  }
+
+  if (hasUnsafeSubscriptionRouteTextControls(eventType)) {
+    throw new Error('Stripe subscription webhook event type must not include unsafe control characters');
+  }
+
+  const normalizedEventType = eventType.trim();
+  if (normalizedEventType.length === 0) {
+    throw new Error('Stripe subscription webhook event type must be a non-empty string');
+  }
+
+  if (normalizedEventType.length > MAX_SUBSCRIPTION_WEBHOOK_EVENT_TYPE_CHARS) {
+    throw new Error(
+      `Stripe subscription webhook event type must be at most ${MAX_SUBSCRIPTION_WEBHOOK_EVENT_TYPE_CHARS} characters`
+    );
+  }
+  if (!SUPPORTED_SUBSCRIPTION_WEBHOOK_EVENT_TYPES.has(normalizedEventType)) {
+    throw new Error('Stripe subscription webhook event type must be a supported subscription webhook event');
+  }
+
+  return normalizedEventType;
+}
+
+export function recordSubscriptionEventOnce(eventId: unknown): boolean {
+  const normalizedEventId = normalizeSubscriptionWebhookEventId(eventId);
+  if (processedSubscriptionEventIds.has(normalizedEventId)) return false;
+  processedSubscriptionEventIds.add(normalizedEventId);
+  return true;
+}
+
+export function releaseSubscriptionEventReceipt(eventId: unknown): void {
+  processedSubscriptionEventIds.delete(normalizeSubscriptionWebhookEventId(eventId));
+}
+
+export function getExactSubscriptionWebhookBody(request: { rawBody?: Buffer; body?: unknown }): Buffer {
+  if (Buffer.isBuffer(request.rawBody)) return request.rawBody;
+  if (Buffer.isBuffer(request.body)) return request.body;
+  throw new Error('Exact raw subscription webhook body is required');
+}
+
+const SUBSCRIPTION_SUBSCRIBE_BODY_KEYS = new Set(['tier', 'trialDays', 'email']);
+const SUBSCRIPTION_CANCEL_BODY_KEYS = new Set(['immediate']);
+const SUBSCRIPTION_RESUME_BODY_KEYS = new Set<string>();
+const SUBSCRIPTION_SUBSCRIBE_QUERY_KEYS = new Set<string>();
+const SUBSCRIPTION_CANCEL_QUERY_KEYS = new Set<string>();
+const SUBSCRIPTION_RESUME_QUERY_KEYS = new Set<string>();
+const SUBSCRIPTION_TIERS_QUERY_KEYS = new Set<string>();
+const SUBSCRIPTION_PORTAL_QUERY_KEYS = new Set(['returnUrl']);
+const SUBSCRIPTION_READ_QUERY_KEYS = new Set<string>();
+const SUBSCRIPTION_WEBHOOK_QUERY_KEYS = new Set<string>();
+const SUBSCRIPTION_TIERS_ALLOWED = new Set<SubscriptionTier>(['free', 'starter', 'pro']);
+
+function normalizeOptionalSubscriptionRequestRecord(value: unknown): Record<string, unknown> | null {
+  if (value === undefined || value === null) {
+    return {};
+  }
+
+  if (typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function unsupportedRequestFields(body: unknown, allowedKeys: Set<string>): string[] {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return [];
+  }
+
+  return Object.keys(body).filter((key) => !allowedKeys.has(key)).sort();
+}
+
+function rejectMalformedSubscriptionBody(
+  reply: { status: (statusCode: number) => { send: (payload: unknown) => unknown } },
+  body: Record<string, unknown> | null
+): body is null {
+  if (body !== null) {
+    return false;
+  }
+
+  reply.status(400).send({
+    success: false,
+    error: {
+      code: 'INVALID_SUBSCRIPTION_REQUEST_BODY',
+      message: 'Subscription request body must be an object',
+    },
+  });
+  return true;
+}
+
+function rejectMalformedSubscriptionQuery(
+  reply: { status: (statusCode: number) => { send: (payload: unknown) => unknown } },
+  query: Record<string, unknown> | null
+): query is null {
+  if (query !== null) {
+    return false;
+  }
+
+  reply.status(400).send({
+    success: false,
+    error: {
+      code: 'INVALID_SUBSCRIPTION_QUERY',
+      message: 'Subscription query must be an object',
+    },
+  });
+  return true;
+}
+
+function rejectUnsupportedSubscriptionFields(
+  reply: { status: (statusCode: number) => { send: (payload: unknown) => unknown } },
+  fields: string[]
+): boolean {
+  if (fields.length === 0) {
+    return false;
+  }
+
+  reply.status(400).send({
+    success: false,
+    error: {
+      code: 'UNSUPPORTED_SUBSCRIPTION_FIELD',
+      message: `Unsupported subscription request field(s): ${fields.join(', ')}`,
+    },
+  });
+  return true;
+}
+
+function rejectUnsafeSubscriptionRequestFieldNames(
+  reply: { status: (statusCode: number) => { send: (payload: unknown) => unknown } },
+  label: string,
+  record: Record<string, unknown> | null | undefined
+): boolean {
+  if (!record || !Object.keys(record).some(hasUnsafeSubscriptionRouteTextControls)) {
+    return false;
+  }
+
+  reply.status(400).send({
+    success: false,
+    error: {
+      code: 'INVALID_SUBSCRIPTION_FIELD_NAME',
+      message: `${label} field names must not include unsafe control characters`,
+    },
+  });
+  return true;
+}
+
+export function normalizeRequiredSubscriptionString(value: unknown): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  if (hasUnsafeSubscriptionRouteTextControls(value)) {
+    return value;
+  }
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function rejectUnsafeSubscriptionTextField(
+  reply: { status: (statusCode: number) => { send: (payload: unknown) => unknown } },
+  label: string,
+  value: string | undefined | null
+): boolean {
+  if (value === undefined || value === null || !hasUnsafeSubscriptionRouteTextControls(value)) {
+    return false;
+  }
+
+  reply.status(400).send({
+    success: false,
+    error: {
+      code: 'INVALID_SUBSCRIPTION_TEXT_FIELD',
+      message: `${label} must not include unsafe control characters`,
+    },
+  });
+  return true;
+}
+
+function rejectOversizedSubscriptionTextField(
+  reply: { status: (statusCode: number) => { send: (payload: unknown) => unknown } },
+  label: string,
+  value: string | undefined | null,
+  maxChars: number
+): boolean {
+  if (value === undefined || value === null || value.length <= maxChars) {
+    return false;
+  }
+
+  reply.status(400).send({
+    success: false,
+    error: {
+      code: 'INVALID_SUBSCRIPTION_TEXT_FIELD',
+      message: `${label} must be at most ${maxChars} characters`,
+    },
+  });
+  return true;
+}
+
+function normalizeAuthenticatedSubscriptionBusinessId(
+  request: { user?: { businessId?: unknown } | null }
+): string | null {
+  return normalizeRequiredSubscriptionString(request.user?.businessId);
+}
+
+function normalizeAuthenticatedSubscriptionUserId(
+  request: { user?: { userId?: unknown; id?: unknown } | null }
+): string | null {
+  return (
+    normalizeRequiredSubscriptionString(request.user?.userId) ??
+    normalizeRequiredSubscriptionString(request.user?.id)
+  );
+}
+
+function rejectMissingSubscriptionUserId(
+  reply: { status: (statusCode: number) => { send: (payload: unknown) => unknown } },
+  userId: string | null
+): userId is null {
+  if (userId !== null) {
+    return false;
+  }
+
+  reply.status(400).send({
+    success: false,
+    error: {
+      code: 'NO_USER',
+      message: 'User identity is required',
+    },
+  });
+  return true;
+}
+
+function normalizeAuthenticatedSubscriptionIdentity(
+  request: { user?: { businessId?: unknown; userId?: unknown; id?: unknown } | null },
+  reply: { status: (statusCode: number) => { send: (payload: unknown) => unknown } }
+): { businessId: string; userId: string } | null {
+  const businessId = normalizeAuthenticatedSubscriptionBusinessId(request);
+
+  if (!businessId) {
+    reply.status(400).send({
+      success: false,
+      error: {
+        code: 'NO_BUSINESS',
+        message: 'User has no business associated',
+      },
+    });
+    return null;
+  }
+  if (
+    rejectUnsafeSubscriptionTextField(reply, 'Subscription business ID', businessId) ||
+    rejectOversizedSubscriptionTextField(
+      reply,
+      'Subscription business ID',
+      businessId,
+      MAX_SUBSCRIPTION_BUSINESS_ID_CHARS
+    )
+  ) {
+    return null;
+  }
+
+  const userId = normalizeAuthenticatedSubscriptionUserId(request);
+  if (
+    rejectMissingSubscriptionUserId(reply, userId) ||
+    rejectUnsafeSubscriptionTextField(reply, 'Subscription user ID', userId) ||
+    rejectOversizedSubscriptionTextField(
+      reply,
+      'Subscription user ID',
+      userId,
+      MAX_SUBSCRIPTION_USER_ID_CHARS
+    )
+  ) {
+    return null;
+  }
+
+  return { businessId, userId };
+}
+
+function normalizeSubscriptionTier(value: unknown): SubscriptionTier | null {
+  const normalized = normalizeRequiredSubscriptionString(value);
+  if (!normalized || !SUBSCRIPTION_TIERS_ALLOWED.has(normalized as SubscriptionTier)) {
+    return null;
+  }
+
+  return normalized as SubscriptionTier;
+}
+
+function parseOptionalSubscriptionTrialDays(value: unknown): number | undefined | null {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  if (
+    typeof value !== 'number' ||
+    !Number.isInteger(value) ||
+    value < 1 ||
+    value > 365 ||
+    !Number.isSafeInteger(value)
+  ) {
+    return null;
+  }
+
+  return value;
+}
+
+function normalizeOptionalSubscriptionEmail(value: unknown): string | undefined | null {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  const normalized = normalizeRequiredSubscriptionString(value);
+  if (
+    !normalized ||
+    normalized.length > MAX_SUBSCRIPTION_CUSTOMER_EMAIL_CHARS ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)
+  ) {
+    return null;
+  }
+
+  return normalized;
+}
+
+function normalizeOptionalCancellationImmediate(value: unknown): boolean | undefined | null {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  return typeof value === 'boolean' ? value : null;
+}
+
+function isValidSubscriptionPortalReturnUrl(value: string): boolean {
+  if (value.length > MAX_SUBSCRIPTION_PORTAL_RETURN_URL_CHARS) {
+    return false;
+  }
+
+  try {
+    const parsedUrl = new URL(value);
+    if (parsedUrl.username || parsedUrl.password) {
+      return false;
+    }
+
+    return (
+      (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:') &&
+      !isPrivateOrInternalSubscriptionHost(parsedUrl.hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function parseSubscriptionIPv4Host(hostname: string): number[] | null {
+  const parts = hostname.split('.');
+  if (parts.length !== 4) return null;
+
+  const octets = parts.map((part) => {
+    if (!/^\d{1,3}$/.test(part)) return Number.NaN;
+    const octet = Number(part);
+    return Number.isInteger(octet) && octet >= 0 && octet <= 255 ? octet : Number.NaN;
+  });
+
+  return octets.every((octet) => Number.isInteger(octet)) ? octets : null;
+}
+
+function isPrivateOrInternalSubscriptionHost(hostname: string): boolean {
+  const normalizedHost = hostname.toLowerCase().replace(/\.$/, '');
+  const unbracketedHost = normalizedHost.replace(/^\[(.*)\]$/, '$1');
+
+  if (unbracketedHost === 'localhost' || unbracketedHost.endsWith('.localhost')) {
+    return true;
+  }
+
+  const ipv4Host = unbracketedHost.startsWith('::ffff:')
+    ? unbracketedHost.slice('::ffff:'.length)
+    : unbracketedHost;
+  const octets = parseSubscriptionIPv4Host(ipv4Host);
+  if (octets) {
+    const [first, second] = octets;
+    return (
+      first === 0 ||
+      first === 10 ||
+      first === 127 ||
+      (first === 100 && second >= 64 && second <= 127) ||
+      (first === 169 && second === 254) ||
+      (first === 172 && second >= 16 && second <= 31) ||
+      (first === 192 && second === 168)
+    );
+  }
+
+  if (!unbracketedHost.includes(':')) {
+    return false;
+  }
+
+  const firstIpv6Group = unbracketedHost.split(':')[0];
+  return (
+    unbracketedHost === '::' ||
+    unbracketedHost === '::1' ||
+    firstIpv6Group.startsWith('fc') ||
+    firstIpv6Group.startsWith('fd') ||
+    /^fe[89ab]/u.test(firstIpv6Group)
+  );
+}
 
 export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void> {
-  const subscriptionService = new SubscriptionService();
+  const requireSubscriptions = requireCapability('subscriptions');
+  let subscriptionService: SubscriptionService | null = null;
+  const getSubscriptionService = (): SubscriptionService => {
+    subscriptionService ??= new SubscriptionService();
+    return subscriptionService;
+  };
 
   /**
    * GET /subscriptions/tiers
    * Get available subscription tiers and pricing
    * Public endpoint
    */
-  fastify.get('/tiers', async (request, reply) => {
+  fastify.get('/tiers', {
+    preHandler: requireSubscriptions,
+  }, async (request, reply) => {
+    const query = normalizeOptionalSubscriptionRequestRecord(request.query);
+    if (rejectMalformedSubscriptionQuery(reply, query)) {
+      return;
+    }
+
+    if (rejectUnsafeSubscriptionRequestFieldNames(reply, 'Subscription tiers query', query)) {
+      return;
+    }
+
+    const unsupportedFields = unsupportedRequestFields(
+      query,
+      SUBSCRIPTION_TIERS_QUERY_KEYS
+    );
+    if (rejectUnsupportedSubscriptionFields(reply, unsupportedFields)) {
+      return;
+    }
+
     const tiers = Object.entries(SUBSCRIPTION_TIERS).map(([key, config]) => ({
       tier: key,
       name: config.name,
@@ -35,22 +507,32 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
    * Authenticated endpoint
    */
   fastify.get('/current', {
-    preHandler: authenticate,
+    preHandler: [requireSubscriptions, authenticate],
   }, async (request, reply) => {    // Get business from auth middleware
-    const businessId = request.user!.businessId;
+    const authenticatedIdentity = normalizeAuthenticatedSubscriptionIdentity(request, reply);
+    if (!authenticatedIdentity) {
+      return;
+    }
+    const { businessId } = authenticatedIdentity;
 
-    if (!businessId) {
-      reply.status(400).send({
-        success: false,
-        error: {
-          code: 'NO_BUSINESS',
-          message: 'User has no business associated',
-        },
-      });
+    const query = normalizeOptionalSubscriptionRequestRecord(request.query);
+    if (rejectMalformedSubscriptionQuery(reply, query)) {
       return;
     }
 
-    const subscription = await subscriptionService.getSubscription(businessId);
+    if (rejectUnsafeSubscriptionRequestFieldNames(reply, 'Subscription current query', query)) {
+      return;
+    }
+
+    const unsupportedFields = unsupportedRequestFields(
+      query,
+      SUBSCRIPTION_READ_QUERY_KEYS
+    );
+    if (rejectUnsupportedSubscriptionFields(reply, unsupportedFields)) {
+      return;
+    }
+
+    const subscription = await getSubscriptionService().getSubscription(businessId);
 
     if (!subscription) {
       reply.status(404).send({
@@ -93,16 +575,61 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
    * Authenticated endpoint
    */
   fastify.post('/subscribe', {
-    preHandler: authenticate,
+    preHandler: [requireSubscriptions, authenticate],
   }, async (request, reply) => {
-    const { tier, trialDays, email } = request.body as {
+    const authenticatedIdentity = normalizeAuthenticatedSubscriptionIdentity(request, reply);
+    if (!authenticatedIdentity) {
+      return;
+    }
+    const { businessId, userId } = authenticatedIdentity;
+
+    const query = normalizeOptionalSubscriptionRequestRecord(request.query);
+    if (rejectMalformedSubscriptionQuery(reply, query)) {
+      return;
+    }
+
+    if (rejectUnsafeSubscriptionRequestFieldNames(reply, 'Subscription subscribe query', query)) {
+      return;
+    }
+
+    const unsupportedQueryFields = unsupportedRequestFields(
+      query,
+      SUBSCRIPTION_SUBSCRIBE_QUERY_KEYS
+    );
+    if (rejectUnsupportedSubscriptionFields(reply, unsupportedQueryFields)) {
+      return;
+    }
+
+    const body = normalizeOptionalSubscriptionRequestRecord(request.body);
+    if (rejectMalformedSubscriptionBody(reply, body)) {
+      return;
+    }
+
+    if (rejectUnsafeSubscriptionRequestFieldNames(reply, 'Subscription subscribe request', body)) {
+      return;
+    }
+
+    const unsupportedFields = unsupportedRequestFields(
+      body,
+      SUBSCRIPTION_SUBSCRIBE_BODY_KEYS
+    );
+    if (rejectUnsupportedSubscriptionFields(reply, unsupportedFields)) {
+      return;
+    }
+
+    const { tier, trialDays, email } = body as {
       tier: SubscriptionTier;
       trialDays?: number;
       email?: string;
     };
 
-    // Validate tier
-    if (!['free', 'starter', 'pro'].includes(tier)) {
+    const normalizedTierText = normalizeRequiredSubscriptionString(tier);
+    if (rejectUnsafeSubscriptionTextField(reply, 'Subscription tier', normalizedTierText)) {
+      return;
+    }
+
+    const normalizedTier = normalizeSubscriptionTier(tier);
+    if (!normalizedTier) {
       reply.status(400).send({
         success: false,
         error: {
@@ -111,31 +638,53 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
         },
       });
       return;
-    }    const businessId = request.user!.businessId;
+    }
 
-    if (!businessId) {
+    if (
+      typeof trialDays === 'string' &&
+      rejectUnsafeSubscriptionTextField(reply, 'Subscription trialDays', trialDays)
+    ) {
+      return;
+    }
+    const normalizedTrialDays = parseOptionalSubscriptionTrialDays(trialDays);
+    if (normalizedTrialDays === null) {
       reply.status(400).send({
         success: false,
         error: {
-          code: 'NO_BUSINESS',
-          message: 'User has no business associated',
+          code: 'INVALID_TRIAL_DAYS',
+          message: 'subscription trialDays must be a positive safe integer between 1 and 365',
         },
       });
       return;
     }
 
-    const { subscription, clientSecret } = await subscriptionService.createSubscription(
+    const normalizedEmail = normalizeOptionalSubscriptionEmail(email);
+    if (normalizedEmail === null) {
+      reply.status(400).send({
+        success: false,
+        error: {
+          code: 'INVALID_EMAIL',
+          message: 'subscription customer email must be a valid email address',
+        },
+      });
+      return;
+    }
+    if (rejectUnsafeSubscriptionTextField(reply, 'Subscription customer email', normalizedEmail)) {
+      return;
+    }
+
+    const { subscription, clientSecret } = await getSubscriptionService().createSubscription(
       businessId,
-      tier,
-      { trialDays, email }
+      normalizedTier,
+      { trialDays: normalizedTrialDays, email: normalizedEmail }
     );
 
     // Log security event
-    logSecurityEvent(request.log, `Subscription created/upgraded: ${tier}`, {
+    logSecurityEvent(request.log, `Subscription created/upgraded: ${normalizedTier}`, {
       requestId: request.id,
-      userId: request.user!.userId,
+      userId,
       businessId,
-      tier,
+      tier: normalizedTier,
       severity: 'low',
     });
 
@@ -162,31 +711,78 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
    * Authenticated endpoint
    */
   fastify.post('/cancel', {
-    preHandler: authenticate,
+    preHandler: [requireSubscriptions, authenticate],
   }, async (request, reply) => {
-    const { immediate } = request.body as { immediate?: boolean };    const businessId = request.user!.businessId;
+    const authenticatedIdentity = normalizeAuthenticatedSubscriptionIdentity(request, reply);
+    if (!authenticatedIdentity) {
+      return;
+    }
+    const { businessId, userId } = authenticatedIdentity;
 
-    if (!businessId) {
+    const query = normalizeOptionalSubscriptionRequestRecord(request.query);
+    if (rejectMalformedSubscriptionQuery(reply, query)) {
+      return;
+    }
+
+    if (rejectUnsafeSubscriptionRequestFieldNames(reply, 'Subscription cancel query', query)) {
+      return;
+    }
+
+    const unsupportedQueryFields = unsupportedRequestFields(
+      query,
+      SUBSCRIPTION_CANCEL_QUERY_KEYS
+    );
+    if (rejectUnsupportedSubscriptionFields(reply, unsupportedQueryFields)) {
+      return;
+    }
+
+    const body = normalizeOptionalSubscriptionRequestRecord(request.body);
+    if (rejectMalformedSubscriptionBody(reply, body)) {
+      return;
+    }
+
+    if (rejectUnsafeSubscriptionRequestFieldNames(reply, 'Subscription cancel request', body)) {
+      return;
+    }
+
+    const unsupportedFields = unsupportedRequestFields(
+      body,
+      SUBSCRIPTION_CANCEL_BODY_KEYS
+    );
+    if (rejectUnsupportedSubscriptionFields(reply, unsupportedFields)) {
+      return;
+    }
+
+    const { immediate } = body as { immediate?: boolean };
+    if (
+      typeof immediate === 'string' &&
+      rejectUnsafeSubscriptionTextField(reply, 'Subscription cancellation immediate', immediate)
+    ) {
+      return;
+    }
+
+    const normalizedImmediate = normalizeOptionalCancellationImmediate(immediate);
+    if (normalizedImmediate === null) {
       reply.status(400).send({
         success: false,
         error: {
-          code: 'NO_BUSINESS',
-          message: 'User has no business associated',
+          code: 'INVALID_CANCELLATION_OPTION',
+          message: 'subscription cancellation immediate must be a boolean',
         },
       });
       return;
     }
 
-    const subscription = await subscriptionService.cancelSubscription(businessId, {
-      immediate,
+    const subscription = await getSubscriptionService().cancelSubscription(businessId, {
+      immediate: normalizedImmediate,
     });
 
     // Log security event
     logSecurityEvent(request.log, `Subscription canceled: ${subscription.tier}`, {
       requestId: request.id,
-      userId: request.user!.userId,
+      userId,
       businessId,
-      immediate,
+      immediate: normalizedImmediate,
       severity: 'medium',
     });
 
@@ -211,26 +807,54 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
    * Authenticated endpoint
    */
   fastify.post('/resume', {
-    preHandler: authenticate,
-  }, async (request, reply) => {    const businessId = request.user!.businessId;
+    preHandler: [requireSubscriptions, authenticate],
+  }, async (request, reply) => {
+    const authenticatedIdentity = normalizeAuthenticatedSubscriptionIdentity(request, reply);
+    if (!authenticatedIdentity) {
+      return;
+    }
+    const { businessId, userId } = authenticatedIdentity;
 
-    if (!businessId) {
-      reply.status(400).send({
-        success: false,
-        error: {
-          code: 'NO_BUSINESS',
-          message: 'User has no business associated',
-        },
-      });
+    const query = normalizeOptionalSubscriptionRequestRecord(request.query);
+    if (rejectMalformedSubscriptionQuery(reply, query)) {
       return;
     }
 
-    const subscription = await subscriptionService.resumeSubscription(businessId);
+    if (rejectUnsafeSubscriptionRequestFieldNames(reply, 'Subscription resume query', query)) {
+      return;
+    }
+
+    const unsupportedQueryFields = unsupportedRequestFields(
+      query,
+      SUBSCRIPTION_RESUME_QUERY_KEYS
+    );
+    if (rejectUnsupportedSubscriptionFields(reply, unsupportedQueryFields)) {
+      return;
+    }
+
+    const body = normalizeOptionalSubscriptionRequestRecord(request.body);
+    if (rejectMalformedSubscriptionBody(reply, body)) {
+      return;
+    }
+
+    if (rejectUnsafeSubscriptionRequestFieldNames(reply, 'Subscription resume request', body)) {
+      return;
+    }
+
+    const unsupportedFields = unsupportedRequestFields(
+      body,
+      SUBSCRIPTION_RESUME_BODY_KEYS
+    );
+    if (rejectUnsupportedSubscriptionFields(reply, unsupportedFields)) {
+      return;
+    }
+
+    const subscription = await getSubscriptionService().resumeSubscription(businessId);
 
     // Log security event
     logSecurityEvent(request.log, `Subscription resumed: ${subscription.tier}`, {
       requestId: request.id,
-      userId: request.user!.userId,
+      userId,
       businessId,
       severity: 'low',
     });
@@ -255,9 +879,34 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
    * Authenticated endpoint
    */
   fastify.get('/portal', {
-    preHandler: authenticate,
+    preHandler: [requireSubscriptions, authenticate],
   }, async (request, reply) => {
-    const { returnUrl } = request.query as { returnUrl: string };
+    const authenticatedIdentity = normalizeAuthenticatedSubscriptionIdentity(request, reply);
+    if (!authenticatedIdentity) {
+      return;
+    }
+    const { businessId } = authenticatedIdentity;
+
+    const query = normalizeOptionalSubscriptionRequestRecord(request.query);
+    if (rejectMalformedSubscriptionQuery(reply, query)) {
+      return;
+    }
+
+    if (rejectUnsafeSubscriptionRequestFieldNames(reply, 'Subscription portal query', query)) {
+      return;
+    }
+
+    const unsupportedFields = unsupportedRequestFields(
+      query,
+      SUBSCRIPTION_PORTAL_QUERY_KEYS
+    );
+    if (rejectUnsupportedSubscriptionFields(reply, unsupportedFields)) {
+      return;
+    }
+
+    const returnUrl = normalizeRequiredSubscriptionString(
+      query.returnUrl
+    );
 
     if (!returnUrl) {
       reply.status(400).send({
@@ -268,20 +917,23 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
         },
       });
       return;
-    }    const businessId = request.user!.businessId;
+    }
+    if (rejectUnsafeSubscriptionTextField(reply, 'Subscription portal return URL', returnUrl)) {
+      return;
+    }
 
-    if (!businessId) {
+    if (!isValidSubscriptionPortalReturnUrl(returnUrl)) {
       reply.status(400).send({
         success: false,
         error: {
-          code: 'NO_BUSINESS',
-          message: 'User has no business associated',
+          code: 'INVALID_RETURN_URL',
+          message: 'Return URL must be an absolute HTTP(S) URL without credentials and at most 2048 characters',
         },
       });
       return;
     }
 
-    const portalUrl = await subscriptionService.createPortalSession(businessId, returnUrl);
+    const portalUrl = await getSubscriptionService().createPortalSession(businessId, returnUrl);
 
     reply.send({
       success: true,
@@ -296,21 +948,32 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
    * Authenticated endpoint
    */
   fastify.get('/usage', {
-    preHandler: authenticate,
-  }, async (request, reply) => {    const businessId = request.user!.businessId;
+    preHandler: [requireSubscriptions, authenticate],
+  }, async (request, reply) => {
+    const authenticatedIdentity = normalizeAuthenticatedSubscriptionIdentity(request, reply);
+    if (!authenticatedIdentity) {
+      return;
+    }
+    const { businessId } = authenticatedIdentity;
 
-    if (!businessId) {
-      reply.status(400).send({
-        success: false,
-        error: {
-          code: 'NO_BUSINESS',
-          message: 'User has no business associated',
-        },
-      });
+    const query = normalizeOptionalSubscriptionRequestRecord(request.query);
+    if (rejectMalformedSubscriptionQuery(reply, query)) {
       return;
     }
 
-    const usage = await subscriptionService.checkOrderLimit(businessId);
+    if (rejectUnsafeSubscriptionRequestFieldNames(reply, 'Subscription usage query', query)) {
+      return;
+    }
+
+    const unsupportedFields = unsupportedRequestFields(
+      query,
+      SUBSCRIPTION_READ_QUERY_KEYS
+    );
+    if (rejectUnsupportedSubscriptionFields(reply, unsupportedFields)) {
+      return;
+    }
+
+    const usage = await getSubscriptionService().checkOrderLimit(businessId);
 
     reply.send({
       success: true,
@@ -329,6 +992,23 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
       rawBody: true,
     },
   }, async (request, reply) => {
+    const query = normalizeOptionalSubscriptionRequestRecord(request.query);
+    if (rejectMalformedSubscriptionQuery(reply, query)) {
+      return;
+    }
+
+    if (rejectUnsafeSubscriptionRequestFieldNames(reply, 'Subscription webhook query', query)) {
+      return;
+    }
+
+    const unsupportedQueryFields = unsupportedRequestFields(
+      query,
+      SUBSCRIPTION_WEBHOOK_QUERY_KEYS
+    );
+    if (rejectUnsupportedSubscriptionFields(reply, unsupportedQueryFields)) {
+      return;
+    }
+
     const signature = request.headers['stripe-signature'];
 
     if (!signature || typeof signature !== 'string') {
@@ -340,7 +1020,19 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
         },
       });
       return;
-    }    const rawBody = (request as any).rawBody || request.body;
+    }
+    if (
+      rejectUnsafeSubscriptionTextField(reply, 'Stripe subscription signature', signature) ||
+      rejectOversizedSubscriptionTextField(
+        reply,
+        'Stripe subscription signature',
+        signature,
+        MAX_SUBSCRIPTION_WEBHOOK_SIGNATURE_CHARS
+      )
+    ) {
+      return;
+    }
+    const rawBody = getExactSubscriptionWebhookBody(request as any);
 
     // Construct and verify webhook event
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET_SUBSCRIPTIONS;
@@ -348,14 +1040,65 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
       throw new Error('STRIPE_WEBHOOK_SECRET_SUBSCRIPTIONS not configured');
     }
 
-    const stripe = (subscriptionService as any).stripe;
+    const service = getSubscriptionService();
+    const stripe = (service as any).stripe;
     const event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
 
+    let eventId: string;
+    try {
+      eventId = normalizeSubscriptionWebhookEventId(event.id);
+    } catch (error) {
+      return reply.status(400).send({
+        success: false,
+        error: {
+          code: 'INVALID_SUBSCRIPTION_TEXT_FIELD',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Stripe subscription webhook event id is invalid',
+        },
+      });
+    }
+
+    let eventType: string;
+    try {
+      eventType = normalizeSubscriptionWebhookEventType(event.type);
+    } catch (error) {
+      return reply.status(400).send({
+        success: false,
+        error: {
+          code: 'INVALID_SUBSCRIPTION_TEXT_FIELD',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Stripe subscription webhook event type is invalid',
+        },
+      });
+    }
+
+    const firstReceipt = recordSubscriptionEventOnce(eventId);
+    if (!firstReceipt) {
+      return reply.send({
+        success: true,
+        data: {
+          processed: false,
+          duplicate: true,
+          eventType,
+          eventId,
+        },
+      });
+    }
+
     // Process subscription event
-    await subscriptionService.handleSubscriptionWebhook(event);
+    try {
+      await service.handleSubscriptionWebhook({ ...event, type: eventType } as any);
+    } catch (error) {
+      releaseSubscriptionEventReceipt(eventId);
+      throw error;
+    }
 
     // Log webhook processing
-    logSecurityEvent(request.log, `Subscription webhook processed: ${event.type}`, {
+    logSecurityEvent(request.log, `Subscription webhook processed: ${eventType}`, {
       requestId: request.id,
       method: request.method,
       path: request.url,
@@ -366,8 +1109,8 @@ export async function subscriptionRoutes(fastify: FastifyInstance): Promise<void
       success: true,
       data: {
         processed: true,
-        eventType: event.type,
-        eventId: event.id,
+        eventType,
+        eventId,
       },
     });
 

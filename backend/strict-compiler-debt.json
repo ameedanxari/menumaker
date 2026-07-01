@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "owner": "platform-quality",
+  "updated_at": "2026-06-20",
+  "policy": "This file is the monotonic staged baseline for compiler/lint strictness that cannot be enabled without touching production code outside Task 14 ownership. Counts may only decrease. New production files are not exempt.",
+  "max_allowed_total": 178,
+  "baselines": [
+    {
+      "key": "noImplicitAny",
+      "enabled_in_tsconfig": false,
+      "current_count": 5,
+      "max_allowed": 5,
+      "owner": "backend-platform",
+      "expires_on": "2026-08-31",
+      "evidence": "2026-06-20 build probe found implicit any debt in untyped third-party nodemailer and array literals outside Task 14 ownership."
+    },
+    {
+      "key": "noImplicitReturns",
+      "enabled_in_tsconfig": false,
+      "current_count": 69,
+      "max_allowed": 69,
+      "owner": "backend-platform",
+      "expires_on": "2026-08-31",
+      "evidence": "2026-06-20 build probe found existing Fastify route handlers and middleware with reply-send branches that do not return a value consistently."
+    },
+    {
+      "key": "strictNullChecks",
+      "enabled_in_tsconfig": false,
+      "current_count": 82,
+      "max_allowed": 82,
+      "owner": "backend-platform",
+      "expires_on": "2026-08-31",
+      "evidence": "2026-06-20 tsc probe with strictNullChecks/noUnused flags found nullable TypeORM query and credential-shape defects across payment, analytics, GDPR, reorder, notification, and route code."
+    },
+    {
+      "key": "noUnusedLocals.noUnusedParameters",
+      "enabled_in_tsconfig": false,
+      "current_count": 22,
+      "max_allowed": 22,
+      "owner": "backend-platform",
+      "expires_on": "2026-08-31",
+      "evidence": "2026-06-20 lint/tsc probe found pre-existing unused Relation imports and a small number of unused route/service parameters."
+    }
+  ],
+  "enabled_now": [
+    "noEmitOnError",
+    "forceConsistentCasingInFileNames",
+    "noFallthroughCasesInSwitch"
+  ],
+  "production_compile_scope": {
+    "include": [
+      "src/**/*"
+    ],
+    "forbidden_excludes": [
+      "src",
+      "src/**",
+      "src/routes/**",
+      "src/services/**",
+      "src/models/**"
+    ]
+  }
+}

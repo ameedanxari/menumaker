@@ -4,6 +4,7 @@ import android.net.Uri
 import com.menumaker.data.common.Resource
 import com.menumaker.data.remote.models.ReviewDto
 import com.menumaker.data.remote.models.ReviewListData
+import com.menumaker.data.repository.MediaRepository
 import com.menumaker.data.repository.ReviewRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,6 +28,9 @@ class ReviewViewModelTest {
 
     @Mock
     private lateinit var reviewRepository: ReviewRepository
+
+    @Mock
+    private lateinit var mediaRepository: MediaRepository
 
     @Mock
     private lateinit var mockUri: Uri
@@ -56,7 +60,7 @@ class ReviewViewModelTest {
         MockitoAnnotations.openMocks(this)
         Dispatchers.setMain(testDispatcher)
 
-        viewModel = ReviewViewModel(reviewRepository)
+        viewModel = ReviewViewModel(reviewRepository, mediaRepository)
     }
 
     @After

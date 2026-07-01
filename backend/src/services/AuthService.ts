@@ -200,11 +200,9 @@ export class AuthService {
       return;
     }
 
-    // TODO: In a real implementation, you would:
-    // 1. Generate a password reset token
-    // 2. Save it to the database with expiration
-    // 3. Send an email with the reset link
-    // For now, we'll just log it
+    // Launch exception: reset-token persistence and provider email are tracked in
+    // docs/product/capability-registry.yaml under identity_auth before public auth launch review.
+    // Keep the response non-enumerating until that flow is implemented end to end.
     console.log(`Password reset requested for user: ${email}`);
   }
 }

@@ -68,13 +68,25 @@ export function DishFormModal({ dish, categories, onClose, onSubmit }: DishFormM
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!formData.name.trim()) {
+      setError('Dish name is required');
+      return;
+    }
+
+    const price = parseFloat(formData.price);
+    if (!Number.isFinite(price) || price <= 0) {
+      setError('Dish price is required');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       await onSubmit({
         name: formData.name,
         description: formData.description || undefined,
-        price_cents: Math.round(parseFloat(formData.price) * 100),
+        price_cents: Math.round(price * 100),
         image_url: formData.image_url || undefined,
         category_id: formData.category_id || undefined,
         is_available: formData.is_available,
@@ -102,7 +114,7 @@ export function DishFormModal({ dish, categories, onClose, onSubmit }: DishFormM
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} noValidate className="p-6 space-y-6">
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="error-text">{error}</p>
@@ -115,6 +127,7 @@ export function DishFormModal({ dish, categories, onClose, onSubmit }: DishFormM
             </label>
             <input
               id="name"
+              name="name"
               type="text"
               value={formData.name}
               onChange={(e) =>
@@ -132,6 +145,7 @@ export function DishFormModal({ dish, categories, onClose, onSubmit }: DishFormM
             </label>
             <textarea
               id="description"
+              name="description"
               value={formData.description}
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
@@ -148,6 +162,7 @@ export function DishFormModal({ dish, categories, onClose, onSubmit }: DishFormM
               </label>
               <input
                 id="price"
+                name="price"
                 type="number"
                 step="0.01"
                 min="0"
@@ -166,6 +181,7 @@ export function DishFormModal({ dish, categories, onClose, onSubmit }: DishFormM
               </label>
               <select
                 id="category"
+                name="category"
                 value={formData.category_id}
                 onChange={(e) =>
                   setFormData({ ...formData, category_id: e.target.value })
@@ -223,6 +239,7 @@ export function DishFormModal({ dish, categories, onClose, onSubmit }: DishFormM
           <div className="flex items-center gap-3">
             <input
               id="is_available"
+              name="is_available"
               type="checkbox"
               checked={formData.is_available}
               onChange={(e) =>
@@ -241,7 +258,7 @@ export function DishFormModal({ dish, categories, onClose, onSubmit }: DishFormM
               className="btn-primary"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Saving...' : dish ? 'Save Changes' : 'Add Dish'}
+              {isSubmitting ? 'Saving...' : dish ? 'Save Changes' : 'Save Dish'}
             </button>
             <button
               type="button"

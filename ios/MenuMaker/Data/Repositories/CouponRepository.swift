@@ -10,8 +10,7 @@ class CouponRepository: ObservableObject {
 
     @Published var coupons: [Coupon] = []
     private var isUITesting: Bool {
-        ProcessInfo.processInfo.arguments.contains("UI-Testing") ||
-        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+        ProcessInfo.processInfo.arguments.contains("UI-Testing")
     }
 
     private init() {}
@@ -61,7 +60,7 @@ class CouponRepository: ObservableObject {
         let normalizedCode = code.uppercased()
 
         if isUITesting {
-            let seedCoupons = loadFixtureCoupons() ?? APIClient.mockCoupons
+            let seedCoupons = loadFixtureCoupons() ?? []
             coupons = seedCoupons
 
             guard let coupon = seedCoupons.first(where: { $0.code.uppercased() == normalizedCode }) else {
@@ -251,36 +250,6 @@ class CouponRepository: ObservableObject {
             }
         }
 
-        // Fallback hardcoded seed to keep UI tests stable
-        return [
-            Coupon(
-                id: "ui-test-1",
-                businessId: "business-1",
-                code: "TESTCODE",
-                discountType: "percentage",
-                discountValue: 15,
-                maxDiscountCents: 1000,
-                minOrderValueCents: 0,
-                validUntil: "2030-12-31T23:59:59Z",
-                usageLimitType: "unlimited",
-                totalUsageLimit: nil,
-                isActive: true,
-                createdAt: "2024-01-01T00:00:00Z"
-            ),
-            Coupon(
-                id: "ui-test-2",
-                businessId: "business-1",
-                code: "SAVE10",
-                discountType: "percentage",
-                discountValue: 10,
-                maxDiscountCents: 500,
-                minOrderValueCents: 1000,
-                validUntil: "2030-12-31T23:59:59Z",
-                usageLimitType: "unlimited",
-                totalUsageLimit: nil,
-                isActive: true,
-                createdAt: "2024-01-01T00:00:00Z"
-            )
-        ]
+        return nil
     }
 }

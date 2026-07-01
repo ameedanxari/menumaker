@@ -16,7 +16,11 @@ interface DishCardProps {
 
 export function DishCard({ dish, onEdit, onDelete }: DishCardProps) {
   return (
-    <div className="card hover:shadow-md transition-shadow">
+    <div
+      className="card hover:shadow-md transition-shadow"
+      data-dish-name={dish.name}
+      data-available={String(dish.is_available)}
+    >
       <div className="flex gap-4">
         {/* Image */}
         <div className="w-24 h-24 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
@@ -47,15 +51,19 @@ export function DishCard({ dish, onEdit, onDelete }: DishCardProps) {
                 onClick={onEdit}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Edit dish"
+                type="button"
               >
                 <Pencil className="w-4 h-4 text-gray-600" />
+                <span className="sr-only">Edit</span>
               </button>
               <button
                 onClick={onDelete}
                 className="p-2 hover:bg-red-50 rounded-lg transition-colors"
                 title="Delete dish"
+                type="button"
               >
                 <Trash2 className="w-4 h-4 text-red-600" />
+                <span className="sr-only">Delete</span>
               </button>
             </div>
           </div>

@@ -71,9 +71,13 @@ class ReferralViewModelTest {
     }
 
     @Test
-    fun `loadReferralData updates stats and leaderboard`() = runTest {
+    fun `loadReferralData suppresses launch gated rewards and leaderboard`() = runTest {
         assertEquals(5, viewModel.stats.value?.totalReferrals)
-        assertEquals(1, viewModel.leaderboard.value.size)
+        assertEquals(0, viewModel.stats.value?.totalEarningsCents)
+        assertEquals(0, viewModel.stats.value?.availableCreditsCents)
+        assertEquals(0, viewModel.stats.value?.pendingRewardsCents)
+        assertEquals(null, viewModel.stats.value?.leaderboardPosition)
+        assertEquals(0, viewModel.leaderboard.value.size)
         assertFalse(viewModel.isLoading.value)
     }
 
@@ -97,7 +101,7 @@ class ReferralViewModelTest {
         
         viewModel.applyReferralCode("OTHER")
         
-        assertEquals("Applied", viewModel.referralCodeMessage.value)
+        assertEquals("Referral code applied successfully. Reward credits are disabled for this launch build.", viewModel.referralCodeMessage.value)
         assertTrue(viewModel.referralCodeSuccess.value)
     }
 

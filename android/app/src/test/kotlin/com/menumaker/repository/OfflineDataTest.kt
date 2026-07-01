@@ -13,6 +13,7 @@ import com.menumaker.data.repository.OrderRepositoryImpl
 import com.menumaker.testutils.FakeApiService
 import com.menumaker.testutils.TestDataFactory
 import com.menumaker.testutils.TestDispatcherRule
+import com.menumaker.workers.PendingOrderSyncPayload
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
@@ -296,6 +297,31 @@ class OfflineDataTest {
         // And should emit Error
         val errorResult = results.last() as Resource.Error
         assertThat(errorResult.message).contains("Network unavailable")
+    }
+
+    @Test
+    fun `offline order entity preserves complete pending mutation for restart sync`() {
+        val entity = createOrderEntity(
+            id = "offline-order-1",
+            totalCents = 2750
+        ).copy(
+            syncPending = true,
+            idempotencyKey = "offline-order-1-idempotency",
+            itemsPayloadJson = """[{"dish_id":"dish-1","quantity":2,"price_cents":1000,"total_cents":2000,"notes":"mild"}]""",
+            feesPayloadJson = """{"tax_cents":250,"delivery_cents":500}""",
+            addressPayloadJson = """{"line1":"12 Test St","city":"Vancouver"}""",
+            paymentMethodPayloadJson = """{"type":"cash"}"""
+        )
+
+        val payload = PendingOrderSyncPayload.build(entity)
+
+        assertThat(entity.syncPending).isTrue()
+        assertThat(payload["idempotency_key"]).isEqualTo("offline-order-1-idempotency")
+        assertThat(payload["items"].toString()).contains("dish-1")
+        assertThat(payload["items"].toString()).contains("mild")
+        assertThat(payload["fees"].toString()).contains("delivery_cents")
+        assertThat(payload["delivery_address"].toString()).contains("Vancouver")
+        assertThat(payload["total_cents"]).isEqualTo(2750)
     }
 
     // ==================== Helper Methods ====================

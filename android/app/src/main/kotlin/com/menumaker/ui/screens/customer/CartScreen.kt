@@ -1,3 +1,5 @@
+@file:JvmName("MainCartScreenKt")
+
 package com.menumaker.ui.screens.customer
 
 import androidx.compose.foundation.layout.Box

@@ -321,6 +321,7 @@ class FakeApiService : ApiService {
     var getReferralStatsResponse: Response<ReferralStatsResponse>? = null
     var getReferralHistoryResponse: Response<ReferralHistoryResponse>? = null
     var applyReferralCodeResponse: Response<ApplyReferralResponse>? = null
+    var lastApplyReferralCodeRequest: Map<String, String>? = null
 
     override suspend fun getReferralStats(): Response<ReferralStatsResponse> {
         checkForError<ReferralStatsResponse>()?.let { return it }
@@ -333,6 +334,7 @@ class FakeApiService : ApiService {
     }
 
     override suspend fun applyReferralCode(request: Map<String, String>): Response<ApplyReferralResponse> {
+        lastApplyReferralCodeRequest = request
         checkForError<ApplyReferralResponse>()?.let { return it }
         return applyReferralCodeResponse ?: Response.success(TestDataFactory.createApplyReferralResponse())
     }
@@ -340,26 +342,18 @@ class FakeApiService : ApiService {
     // ==================== Integration Responses ====================
 
     var getIntegrationsResponse: Response<IntegrationListResponse>? = null
-    var connectPOSResponse: Response<PaymentProcessorResponse>? = null
-    var connectDeliveryResponse: Response<PaymentProcessorResponse>? = null
     var disconnectIntegrationResponse: Response<Unit>? = null
+    var lastGetIntegrationsBusinessId: String? = null
+    var lastDisconnectIntegrationId: String? = null
 
     override suspend fun getIntegrations(businessId: String): Response<IntegrationListResponse> {
+        lastGetIntegrationsBusinessId = businessId
         checkForError<IntegrationListResponse>()?.let { return it }
         return getIntegrationsResponse ?: Response.success(TestDataFactory.createIntegrationListResponse())
     }
 
-    override suspend fun connectPOS(request: Map<String, String>): Response<PaymentProcessorResponse> {
-        checkForError<PaymentProcessorResponse>()?.let { return it }
-        return connectPOSResponse ?: Response.success(TestDataFactory.createPaymentProcessorResponse())
-    }
-
-    override suspend fun connectDelivery(request: Map<String, String>): Response<PaymentProcessorResponse> {
-        checkForError<PaymentProcessorResponse>()?.let { return it }
-        return connectDeliveryResponse ?: Response.success(TestDataFactory.createPaymentProcessorResponse())
-    }
-
     override suspend fun disconnectIntegration(id: String): Response<Unit> {
+        lastDisconnectIntegrationId = id
         checkForError<Unit>()?.let { return it }
         return disconnectIntegrationResponse ?: Response.success(Unit)
     }
@@ -397,6 +391,8 @@ class FakeApiService : ApiService {
     var getNotificationsResponse: Response<NotificationListResponse>? = null
     var markNotificationAsReadResponse: Response<NotificationResponse>? = null
     var markAllNotificationsAsReadResponse: Response<Unit>? = null
+    var getUserSettingsResponse: Response<Map<String, Any>>? = null
+    var updateUserSettingsResponse: Response<Map<String, Any>>? = null
 
     override suspend fun registerDevice(request: DeviceRegistrationRequest): Response<DeviceRegistrationResponse> {
         checkForError<DeviceRegistrationResponse>()?.let { return it }
@@ -420,6 +416,21 @@ class FakeApiService : ApiService {
     override suspend fun markAllNotificationsAsRead(): Response<Unit> {
         checkForError<Unit>()?.let { return it }
         return markAllNotificationsAsReadResponse ?: Response.success(Unit)
+    }
+
+    override suspend fun getUserSettings(): Response<Map<String, Any>> {
+        checkForError<Map<String, Any>>()?.let { return it }
+        return getUserSettingsResponse ?: Response.success(defaultSettingsResponse())
+    }
+
+    override suspend fun updateUserSettings(settings: Map<String, Boolean>): Response<Map<String, Any>> {
+        checkForError<Map<String, Any>>()?.let { return it }
+        return updateUserSettingsResponse ?: Response.success(
+            mapOf(
+                "success" to true,
+                "data" to mapOf("settings" to defaultSettingsResponse().settingsMap() + settings)
+            )
+        )
     }
 
     // ==================== Payment Responses ====================
@@ -468,6 +479,10 @@ class FakeApiService : ApiService {
 
     var getUserProfileResponse: Response<AuthResponse>? = null
     var updateUserProfileResponse: Response<AuthResponse>? = null
+    var updateProfilePhotoResponse: Response<MeResponse>? = null
+    var uploadMediaResponse: Response<MediaUploadResponse>? = null
+    var uploadMediaCallCount: Int = 0
+    var lastUploadMediaPart: okhttp3.MultipartBody.Part? = null
 
     override suspend fun getUserProfile(): Response<AuthResponse> {
         checkForError<AuthResponse>()?.let { return it }
@@ -477,6 +492,30 @@ class FakeApiService : ApiService {
     override suspend fun updateUserProfile(updates: Map<String, Any>): Response<AuthResponse> {
         checkForError<AuthResponse>()?.let { return it }
         return updateUserProfileResponse ?: Response.success(TestDataFactory.createAuthResponse())
+    }
+
+    override suspend fun updateProfilePhoto(request: Map<String, String>): Response<MeResponse> {
+        checkForError<MeResponse>()?.let { return it }
+        return updateProfilePhotoResponse ?: Response.success(
+            MeResponse(success = true, data = MeData(user = TestDataFactory.createUser(photoUrl = request["photo_url"])))
+        )
+    }
+
+    override suspend fun uploadMedia(file: okhttp3.MultipartBody.Part): Response<MediaUploadResponse> {
+        uploadMediaCallCount += 1
+        lastUploadMediaPart = file
+        checkForError<MediaUploadResponse>()?.let { return it }
+        return uploadMediaResponse ?: Response.success(
+            MediaUploadResponse(
+                success = true,
+                data = MediaUploadData(
+                    url = "https://cdn.menumaker.test/android-upload.jpg",
+                    filename = "android-upload.jpg",
+                    mimeType = "image/jpeg",
+                    size = 1024
+                )
+            )
+        )
     }
 
     // ==================== Analytics Responses ====================
@@ -545,10 +584,11 @@ class FakeApiService : ApiService {
         getReferralStatsResponse = null
         getReferralHistoryResponse = null
         applyReferralCodeResponse = null
+        lastApplyReferralCodeRequest = null
         getIntegrationsResponse = null
-        connectPOSResponse = null
-        connectDeliveryResponse = null
         disconnectIntegrationResponse = null
+        lastGetIntegrationsBusinessId = null
+        lastDisconnectIntegrationId = null
         getFavoritesResponse = null
         addFavoriteResponse = null
         removeFavoriteResponse = null
@@ -557,6 +597,8 @@ class FakeApiService : ApiService {
         getNotificationsResponse = null
         markNotificationAsReadResponse = null
         markAllNotificationsAsReadResponse = null
+        getUserSettingsResponse = null
+        updateUserSettingsResponse = null
         mockChargeResponse = null
         getMenusResponse = null
         getMenuByIdResponse = null
@@ -565,7 +607,28 @@ class FakeApiService : ApiService {
         deleteMenuResponse = null
         getUserProfileResponse = null
         updateUserProfileResponse = null
+        updateProfilePhotoResponse = null
+        uploadMediaResponse = null
+        uploadMediaCallCount = 0
+        lastUploadMediaPart = null
         getAnalyticsResponse = null
         exportAnalyticsResponse = null
+    }
+
+    private fun defaultSettingsResponse(): Map<String, Any> = mapOf(
+        "success" to true,
+        "data" to mapOf(
+            "settings" to mapOf(
+                "notifications_enabled" to true,
+                "order_notifications" to true,
+                "promotion_notifications" to true,
+                "review_notifications" to true
+            )
+        )
+    )
+
+    @Suppress("UNCHECKED_CAST")
+    private fun Map<String, Any>.settingsMap(): Map<String, Boolean> {
+        return ((this["data"] as? Map<String, Any>)?.get("settings") as? Map<String, Boolean>).orEmpty()
     }
 }

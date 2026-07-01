@@ -52,14 +52,6 @@ fun MyOrdersScreen(
                             contentDescription = "Back"
                         )
                     }
-                },
-                actions = {
-                    IconButton(onClick = { /* TODO: Filter */ }) {
-                        Icon(
-                            imageVector = Icons.Default.FilterList,
-                            contentDescription = "Filter"
-                        )
-                    }
                 }
             )
         }

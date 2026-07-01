@@ -203,14 +203,21 @@ struct CardPaymentForm: View {
                 .font(.headline)
 
             // Saved Cards Section
-            if !viewModel.savedCards.isEmpty {
+            let cardMethods = viewModel.tokenizedPaymentMethods.enumerated().filter { $0.element.type == .card }
+            if !cardMethods.isEmpty {
                 Text("Saved Cards")
                     .font(.subheadline)
                     .foregroundColor(.theme.textSecondary)
 
-                ForEach(viewModel.savedCards.indices, id: \.self) { index in
+                ForEach(cardMethods, id: \.element.id) { index, method in
                     SavedCardRow(
-                        card: viewModel.savedCards[index],
+                        card: SavedCard(
+                            id: method.id,
+                            last4Digits: method.last4 ?? "",
+                            expiryMonth: method.expiryMonth.map { String(format: "%02d", $0) } ?? "",
+                            expiryYear: method.expiryYear.map(String.init) ?? "",
+                            cardHolderName: method.billingName ?? "Provider saved card"
+                        ),
                         isSelected: viewModel.selectedSavedCardIndex == index
                     ) {
                         viewModel.selectSavedCard(at: index)
@@ -228,54 +235,15 @@ struct CardPaymentForm: View {
                 .accessibility(label: Text("Add New Card"))
             }
 
-            // New Card Form
-            if viewModel.savedCards.isEmpty || viewModel.showNewCardForm {
-                VStack(spacing: 12) {
-                TextField("Card Number", text: $viewModel.cardNumber)
-                    .keyboardType(.numberPad)
-                    .textContentType(.creditCardNumber)
-                    .padding()
-                    .background(Color.theme.surface)
-                    .cornerRadius(8)
-                    .accessibilityIdentifier("card-number-field")
+            ProviderPaymentGuidance(
+                title: "Add card with provider",
+                message: "Card numbers and security codes are collected only by the payment provider. MenuMaker receives a reusable tokenized summary such as brand, expiry, and last four digits."
+            )
 
-                TextField("Cardholder Name", text: $viewModel.cardHolderName)
-                    .textContentType(.name)
-                    .autocapitalization(.words)
-                    .padding()
-                    .background(Color.theme.surface)
-                    .cornerRadius(8)
-                    .accessibilityIdentifier("cardholder-field")
-
-                HStack(spacing: 12) {
-                    TextField("MM/YY", text: $viewModel.expiryDate)
-                        .keyboardType(.numberPad)
-                        .padding()
-                        .background(Color.theme.surface)
-                        .cornerRadius(8)
-                        .accessibilityIdentifier("expiry-field")
-
-                    TextField("CVV", text: $viewModel.cvv)
-                        .keyboardType(.numberPad)
-                        .textContentType(.creditCardNumber)
-                        .padding()
-                        .background(Color.theme.surface)
-                        .cornerRadius(8)
-                        .accessibilityIdentifier("cvv-field")
-                }
-
-                Toggle("Save card for future payments", isOn: $viewModel.saveCard)
-                    .accessibilityIdentifier("saveCardToggle")
-
-                if let error = viewModel.cardValidationError {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundColor(.theme.error)
-                }
-                }
-                .padding()
-                .background(Color.theme.surface)
-                .cornerRadius(AppConstants.UI.cornerRadius)
+            if let error = viewModel.cardValidationError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundColor(.theme.error)
             }
         }
     }
@@ -328,16 +296,37 @@ struct UPIPaymentForm: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("UPI Details")
+            Text("UPI Payment")
                 .font(.headline)
 
-            TextField("UPI ID (e.g., user@upi)", text: $viewModel.upiId)
-                .keyboardType(.emailAddress)
-                .autocapitalization(.none)
-                .padding()
-                .background(Color.theme.surface)
-                .cornerRadius(8)
-                .accessibilityIdentifier("upi-id-field")
+            let upiMethods = viewModel.tokenizedPaymentMethods.enumerated().filter { $0.element.type == .upi }
+            if upiMethods.isEmpty {
+                ProviderPaymentGuidance(
+                    title: "Authorize UPI with provider",
+                    message: "Enter and verify UPI details in the payment provider flow. MenuMaker uses only the returned token reference."
+                )
+            } else {
+                ForEach(upiMethods, id: \.element.id) { index, method in
+                    Button {
+                        viewModel.selectSavedCard(at: index)
+                    } label: {
+                        HStack {
+                            Image(systemName: "qrcode")
+                                .foregroundColor(.theme.primary)
+                            Text(method.billingName ?? "Provider UPI")
+                            Spacer()
+                            if viewModel.selectedSavedCardIndex == index {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.theme.primary)
+                            }
+                        }
+                        .padding()
+                        .background(Color.theme.surface)
+                        .cornerRadius(8)
+                    }
+                    .accessibilityIdentifier("tokenized-upi-method")
+                }
+            }
 
             if let error = viewModel.upiValidationError {
                 Text(error)
@@ -348,6 +337,30 @@ struct UPIPaymentForm: View {
         .padding()
         .background(Color.theme.surface)
         .cornerRadius(AppConstants.UI.cornerRadius)
+    }
+}
+
+struct ProviderPaymentGuidance: View {
+    let title: String
+    let message: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "lock.shield")
+                    .foregroundColor(.theme.primary)
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+            }
+            Text(message)
+                .font(.caption)
+                .foregroundColor(.theme.textSecondary)
+        }
+        .padding()
+        .background(Color.theme.surface)
+        .cornerRadius(AppConstants.UI.cornerRadius)
+        .accessibilityIdentifier("provider-payment-guidance")
     }
 }
 

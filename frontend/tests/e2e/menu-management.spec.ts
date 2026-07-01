@@ -49,12 +49,9 @@ test.describe('Menu and Dish Management', () => {
       await page.goto('/menu/editor');
 
       // Create a category first
-      const categoryButton = page.locator('button:has-text("Add Category")');
-      if (await categoryButton.isVisible()) {
-        await categoryButton.click();
-        await page.fill('input[name="categoryName"]', 'Appetizers');
-        await page.click('button:has-text("Save Category")');
-      }
+      await page.click('button:has-text("Add Category")');
+      await page.fill('input[name="categoryName"]', 'Appetizers');
+      await page.click('button:has-text("Save Category")');
 
       // Create a dish with category
       await page.click('button:has-text("Add Dish")');
@@ -173,10 +170,10 @@ test.describe('Menu and Dish Management', () => {
       await createDish(page, dish);
 
       // Delete the dish
+      page.once('dialog', async (dialog) => {
+        await dialog.accept();
+      });
       await page.click(`[data-dish-name="${dish.name}"] button:has-text("Delete")`);
-
-      // Confirm deletion
-      await page.click('button:has-text("Confirm")');
 
       // Should remove dish from list
       await expect(page.locator(`text=${dish.name}`)).not.toBeVisible({ timeout: 5000 });
@@ -223,7 +220,7 @@ test.describe('Menu and Dish Management', () => {
       await page.click('button:has-text("Save Category")');
 
       // Should show category in list
-      await expect(page.locator('text=Main Courses')).toBeVisible({ timeout: 5000 });
+      await expect(page.getByText('Main Courses', { exact: true }).last()).toBeVisible({ timeout: 5000 });
     });
 
     test('should reorder categories', async ({ page }) => {
@@ -279,7 +276,7 @@ test.describe('Menu and Dish Management', () => {
       const menuName = `Weekly Menu ${Date.now()}`;
       await page.click('button:has-text("Create Menu")');
       await page.fill('input[name="menuName"]', menuName);
-      await page.click('button:has-text("Create")');
+      await page.locator('button:has-text("Create")').last().click();
 
       // Add dishes to menu
       for (const dish of dishes) {
@@ -340,10 +337,10 @@ test.describe('Menu and Dish Management', () => {
       // Unpublish/archive menu
       const archiveButton = page.locator('button:has-text("Archive")');
       if (await archiveButton.isVisible()) {
+        page.once('dialog', async (dialog) => {
+          await dialog.accept();
+        });
         await archiveButton.click();
-
-        // Confirm archive
-        await page.click('button:has-text("Confirm")');
 
         // Should show archived status
         await expect(page.locator('text=/archived|draft/i')).toBeVisible({ timeout: 5000 });

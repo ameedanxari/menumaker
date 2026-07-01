@@ -11,7 +11,8 @@ import java.io.InputStreamReader
  * unit tests and instrumented tests consume the same data contracts.
  */
 object SharedMockLoader {
-    private val gson = Gson()
+    @PublishedApi
+    internal val gson = Gson()
 
     fun loadJson(path: String): String {
         // Try classpath resources first (unit tests)

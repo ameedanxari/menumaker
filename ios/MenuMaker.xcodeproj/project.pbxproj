@@ -7,6 +7,20 @@
 	objects = {
 
 /* Begin PBXContainerItemProxy section */
+		E2B100012F00000000A24630 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2804F802EC9DD6B00A24630 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E2B100102F00000000A24630;
+			remoteInfo = "MenuMaker-Business";
+		};
+		E2B100022F00000000A24630 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2804F802EC9DD6B00A24630 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E2B100202F00000000A24630;
+			remoteInfo = "MenuMaker-Customer";
+		};
 		E2804F962EC9DD6D00A24630 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E2804F802EC9DD6B00A24630 /* Project object */;
@@ -25,6 +39,10 @@
 
 /* Begin PBXFileReference section */
 		E25246A22F00D30300FC6183 /* MenuMaker.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = MenuMaker.xctestplan; sourceTree = "<group>"; };
+		E2B100032F00000000A24630 /* MenuMaker-Business.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MenuMaker-Business.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2B100042F00000000A24630 /* MenuMaker-Customer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MenuMaker-Customer.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2B100052F00000000A24630 /* MenuMaker-BusinessUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MenuMaker-BusinessUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2B100062F00000000A24630 /* MenuMaker-CustomerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MenuMaker-CustomerUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2804F882EC9DD6B00A24630 /* MenuMaker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MenuMaker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2804F952EC9DD6D00A24630 /* MenuMakerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MenuMakerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2804F9F2EC9DD6D00A24630 /* MenuMakerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MenuMakerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -34,9 +52,29 @@
 		E2E989102ECA16980099E5F4 /* Exceptions for "MenuMaker" folder in "MenuMaker" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				App/MenuMakerBusinessApp.swift,
+				App/MenuMakerCustomerApp.swift,
 				Info.plist,
 			);
 			target = E2804F872EC9DD6B00A24630 /* MenuMaker */;
+		};
+		E2B100092F00000000A24630 /* Exceptions for "MenuMaker" folder in "MenuMaker-Business" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				App/MenuMakerApp.swift,
+				App/MenuMakerCustomerApp.swift,
+				Info.plist,
+			);
+			target = E2B100102F00000000A24630 /* MenuMaker-Business */;
+		};
+		E2B1000A2F00000000A24630 /* Exceptions for "MenuMaker" folder in "MenuMaker-Customer" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				App/MenuMakerApp.swift,
+				App/MenuMakerBusinessApp.swift,
+				Info.plist,
+			);
+			target = E2B100202F00000000A24630 /* MenuMaker-Customer */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -44,9 +82,21 @@
 		E2804F8A2EC9DD6B00A24630 /* MenuMaker */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				E2B100092F00000000A24630 /* Exceptions for "MenuMaker" folder in "MenuMaker-Business" target */,
+				E2B1000A2F00000000A24630 /* Exceptions for "MenuMaker" folder in "MenuMaker-Customer" target */,
 				E2E989102ECA16980099E5F4 /* Exceptions for "MenuMaker" folder in "MenuMaker" target */,
 			);
 			path = MenuMaker;
+			sourceTree = "<group>";
+		};
+		E2B100072F00000000A24630 /* MenuMaker-BusinessUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "MenuMaker-BusinessUITests";
+			sourceTree = "<group>";
+		};
+		E2B100082F00000000A24630 /* MenuMaker-CustomerUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "MenuMaker-CustomerUITests";
 			sourceTree = "<group>";
 		};
 		E2804F982EC9DD6D00A24630 /* MenuMakerTests */ = {
@@ -83,6 +133,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E2B100122F00000000A24630 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E2B100222F00000000A24630 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E2B100312F00000000A24630 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E2B100412F00000000A24630 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -93,6 +171,8 @@
 				E2804F8A2EC9DD6B00A24630 /* MenuMaker */,
 				E2804F982EC9DD6D00A24630 /* MenuMakerTests */,
 				E2804FA22EC9DD6D00A24630 /* MenuMakerUITests */,
+				E2B100072F00000000A24630 /* MenuMaker-BusinessUITests */,
+				E2B100082F00000000A24630 /* MenuMaker-CustomerUITests */,
 				E2804F892EC9DD6B00A24630 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -101,8 +181,12 @@
 			isa = PBXGroup;
 			children = (
 				E2804F882EC9DD6B00A24630 /* MenuMaker.app */,
+				E2B100032F00000000A24630 /* MenuMaker-Business.app */,
+				E2B100042F00000000A24630 /* MenuMaker-Customer.app */,
 				E2804F952EC9DD6D00A24630 /* MenuMakerTests.xctest */,
 				E2804F9F2EC9DD6D00A24630 /* MenuMakerUITests.xctest */,
+				E2B100052F00000000A24630 /* MenuMaker-BusinessUITests.xctest */,
+				E2B100062F00000000A24630 /* MenuMaker-CustomerUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -110,6 +194,96 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		E2B100102F00000000A24630 /* MenuMaker-Business */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E2B100502F00000000A24630 /* Build configuration list for PBXNativeTarget "MenuMaker-Business" */;
+			buildPhases = (
+				E2B100112F00000000A24630 /* Sources */,
+				E2B100122F00000000A24630 /* Frameworks */,
+				E2B100132F00000000A24630 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E2804F8A2EC9DD6B00A24630 /* MenuMaker */,
+			);
+			name = "MenuMaker-Business";
+			packageProductDependencies = (
+			);
+			productName = "MenuMaker-Business";
+			productReference = E2B100032F00000000A24630 /* MenuMaker-Business.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E2B100202F00000000A24630 /* MenuMaker-Customer */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E2B100602F00000000A24630 /* Build configuration list for PBXNativeTarget "MenuMaker-Customer" */;
+			buildPhases = (
+				E2B100212F00000000A24630 /* Sources */,
+				E2B100222F00000000A24630 /* Frameworks */,
+				E2B100232F00000000A24630 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E2804F8A2EC9DD6B00A24630 /* MenuMaker */,
+			);
+			name = "MenuMaker-Customer";
+			packageProductDependencies = (
+			);
+			productName = "MenuMaker-Customer";
+			productReference = E2B100042F00000000A24630 /* MenuMaker-Customer.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E2B100302F00000000A24630 /* MenuMaker-BusinessUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E2B100702F00000000A24630 /* Build configuration list for PBXNativeTarget "MenuMaker-BusinessUITests" */;
+			buildPhases = (
+				E2B100302F01000000A24630 /* Sources */,
+				E2B100312F00000000A24630 /* Frameworks */,
+				E2B100322F00000000A24630 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E2B100332F00000000A24630 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E2B100072F00000000A24630 /* MenuMaker-BusinessUITests */,
+			);
+			name = "MenuMaker-BusinessUITests";
+			packageProductDependencies = (
+			);
+			productName = "MenuMaker-BusinessUITests";
+			productReference = E2B100052F00000000A24630 /* MenuMaker-BusinessUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		E2B100402F00000000A24630 /* MenuMaker-CustomerUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E2B100802F00000000A24630 /* Build configuration list for PBXNativeTarget "MenuMaker-CustomerUITests" */;
+			buildPhases = (
+				E2B100402F01000000A24630 /* Sources */,
+				E2B100412F00000000A24630 /* Frameworks */,
+				E2B100422F00000000A24630 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E2B100432F00000000A24630 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E2B100082F00000000A24630 /* MenuMaker-CustomerUITests */,
+			);
+			name = "MenuMaker-CustomerUITests";
+			packageProductDependencies = (
+			);
+			productName = "MenuMaker-CustomerUITests";
+			productReference = E2B100062F00000000A24630 /* MenuMaker-CustomerUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		E2804F872EC9DD6B00A24630 /* MenuMaker */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = E2804FA92EC9DD6D00A24630 /* Build configuration list for PBXNativeTarget "MenuMaker" */;
@@ -191,6 +365,20 @@
 					E2804F872EC9DD6B00A24630 = {
 						CreatedOnToolsVersion = 26.0.1;
 					};
+					E2B100102F00000000A24630 = {
+						CreatedOnToolsVersion = 26.0.1;
+					};
+					E2B100202F00000000A24630 = {
+						CreatedOnToolsVersion = 26.0.1;
+					};
+					E2B100302F00000000A24630 = {
+						CreatedOnToolsVersion = 26.0.1;
+						TestTargetID = E2B100102F00000000A24630;
+					};
+					E2B100402F00000000A24630 = {
+						CreatedOnToolsVersion = 26.0.1;
+						TestTargetID = E2B100202F00000000A24630;
+					};
 					E2804F942EC9DD6D00A24630 = {
 						CreatedOnToolsVersion = 26.0.1;
 						TestTargetID = E2804F872EC9DD6B00A24630;
@@ -220,8 +408,12 @@
 			projectRoot = "";
 			targets = (
 				E2804F872EC9DD6B00A24630 /* MenuMaker */,
+				E2B100102F00000000A24630 /* MenuMaker-Business */,
+				E2B100202F00000000A24630 /* MenuMaker-Customer */,
 				E2804F942EC9DD6D00A24630 /* MenuMakerTests */,
 				E2804F9E2EC9DD6D00A24630 /* MenuMakerUITests */,
+				E2B100302F00000000A24630 /* MenuMaker-BusinessUITests */,
+				E2B100402F00000000A24630 /* MenuMaker-CustomerUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -242,6 +434,34 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E2804F9D2EC9DD6D00A24630 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E2B100132F00000000A24630 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E2B100232F00000000A24630 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E2B100322F00000000A24630 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E2B100422F00000000A24630 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -272,6 +492,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E2B100112F00000000A24630 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E2B100212F00000000A24630 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E2B100302F01000000A24630 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E2B100402F01000000A24630 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -284,6 +532,16 @@
 			isa = PBXTargetDependency;
 			target = E2804F872EC9DD6B00A24630 /* MenuMaker */;
 			targetProxy = E2804FA02EC9DD6D00A24630 /* PBXContainerItemProxy */;
+		};
+		E2B100332F00000000A24630 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E2B100102F00000000A24630 /* MenuMaker-Business */;
+			targetProxy = E2B100012F00000000A24630 /* PBXContainerItemProxy */;
+		};
+		E2B100432F00000000A24630 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E2B100202F00000000A24630 /* MenuMaker-Customer */;
+			targetProxy = E2B100022F00000000A24630 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -532,10 +790,10 @@
 			};
 			name = Debug;
 		};
-		E2804FB12EC9DD6D00A24630 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
+			E2804FB12EC9DD6D00A24630 /* Release */ = {
+				isa = XCBuildConfiguration;
+				buildSettings = {
+					CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
@@ -548,10 +806,190 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = MenuMaker;
+				};
+				name = Release;
 			};
-			name = Release;
-		};
-/* End XCBuildConfiguration section */
+			E2B100512F00000000A24630 /* Debug */ = {
+				isa = XCBuildConfiguration;
+				buildSettings = {
+					ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+					ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+					CODE_SIGN_STYLE = Automatic;
+					CURRENT_PROJECT_VERSION = 1;
+					ENABLE_PREVIEWS = YES;
+					GENERATE_INFOPLIST_FILE = NO;
+					INFOPLIST_FILE = MenuMaker/Info.plist;
+					INFOPLIST_KEY_CFBundleDisplayName = "MenuMaker Business";
+					LD_RUNPATH_SEARCH_PATHS = (
+						"$(inherited)",
+						"@executable_path/Frameworks",
+					);
+					MARKETING_VERSION = 1.0;
+					PRODUCT_BUNDLE_IDENTIFIER = com.creatrixe.MenuMaker.business;
+					PRODUCT_NAME = "$(TARGET_NAME)";
+					STRING_CATALOG_GENERATE_SYMBOLS = YES;
+					SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG BUSINESS_APP $(inherited)";
+					SWIFT_APPROACHABLE_CONCURRENCY = YES;
+					SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+					SWIFT_EMIT_LOC_STRINGS = YES;
+					SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+					SWIFT_VERSION = 5.0;
+					TARGETED_DEVICE_FAMILY = "1,2";
+				};
+				name = Debug;
+			};
+			E2B100522F00000000A24630 /* Release */ = {
+				isa = XCBuildConfiguration;
+				buildSettings = {
+					ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+					ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+					CODE_SIGN_STYLE = Automatic;
+					CURRENT_PROJECT_VERSION = 1;
+					ENABLE_PREVIEWS = YES;
+					GENERATE_INFOPLIST_FILE = NO;
+					INFOPLIST_FILE = MenuMaker/Info.plist;
+					INFOPLIST_KEY_CFBundleDisplayName = "MenuMaker Business";
+					LD_RUNPATH_SEARCH_PATHS = (
+						"$(inherited)",
+						"@executable_path/Frameworks",
+					);
+					MARKETING_VERSION = 1.0;
+					PRODUCT_BUNDLE_IDENTIFIER = com.creatrixe.MenuMaker.business;
+					PRODUCT_NAME = "$(TARGET_NAME)";
+					STRING_CATALOG_GENERATE_SYMBOLS = YES;
+					SWIFT_ACTIVE_COMPILATION_CONDITIONS = "BUSINESS_APP $(inherited)";
+					SWIFT_APPROACHABLE_CONCURRENCY = YES;
+					SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+					SWIFT_EMIT_LOC_STRINGS = YES;
+					SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+					SWIFT_VERSION = 5.0;
+					TARGETED_DEVICE_FAMILY = "1,2";
+				};
+				name = Release;
+			};
+			E2B100612F00000000A24630 /* Debug */ = {
+				isa = XCBuildConfiguration;
+				buildSettings = {
+					ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+					ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+					CODE_SIGN_STYLE = Automatic;
+					CURRENT_PROJECT_VERSION = 1;
+					ENABLE_PREVIEWS = YES;
+					GENERATE_INFOPLIST_FILE = NO;
+					INFOPLIST_FILE = MenuMaker/Info.plist;
+					INFOPLIST_KEY_CFBundleDisplayName = "MenuMaker Customer";
+					LD_RUNPATH_SEARCH_PATHS = (
+						"$(inherited)",
+						"@executable_path/Frameworks",
+					);
+					MARKETING_VERSION = 1.0;
+					PRODUCT_BUNDLE_IDENTIFIER = com.creatrixe.MenuMaker.customer;
+					PRODUCT_NAME = "$(TARGET_NAME)";
+					STRING_CATALOG_GENERATE_SYMBOLS = YES;
+					SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG CUSTOMER_APP $(inherited)";
+					SWIFT_APPROACHABLE_CONCURRENCY = YES;
+					SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+					SWIFT_EMIT_LOC_STRINGS = YES;
+					SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+					SWIFT_VERSION = 5.0;
+					TARGETED_DEVICE_FAMILY = "1,2";
+				};
+				name = Debug;
+			};
+			E2B100622F00000000A24630 /* Release */ = {
+				isa = XCBuildConfiguration;
+				buildSettings = {
+					ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+					ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+					CODE_SIGN_STYLE = Automatic;
+					CURRENT_PROJECT_VERSION = 1;
+					ENABLE_PREVIEWS = YES;
+					GENERATE_INFOPLIST_FILE = NO;
+					INFOPLIST_FILE = MenuMaker/Info.plist;
+					INFOPLIST_KEY_CFBundleDisplayName = "MenuMaker Customer";
+					LD_RUNPATH_SEARCH_PATHS = (
+						"$(inherited)",
+						"@executable_path/Frameworks",
+					);
+					MARKETING_VERSION = 1.0;
+					PRODUCT_BUNDLE_IDENTIFIER = com.creatrixe.MenuMaker.customer;
+					PRODUCT_NAME = "$(TARGET_NAME)";
+					STRING_CATALOG_GENERATE_SYMBOLS = YES;
+					SWIFT_ACTIVE_COMPILATION_CONDITIONS = "CUSTOMER_APP $(inherited)";
+					SWIFT_APPROACHABLE_CONCURRENCY = YES;
+					SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+					SWIFT_EMIT_LOC_STRINGS = YES;
+					SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+					SWIFT_VERSION = 5.0;
+					TARGETED_DEVICE_FAMILY = "1,2";
+				};
+				name = Release;
+			};
+			E2B100712F00000000A24630 /* Debug */ = {
+				isa = XCBuildConfiguration;
+				buildSettings = {
+					CODE_SIGN_STYLE = Automatic;
+					CURRENT_PROJECT_VERSION = 1;
+					GENERATE_INFOPLIST_FILE = YES;
+					MARKETING_VERSION = 1.0;
+					PRODUCT_BUNDLE_IDENTIFIER = com.creatrixe.MenuMaker.businessUITests;
+					PRODUCT_NAME = "$(TARGET_NAME)";
+					STRING_CATALOG_GENERATE_SYMBOLS = NO;
+					SWIFT_VERSION = 5.0;
+					TARGETED_DEVICE_FAMILY = "1,2";
+					TEST_TARGET_NAME = "MenuMaker-Business";
+				};
+				name = Debug;
+			};
+			E2B100722F00000000A24630 /* Release */ = {
+				isa = XCBuildConfiguration;
+				buildSettings = {
+					CODE_SIGN_STYLE = Automatic;
+					CURRENT_PROJECT_VERSION = 1;
+					GENERATE_INFOPLIST_FILE = YES;
+					MARKETING_VERSION = 1.0;
+					PRODUCT_BUNDLE_IDENTIFIER = com.creatrixe.MenuMaker.businessUITests;
+					PRODUCT_NAME = "$(TARGET_NAME)";
+					STRING_CATALOG_GENERATE_SYMBOLS = NO;
+					SWIFT_VERSION = 5.0;
+					TARGETED_DEVICE_FAMILY = "1,2";
+					TEST_TARGET_NAME = "MenuMaker-Business";
+				};
+				name = Release;
+			};
+			E2B100812F00000000A24630 /* Debug */ = {
+				isa = XCBuildConfiguration;
+				buildSettings = {
+					CODE_SIGN_STYLE = Automatic;
+					CURRENT_PROJECT_VERSION = 1;
+					GENERATE_INFOPLIST_FILE = YES;
+					MARKETING_VERSION = 1.0;
+					PRODUCT_BUNDLE_IDENTIFIER = com.creatrixe.MenuMaker.customerUITests;
+					PRODUCT_NAME = "$(TARGET_NAME)";
+					STRING_CATALOG_GENERATE_SYMBOLS = NO;
+					SWIFT_VERSION = 5.0;
+					TARGETED_DEVICE_FAMILY = "1,2";
+					TEST_TARGET_NAME = "MenuMaker-Customer";
+				};
+				name = Debug;
+			};
+			E2B100822F00000000A24630 /* Release */ = {
+				isa = XCBuildConfiguration;
+				buildSettings = {
+					CODE_SIGN_STYLE = Automatic;
+					CURRENT_PROJECT_VERSION = 1;
+					GENERATE_INFOPLIST_FILE = YES;
+					MARKETING_VERSION = 1.0;
+					PRODUCT_BUNDLE_IDENTIFIER = com.creatrixe.MenuMaker.customerUITests;
+					PRODUCT_NAME = "$(TARGET_NAME)";
+					STRING_CATALOG_GENERATE_SYMBOLS = NO;
+					SWIFT_VERSION = 5.0;
+					TARGETED_DEVICE_FAMILY = "1,2";
+					TEST_TARGET_NAME = "MenuMaker-Customer";
+				};
+				name = Release;
+			};
+	/* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
 		E2804F832EC9DD6B00A24630 /* Build configuration list for PBXProject "MenuMaker" */ = {
@@ -568,6 +1006,24 @@
 			buildConfigurations = (
 				E2804FAA2EC9DD6D00A24630 /* Debug */,
 				E2804FAB2EC9DD6D00A24630 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E2B100502F00000000A24630 /* Build configuration list for PBXNativeTarget "MenuMaker-Business" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E2B100512F00000000A24630 /* Debug */,
+				E2B100522F00000000A24630 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E2B100602F00000000A24630 /* Build configuration list for PBXNativeTarget "MenuMaker-Customer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E2B100612F00000000A24630 /* Debug */,
+				E2B100622F00000000A24630 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -590,7 +1046,25 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-/* End XCConfigurationList section */
+		E2B100702F00000000A24630 /* Build configuration list for PBXNativeTarget "MenuMaker-BusinessUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E2B100712F00000000A24630 /* Debug */,
+				E2B100722F00000000A24630 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E2B100802F00000000A24630 /* Build configuration list for PBXNativeTarget "MenuMaker-CustomerUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E2B100812F00000000A24630 /* Debug */,
+				E2B100822F00000000A24630 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+	/* End XCConfigurationList section */
 	};
 	rootObject = E2804F802EC9DD6B00A24630 /* Project object */;
 }

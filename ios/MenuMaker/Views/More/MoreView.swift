@@ -45,7 +45,7 @@ struct MoreView: View {
                     Label("Referrals", systemImage: "person.2")
                 }
 
-                NavigationLink(destination: Text("Integrations")) {
+                NavigationLink(destination: Text("Provider integrations are launch-gated for this build.")) {
                     Label("Integrations", systemImage: "link")
                 }
             }

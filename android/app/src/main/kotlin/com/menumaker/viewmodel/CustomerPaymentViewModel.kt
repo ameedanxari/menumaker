@@ -4,12 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.menumaker.services.AnalyticsService
 import com.menumaker.data.repository.PaymentRepository
-import com.menumaker.data.remote.models.MockChargeRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import javax.inject.Inject
 
 /**
@@ -29,6 +31,36 @@ data class SavedCard(
     val expiryYear: String,
     val cardHolderName: String
 )
+
+data class TokenizedPaymentMethod(
+    val id: String,
+    val type: PaymentMethodType,
+    val provider: String,
+    val tokenReference: String,
+    val brand: String?,
+    val last4: String?,
+    val expiryMonth: Int?,
+    val expiryYear: Int?,
+    val billingName: String?,
+    val reusable: Boolean = true,
+    val requiresVerification: Boolean = false
+) {
+    fun isExpired(now: YearMonth = YearMonth.now()): Boolean {
+        val month = expiryMonth ?: return false
+        val year = expiryYear ?: return false
+        return YearMonth.of(normalizeExpiryYear(year), month).isBefore(now)
+    }
+
+    private fun normalizeExpiryYear(year: Int): Int = if (year < 100) 2000 + year else year
+}
+
+enum class PaymentIntentStatus {
+    Idle,
+    RequiresProviderAction,
+    PendingVerification,
+    Authorized,
+    Failed
+}
 
 /**
  * ViewModel for customer payment processing
@@ -58,7 +90,7 @@ class CustomerPaymentViewModel @Inject constructor(
     private val _completedOrderId = MutableStateFlow<String?>(null)
     val completedOrderId: StateFlow<String?> = _completedOrderId.asStateFlow()
 
-    // Card payment fields
+    // Card payment fields intentionally retain only masked/non-sensitive summaries.
     private val _cardNumber = MutableStateFlow("")
     val cardNumber: StateFlow<String> = _cardNumber.asStateFlow()
 
@@ -88,6 +120,12 @@ class CustomerPaymentViewModel @Inject constructor(
     private val _savedCards = MutableStateFlow<List<SavedCard>>(emptyList())
     val savedCards: StateFlow<List<SavedCard>> = _savedCards.asStateFlow()
 
+    private val _tokenizedPaymentMethods = MutableStateFlow<List<TokenizedPaymentMethod>>(emptyList())
+    val tokenizedPaymentMethods: StateFlow<List<TokenizedPaymentMethod>> = _tokenizedPaymentMethods.asStateFlow()
+
+    private val _paymentIntentStatus = MutableStateFlow(PaymentIntentStatus.Idle)
+    val paymentIntentStatus: StateFlow<PaymentIntentStatus> = _paymentIntentStatus.asStateFlow()
+
     private val _selectedSavedCardIndex = MutableStateFlow<Int?>(null)
     val selectedSavedCardIndex: StateFlow<Int?> = _selectedSavedCardIndex.asStateFlow()
 
@@ -95,7 +133,7 @@ class CustomerPaymentViewModel @Inject constructor(
     val showNewCardForm: StateFlow<Boolean> = _showNewCardForm.asStateFlow()
 
     init {
-        loadSavedCards()
+        loadTokenizedPaymentMethods()
     }
 
     /**
@@ -104,10 +142,11 @@ class CustomerPaymentViewModel @Inject constructor(
     fun isPayButtonEnabled(): Boolean {
         return when (_selectedPaymentMethod.value) {
             PaymentMethodType.CARD -> {
-                _selectedSavedCardIndex.value != null || isCardValid()
+                selectedTokenizedMethod()?.type == PaymentMethodType.CARD &&
+                    selectedTokenizedMethod()?.isExpired() == false
             }
             PaymentMethodType.CASH -> true
-            PaymentMethodType.UPI -> isUpiValid()
+            PaymentMethodType.UPI -> selectedTokenizedMethod()?.type == PaymentMethodType.UPI
         }
     }
 
@@ -115,15 +154,9 @@ class CustomerPaymentViewModel @Inject constructor(
      * Validate card details
      */
     private fun isCardValid(): Boolean {
-        val number = _cardNumber.value
         val holder = _cardHolderName.value
         val expiry = _expiryDate.value
-        val cvvValue = _cvv.value
-
-        return number.length in 13..19 &&
-                holder.isNotEmpty() &&
-                isValidExpiryDate(expiry) &&
-                cvvValue.length in 3..4
+        return holder.isNotEmpty() && isValidExpiryDate(expiry)
     }
 
     /**
@@ -161,7 +194,8 @@ class CustomerPaymentViewModel @Inject constructor(
      * Update card fields
      */
     fun updateCardNumber(number: String) {
-        _cardNumber.value = number.filter { it.isDigit() }.take(19)
+        val digits = number.filter { it.isDigit() }
+        _cardNumber.value = if (digits.length >= 4) "•••• ${digits.takeLast(4)}" else ""
         validateCardNumber()
     }
 
@@ -175,7 +209,10 @@ class CustomerPaymentViewModel @Inject constructor(
     }
 
     fun updateCvv(value: String) {
-        _cvv.value = value.filter { it.isDigit() }.take(4)
+        _cvv.value = ""
+        _cardValidationError.value = if (value.isNotBlank()) {
+            "Security codes are collected only by the payment provider"
+        } else null
     }
 
     fun updateSaveCard(save: Boolean) {
@@ -194,9 +231,8 @@ class CustomerPaymentViewModel @Inject constructor(
      * Validation methods
      */
     private fun validateCardNumber() {
-        val number = _cardNumber.value
-        _cardValidationError.value = if (number.isNotEmpty() && number.length !in 13..19) {
-            "Invalid card number"
+        _cardValidationError.value = if (_cardNumber.value.isNotEmpty()) {
+            "Use a saved tokenized card or add a card through the payment provider"
         } else null
     }
 
@@ -214,28 +250,31 @@ class CustomerPaymentViewModel @Inject constructor(
         } else null
     }
 
-    /**
-     * Load saved cards
-     */
-    private fun loadSavedCards() {
-        // Mock data - in production, load from secure storage
-        _savedCards.value = listOf(
-            SavedCard(
-                id = "card1",
-                last4Digits = "4242",
-                expiryMonth = "12",
-                expiryYear = "25",
-                cardHolderName = "John Doe"
-            )
-        )
+    private fun loadTokenizedPaymentMethods() {
+        _tokenizedPaymentMethods.value = emptyList()
+        syncLegacySavedCards()
+    }
+
+    fun replaceTokenizedPaymentMethodsForTesting(methods: List<TokenizedPaymentMethod>) {
+        _tokenizedPaymentMethods.value = methods
+        _selectedSavedCardIndex.value = null
+        syncLegacySavedCards()
     }
 
     /**
      * Select saved card
      */
     fun selectSavedCard(index: Int) {
-        _selectedSavedCardIndex.value = index
-        _showNewCardForm.value = false
+        val method = _tokenizedPaymentMethods.value.getOrNull(index)
+        if (method == null) {
+            _selectedSavedCardIndex.value = null
+            _errorMessage.value = "Payment method not found"
+        } else {
+            _selectedSavedCardIndex.value = index
+            _selectedPaymentMethod.value = method.type
+            _showNewCardForm.value = false
+            _errorMessage.value = null
+        }
     }
 
     /**
@@ -247,63 +286,61 @@ class CustomerPaymentViewModel @Inject constructor(
             _errorMessage.value = null
 
             try {
-                val orderId = "ORD-${(10000..99999).random()}"
+                val orderId = "PAY-${System.currentTimeMillis()}"
                 val amountCents = (amount * 100).toInt()
 
                 when (_selectedPaymentMethod.value) {
-                    PaymentMethodType.CARD -> processCardPayment(amountCents, orderId)
+                    PaymentMethodType.CARD -> processTokenizedPayment(amountCents, orderId, PaymentMethodType.CARD)
                     PaymentMethodType.CASH -> processCashPayment(amount, orderId)
-                    PaymentMethodType.UPI -> processUPIPayment(amountCents, orderId)
+                    PaymentMethodType.UPI -> processTokenizedPayment(amountCents, orderId, PaymentMethodType.UPI)
                 }
 
                 _completedOrderId.value = orderId
-                _showPaymentSuccess.value = true
+                _showPaymentSuccess.value = _paymentIntentStatus.value == PaymentIntentStatus.Authorized
                 _isProcessing.value = false
-                onSuccess(orderId)
+                if (_showPaymentSuccess.value) onSuccess(orderId)
 
             } catch (e: Exception) {
                 _errorMessage.value = e.message ?: "Payment failed"
+                _paymentIntentStatus.value = PaymentIntentStatus.Failed
                 _showPaymentFailed.value = true
                 _isProcessing.value = false
             }
         }
     }
 
-    private suspend fun processCardPayment(amountCents: Int, orderId: String) {
-        paymentRepository.mockCharge(
-            MockChargeRequest(
-                amountCents = amountCents,
-                method = "card",
-                reference = orderId
-            )
-        )
+    private fun processTokenizedPayment(amountCents: Int, orderId: String, methodType: PaymentMethodType) {
+        val method = selectedTokenizedMethod()
+            ?: throw IllegalStateException("Choose a saved provider-tokenized ${methodType.name.lowercase(Locale.US)} method")
+        if (method.type != methodType) {
+            throw IllegalStateException("Selected payment method does not match ${methodType.name.lowercase(Locale.US)}")
+        }
+        if (method.isExpired()) {
+            throw IllegalStateException("Selected payment method is expired")
+        }
+        if (method.tokenReference.isBlank()) {
+            throw IllegalStateException("Payment provider token is missing")
+        }
 
-        analyticsService.track("card_payment_processed", mapOf(
+        _paymentIntentStatus.value = if (method.requiresVerification) {
+            PaymentIntentStatus.PendingVerification
+        } else {
+            PaymentIntentStatus.Authorized
+        }
+
+        analyticsService.track("tokenized_payment_authorized", mapOf(
             "amount_cents" to amountCents,
-            "order_id" to orderId
+            "order_id" to orderId,
+            "provider" to method.provider,
+            "method_type" to methodType.name.lowercase(Locale.US)
         ))
     }
 
     private fun processCashPayment(amount: Double, orderId: String) {
+        _paymentIntentStatus.value = PaymentIntentStatus.Authorized
         analyticsService.track("cash_payment_selected", mapOf(
             "amount" to amount,
             "order_id" to orderId
-        ))
-    }
-
-    private suspend fun processUPIPayment(amountCents: Int, orderId: String) {
-        paymentRepository.mockCharge(
-            MockChargeRequest(
-                amountCents = amountCents,
-                method = "upi",
-                reference = orderId
-            )
-        )
-
-        analyticsService.track("upi_payment_processed", mapOf(
-            "amount_cents" to amountCents,
-            "order_id" to orderId,
-            "upi_id" to _upiId.value
         ))
     }
 
@@ -321,5 +358,24 @@ class CustomerPaymentViewModel @Inject constructor(
         _showNewCardForm.value = false
         _cardValidationError.value = null
         _upiValidationError.value = null
+        _paymentIntentStatus.value = PaymentIntentStatus.Idle
+    }
+
+    private fun selectedTokenizedMethod(): TokenizedPaymentMethod? {
+        return _selectedSavedCardIndex.value?.let { _tokenizedPaymentMethods.value.getOrNull(it) }
+    }
+
+    private fun syncLegacySavedCards() {
+        _savedCards.value = _tokenizedPaymentMethods.value
+            .filter { it.type == PaymentMethodType.CARD }
+            .map {
+                SavedCard(
+                    id = it.id,
+                    last4Digits = it.last4 ?: "",
+                    expiryMonth = it.expiryMonth?.toString()?.padStart(2, '0') ?: "",
+                    expiryYear = it.expiryYear?.toString() ?: "",
+                    cardHolderName = it.billingName ?: "Provider saved card"
+                )
+            }
     }
 }

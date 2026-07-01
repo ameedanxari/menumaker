@@ -5,17 +5,20 @@ import androidx.lifecycle.viewModelScope
 import com.menumaker.data.common.Resource
 import com.menumaker.data.remote.models.ReviewDto
 import com.menumaker.data.remote.models.ReviewListData
+import com.menumaker.data.repository.MediaRepository
 import com.menumaker.data.repository.ReviewRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class ReviewViewModel @Inject constructor(
-    private val repository: ReviewRepository
+    private val repository: ReviewRepository,
+    private val mediaRepository: MediaRepository
 ) : ViewModel() {
 
     private val _reviewsState = MutableStateFlow<Resource<ReviewListData>?>(null)
@@ -75,21 +78,60 @@ class ReviewViewModel @Inject constructor(
         comment: String,
         imageUris: List<android.net.Uri>
     ) {
-        val review = mutableMapOf<String, Any>(
-            "business_id" to businessId,
-            "customer_name" to customerName,
-            "rating" to rating,
-            "comment" to comment
-        )
+        viewModelScope.launch {
+            _isLoading.value = true
+            _showSuccessMessage.value = false
+            _successMessage.value = null
 
-        if (orderId != null) {
-            review["order_id"] = orderId
+            val uploadedImageUrls = mutableListOf<String>()
+            for (imageUri in imageUris) {
+                when (val uploadResult = mediaRepository.uploadImage(imageUri).firstNonLoading()) {
+                    is Resource.Success -> uploadedImageUrls += uploadResult.data
+                    is Resource.Error -> {
+                        _isLoading.value = false
+                        _createState.value = Resource.Error(uploadResult.message)
+                        return@launch
+                    }
+                    is Resource.Loading -> Unit
+                }
+            }
+
+            val review = mutableMapOf<String, Any>(
+                "business_id" to businessId,
+                "customer_name" to customerName,
+                "rating" to rating,
+                "comment" to comment
+            )
+
+            if (orderId != null) {
+                review["order_id"] = orderId
+            }
+            if (uploadedImageUrls.isNotEmpty()) {
+                review["photo_urls"] = uploadedImageUrls
+            }
+
+            repository.createReview(review).collect { resource ->
+                _createState.value = resource
+                when (resource) {
+                    is Resource.Loading -> _isLoading.value = true
+                    is Resource.Success -> {
+                        _isLoading.value = false
+                        _showSuccessMessage.value = true
+                        _successMessage.value = "Your review has been submitted successfully!"
+                        loadReviews(businessId)
+                    }
+                    is Resource.Error -> {
+                        _isLoading.value = false
+                        _showSuccessMessage.value = false
+                        _successMessage.value = null
+                    }
+                }
+            }
         }
+    }
 
-        // TODO: Handle image uploads
-        // For now, just submit the review without images
-
-        createReview(review)
+    private suspend fun <T> kotlinx.coroutines.flow.Flow<Resource<T>>.firstNonLoading(): Resource<T> {
+        return first { it !is Resource.Loading }
     }
 
     fun clearSuccessMessage() {

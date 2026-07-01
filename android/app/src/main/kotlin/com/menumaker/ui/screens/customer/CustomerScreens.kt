@@ -1,6 +1,9 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.menumaker.ui.screens.customer
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,12 +17,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.IconButton
-import androidx.compose.material.TopAppBar
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -59,49 +63,13 @@ fun MarketplaceScreen(
         viewModel.searchSellers()
     }
 
-    val sampleSellers = remember {
-        listOf(
-            MarketplaceSellerDto(
-                id = "seller-1",
-                name = "Pizzeria Roma",
-                slug = "pizzeria-roma",
-                description = "Wood-fired pizzas",
-                logoUrl = null,
-                cuisineType = "Italian",
-                rating = 4.7,
-                reviewCount = 120,
-                latitude = null,
-                longitude = null,
-                distanceKm = 1.2
-            ),
-            MarketplaceSellerDto(
-                id = "seller-2",
-                name = "Green Bowl",
-                slug = "green-bowl",
-                description = "Healthy bowls and salads",
-                logoUrl = null,
-                cuisineType = "Healthy",
-                rating = 4.5,
-                reviewCount = 80,
-                latitude = null,
-                longitude = null,
-                distanceKm = 2.5
-            )
-        )
-    }
-
-    val sellers = when (val state = sellersState) {
-        is Resource.Success -> state.data ?: sampleSellers
-        else -> sampleSellers
-    }
-
-    MarketplaceContent(navController = navController, sellers = sellers)
+    MarketplaceContent(navController = navController, sellersState = sellersState ?: Resource.Loading)
 }
 
 @Composable
 fun MarketplaceContent(
     navController: NavController,
-    sellers: List<MarketplaceSellerDto>
+    sellersState: Resource<List<MarketplaceSellerDto>>
 ) {
     Scaffold(
         topBar = {
@@ -110,25 +78,63 @@ fun MarketplaceContent(
             )
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(sellers) { seller ->
-                ElevatedCard(
+        when (sellersState) {
+            is Resource.Loading -> {
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("seller-${seller.id}"),
-                    onClick = { navController.navigate(Destination.SellerMenu.createRoute(seller.id)) }
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(seller.name, fontWeight = FontWeight.Bold)
-                        Text(seller.cuisineType ?: "Cuisine")
-                        Text("Rating: ${seller.rating} (${seller.reviewCount})")
-                        Text("Distance: ${seller.distanceKm ?: 0.0} km")
+                    CircularProgressIndicator()
+                }
+            }
+            is Resource.Error -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(sellersState.message)
+                }
+            }
+            is Resource.Success -> {
+                val sellers = sellersState.data
+                if (sellers.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No sellers are available yet. Please check back later.")
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(sellers) { seller ->
+                            ElevatedCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("seller-${seller.id}"),
+                                onClick = { navController.navigate(Destination.SellerMenu.createRoute(seller.id)) }
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(seller.name, fontWeight = FontWeight.Bold)
+                                    Text(seller.cuisineType ?: "Cuisine")
+                                    Text("Rating: ${seller.rating} (${seller.reviewCount})")
+                                    Text("Distance: ${seller.distanceKm ?: 0.0} km")
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -155,7 +161,7 @@ fun SellerMenuScreen(
     SellerMenuContent(
         navController = navController,
         sellerId = sellerId,
-        dishes = if (dishes.isNotEmpty()) dishes else sampleDishMenu()
+        dishes = dishes
     )
 }
 
@@ -182,32 +188,44 @@ fun SellerMenuContent(
             )
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(dishes) { dish ->
-                ElevatedCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("menu-${dish.id}"),
-                    onClick = { navController.navigate(Destination.Cart.route) }
-                ) {
-                    Row(
+        if (dishes.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("This seller has no available menu items yet.")
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(dishes) { dish ->
+                    ElevatedCard(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                            .testTag("menu-${dish.id}"),
+                        onClick = { navController.navigate(Destination.Cart.route) }
                     ) {
-                        Column {
-                            Text(dish.name, fontWeight = FontWeight.Bold)
-                            Text(dish.description ?: "Tap to add to cart")
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(dish.name, fontWeight = FontWeight.Bold)
+                                Text(dish.description ?: "Tap to add to cart")
+                            }
+                            Text("\$${dish.priceCents / 100.0}")
                         }
-                        Text("\$${dish.priceCents / 100.0}")
                     }
                 }
             }
@@ -370,10 +388,6 @@ fun PaymentScreen(
 
 @Composable
 fun FavoritesScreen(navController: NavController) {
-    val favorites = remember {
-        listOf("Roma Pizza", "Green Bowl", "Sushi House")
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -386,23 +400,14 @@ fun FavoritesScreen(navController: NavController) {
             )
         }
     ) { padding ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(padding)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
         ) {
-            items(favorites) { name ->
-                ElevatedCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("favorite-$name"),
-                    onClick = { navController.navigate(Destination.SellerMenu.createRoute(name)) }
-                ) {
-                    Text(name, modifier = Modifier.padding(16.dp))
-                }
-            }
+            Text("No favorite sellers yet. Favorite a seller from the marketplace to see it here.")
         }
     }
 }
@@ -412,14 +417,6 @@ fun MyOrdersScreen(
     navController: NavController,
     viewModel: OrderViewModel
 ) {
-    val orders = remember {
-        listOf(
-            "order-1" to "Preparing",
-            "order-2" to "Out for delivery",
-            "order-3" to "Delivered"
-        )
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -432,24 +429,14 @@ fun MyOrdersScreen(
             )
         }
     ) { padding ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(padding)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
         ) {
-            items(orders) { (id, status) ->
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { navController.navigate(Destination.OrderTracking.createRoute(id)) }
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Order #$id", fontWeight = FontWeight.Bold)
-                        Text(status)
-                    }
-                }
-            }
+            Text("You do not have any orders yet.")
         }
     }
 }
@@ -541,32 +528,3 @@ fun CustomerReviewsScreen(
         }
     }
 }
-
-private fun sampleDishMenu() = listOf(
-    DishDto(
-        id = "dish-1",
-        businessId = "business-1",
-        name = "Margherita",
-        description = "Wood-fired classic",
-        priceCents = 1299,
-        imageUrl = null,
-        category = "Pizza",
-        isVegetarian = true,
-        isAvailable = true,
-        createdAt = "2025-01-01",
-        updatedAt = "2025-01-01"
-    ),
-    DishDto(
-        id = "dish-2",
-        businessId = "business-1",
-        name = "Spicy Arrabbiata",
-        description = "Penne with heat",
-        priceCents = 1149,
-        imageUrl = null,
-        category = "Pasta",
-        isVegetarian = false,
-        isAvailable = true,
-        createdAt = "2025-01-01",
-        updatedAt = "2025-01-01"
-    )
-)

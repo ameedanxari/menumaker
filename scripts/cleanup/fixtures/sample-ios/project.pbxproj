@@ -1,0 +1,5 @@
+{
+  files = (
+    { isa = PBXFileReference; path = TargetOnly.swift; sourceTree = "<group>"; },
+  );
+}

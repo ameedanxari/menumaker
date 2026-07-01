@@ -163,13 +163,13 @@ class AnalyticsService: ObservableObject {
     // MARK: - Backend Communication
 
     private func sendEventToBackend(_ eventData: [String: Any]) async {
-        // TODO: Send event to analytics backend (e.g., Firebase, Mixpanel, etc.)
-        // For now, just log it
+        // Launch exception: mobile event ingestion is local-only until a provider-backed
+        // analytics endpoint is approved in the platform_health capability registry.
         print("📊 Analytics Event:", eventData)
     }
 
     private func sendUserPropertyToBackend(key: String, value: Any) async {
-        // TODO: Send user property to analytics backend
+        // Launch exception: mobile user-property ingestion follows the same platform_health approval.
         print("👤 User Property:", key, value)
     }
 

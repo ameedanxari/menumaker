@@ -1,0 +1,31 @@
+{
+  "commit": "abc123",
+  "platform": "backend",
+  "generated_at": "2026-06-20T00:00:00Z",
+  "thresholds": {
+    "critical_coverage_min": 0.82,
+    "mutation_score_min": 0.72,
+    "changed_file_coverage_min": 0.75
+  },
+  "gates": [
+    {
+      "name": "order-payment-mutation",
+      "status": "pass",
+      "raw_artifact": "artifacts/mutation.json",
+      "coverage": 0.9,
+      "previous_coverage": 0.89,
+      "mutation_score": 0.61,
+      "previous_mutation_score": 0.78,
+      "retries": 0,
+      "skipped": 0,
+      "only": 0
+    }
+  ],
+  "changed_files": [],
+  "dashboard": {
+    "kpi": ["mutation_score"],
+    "filter": ["platform"],
+    "chart": [{ "id": "mutation", "tooltip": "Mutation score", "legend": "Mutation" }],
+    "table": [{ "label": "mutation", "value": 0.61 }]
+  }
+}

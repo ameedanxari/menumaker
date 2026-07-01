@@ -1,0 +1,9 @@
+capabilities:
+  - name: fixture
+    owner: fixtures
+    status: implemented
+    launch_scope: true
+    feature_flag: FIXTURE_ENABLED
+    route_prefixes: [/fixture]
+    tests: [Fixture.test.ts]
+    client_or_operator_consumers: [fixture_ui]

@@ -1,0 +1,3 @@
+# Root
+
+Allowed root file.

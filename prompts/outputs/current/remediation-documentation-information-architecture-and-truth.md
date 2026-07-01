@@ -1,0 +1,310 @@
+# Remediation Prompt — Documentation Information Architecture and Truth
+
+_Closes gap:_ G13 · documentation-information-architecture-and-truth
+
+## Context
+
+The repository root contains 56 Markdown documents while `docs/` contains one. Requirements, implementation guides, historical audits, status reports, completion claims, plans, troubleshooting, and generated coverage summaries are mixed without authority, owner, date, or lifecycle. Several files simultaneously claim production readiness and list missing/broken workflows.
+
+For documentation examples of a UI surface, existing product style is authoritative and examples must distinguish default, loading, empty, error, disabled, and success rather than presenting a single idealized state.
+
+## What to build
+
+Inventory and classify the corpus, establish a small governed `docs/` hierarchy with explicit authoritative sources, reconcile claims against current code/tests, preserve superseded material in dated read-only archives, generate navigation and freshness checks, and remove root clutter only after references/provenance are verified.
+
+## Implementation guidance
+
+## R1 · Build the documentation inventory and disposition ledger
+- **Closes user story:** As a maintainer, I need every document classified, so that cleanup preserves useful history and removes misleading duplicates safely.
+- **Change type:** create-new
+- **File:** `docs/governance/document-inventory.csv`
+- **File:** `scripts/docs/build_inventory.py`
+- **Precise change:** List every root/docs/spec/platform Markdown or text report with title, type, subject, authority, owner, created/last-evidence date, status (`authoritative`, `supporting`, `superseded`, `historical`, `generated`), replacement, inbound links, retention reason, and proposed destination/delete decision.
+- **Acceptance:**
+  - The ledger contains every tracked documentation/report file exactly once and flags conflicting readiness statements.
+  - Deletion is prohibited when inbound links, unique decisions, legal/operational evidence, or unknown provenance remain.
+  - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
+- **Depends on:** none
+- **Test:** `python3 scripts/docs/build_inventory.py --check docs/governance/document-inventory.csv` reports zero missing/duplicate/unclassified files.
+- **Estimated LOC:** +180
+- **Phase:** polish
+
+## R2 · Establish the authoritative documentation tree
+- **Closes user story:** As a contributor, I need predictable documentation locations, so that I can find current product, architecture, development, operations, security, and release truth.
+- **Change type:** create-new
+- **File:** `AGENTS.md`
+- **File:** `README.md`
+- **File:** `android/README.md`
+- **File:** `ios/README.md`
+- **File:** `docs/README.md`
+- **File:** `docs/archive/2026/README.md`
+- **File:** `scripts/docs/check_navigation.py`
+- **File:** `.ai-prompts`
+- **File:** `.ai-prompts/scripts/safety-check-commit.sh`
+- **File:** `.ai-prompts/scripts/validate-resumption-checkpoint.sh`
+- **File:** `.ai-prompts-version`
+- **File:** `.ai-steering/README.md`
+- **File:** `.ai-steering/architecture-guard.md`
+- **File:** `.ai-steering/change-review.md`
+- **File:** `.ai-steering/library-context.md`
+- **File:** `.cursor/rules/README.md`
+- **File:** `.cursor/rules/architecture-guard.md`
+- **File:** `.cursor/rules/change-review.md`
+- **File:** `.cursor/rules/library-context.md`
+- **File:** `.kiro/steering/README.md`
+- **File:** `.kiro/steering/architecture-guard.md`
+- **File:** `.kiro/steering/change-review.md`
+- **File:** `.kiro/steering/library-context.md`
+- **File:** `.kiro/specs/android-test-coverage/design.md`
+- **File:** `.kiro/specs/android-test-coverage/requirements.md`
+- **File:** `.kiro/specs/android-test-coverage/tasks.md`
+- **File:** `.windsurf/rules/README.md`
+- **File:** `.windsurf/rules/architecture-guard.md`
+- **File:** `.windsurf/rules/change-review.md`
+- **File:** `.windsurf/rules/library-context.md`
+- **File:** `scripts/dev-setup.sh`
+- **File:** `validate-integration.sh`
+- **Precise change:** Define and link `product/`, `architecture/adr/`, `api/`, `development/`, `testing/`, `operations/runbooks/`, `security/`, `release/`, `design-system/`, and `archive/<year>/`; state authority precedence, owners, review cadence, generated-doc rules, and the difference between specs, decisions, runbooks, evidence, and history. Preserve documentation entry points for the user-facing settings screen, debug menu behavior in dev builds, and one-command setup scripts without advertising disabled launch capabilities.
+- **Acceptance:**
+  - A new contributor can reach setup, API contract, target architecture, testing, deployment, incident, security/privacy, and current roadmap in at most two links.
+  - Root retains only README, CONTRIBUTING, AGENTS, MY_PROJECT, and legally conventional top-level files approved in the inventory.
+  - Root and mobile README launch copy does not advertise disabled POS, delivery partner, OCR, tax reporting, subscription, or enhanced-referral capabilities as available.
+  - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
+- **Depends on:** R1 (inventory/disposition decisions)
+- **Test:** `python3 scripts/docs/check_navigation.py docs/README.md` reports all authoritative documents linked and no broken relative links.
+- **Estimated LOC:** +180
+- **Phase:** polish
+
+## R3 · Replace readiness narratives with an evidence-backed status
+- **Closes user story:** As a product owner, I need one current status page, so that release decisions reflect live evidence rather than optimistic historical summaries.
+- **Change type:** create-new
+- **File:** `docs/product/status.md`
+- **File:** `scripts/docs/verify_status_claims.py`
+- **Precise change:** Summarize component completion, open gaps G1–G14, capability-registry states, last successful build/test/deploy/restore evidence, environment limitations, owners, next milestones, and explicit criteria for using `production-ready`; link machine artifacts rather than copying results.
+- **Acceptance:**
+  - README/NEXT-STEPS/mobile reports no longer make contradictory current readiness claims; historical claims are labelled and archived.
+  - Each status claim has source path, command/run URL, timestamp, scope, and confidence; missing evidence is stated as unverified.
+  - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
+- **Depends on:** R2 (authoritative tree; capability and quality evidence are linked as they become available)
+- **Test:** `python3 scripts/docs/verify_status_claims.py docs/product/status.md` rejects unsupported, stale, or unscoped readiness claims.
+- **Estimated LOC:** +220
+- **Phase:** polish
+
+## R4 · Consolidate feature guides and specifications by authority
+- **Closes user story:** As a developer, I need one current guide per capability, so that implementation work does not choose between contradictory phase documents.
+- **Change type:** create-new
+- **File:** `docs/product/capability-index.md`
+- **File:** `scripts/docs/verify_capability_docs.py`
+- **Precise change:** Map each capability-registry entry to canonical product requirement, OpenAPI operation, architecture owner, code paths, tests, operations guide, and archived predecessors; merge unique content from root feature guides into concise current pages and preserve original files under dated archive with `Superseded by` headers.
+- **Acceptance:**
+  - Every launch capability has exactly one current product page and every archived guide points to its replacement.
+  - Generated API/test/coverage artifacts are linked or regenerated, never hand-copied into current narrative pages.
+  - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
+- **Depends on:** R3 (current status authority)
+- **Test:** `python3 scripts/docs/verify_capability_docs.py docs/product/capability-index.md docs/product/capability-registry.yaml` exits 0.
+- **Estimated LOC:** +260
+- **Phase:** polish
+
+## R5 · Archive superseded material and clean the repository root
+- **Closes user story:** As a contributor, I need a quiet repository root without losing provenance, so that current instructions are obvious and historical evidence remains discoverable.
+- **Change type:** create-new
+- **File:** `scripts/docs/apply_disposition.py`
+- **File:** `ADMIN-BACKEND-GUIDE.md`
+- **File:** `ANDROID-DEV-GUIDE.md`
+- **File:** `ANDROID-TEST-VERIFICATION.md`
+- **File:** `ANDROID_IOS_PARITY_PLAN.md`
+- **File:** `API_DOCUMENTATION.md`
+- **File:** `BACKEND_EXPLORATION.md`
+- **File:** `BACKEND_QUICK_REFERENCE.txt`
+- **File:** `BRAND-GUIDELINES.md`
+- **File:** `BUNDLE-VERIFICATION.txt`
+- **File:** `CI-PIPELINE-TEST-REPORT.md`
+- **File:** `COMPILATION_ERRORS_BREAKDOWN.md`
+- **File:** `COMPLETE_TEST_COVERAGE_SUMMARY.md`
+- **File:** `COMPONENT-LIBRARY.md`
+- **File:** `COMPREHENSIVE_PARITY_ANALYSIS.md`
+- **File:** `CONTEXT.md`
+- **File:** `COUPONS-PROMOTIONS-GUIDE.md`
+- **File:** `DELIVERY-INTEGRATION-GUIDE.md`
+- **File:** `DEPLOYMENT.md`
+- **File:** `DESIGN-SYSTEM-GUIDE.md`
+- **File:** `ENHANCED-REFERRAL-GUIDE.md`
+- **File:** `GDPR-COMPLIANCE-GUIDE.md`
+- **File:** `I18N-GUIDE.md`
+- **File:** `IMPLEMENTATION-READY.md`
+- **File:** `INDEX.md`
+- **File:** `IOS-IMPLEMENTATION-SUMMARY.md`
+- **File:** `MARKETPLACE-GUIDE.md`
+- **File:** `MOBILE-APPS-IMPLEMENTATION-COMPLETE.md`
+- **File:** `MOBILE-APPS-STATUS.md`
+- **File:** `NEXT-STEPS.md`
+- **File:** `OCR-MENU-IMPORT-GUIDE.md`
+- **File:** `PAYMENT-PROCESSORS-GUIDE.md`
+- **File:** `PAYOUTS-GUIDE.md`
+- **File:** `PHASE-1-POLISH-COMPLETE.md`
+- **File:** `PHASE-1-POLISH-PLAN.md`
+- **File:** `PHASE-2-IMPLEMENTATION-PLAN.md`
+- **File:** `PHASE-2.1-COMPLETION-SUMMARY.md`
+- **File:** `PHASE-2.2-COMPLETION-SUMMARY.md`
+- **File:** `PHASES-EXPANSION-COMPLETE.txt`
+- **File:** `PHASES-EXPANSION-SUMMARY.md`
+- **File:** `PHASES-ROADMAP.md`
+- **File:** `POS-INTEGRATION-GUIDE.md`
+- **File:** `REFERRAL-SYSTEM-GUIDE.md`
+- **File:** `REORDER-FLOW-GUIDE.md`
+- **File:** `REVIEW-SUMMARY.md`
+- **File:** `REVIEWS-GUIDE.md`
+- **File:** `SECURITY_AUDIT.md`
+- **File:** `SECURITY_FIXES.md`
+- **File:** `SECURITY_QUICK_REFERENCE.md`
+- **File:** `SPEC-REVIEW-ANALYSIS.md`
+- **File:** `SPECKIT-BUNDLE-README.md`
+- **File:** `STRIPE-PAYMENT-TESTING.md`
+- **File:** `TAX-COMPLIANCE-GUIDE.md`
+- **File:** `TEST_COVERAGE_FINAL_SUMMARY.md`
+- **File:** `TROUBLESHOOTING.md`
+- **File:** `WHATSAPP-SETUP-GUIDE.md`
+- **File:** `android/ANDROID_TEST_COVERAGE_REPORT.md`
+- **File:** `android/PARITY_AUDIT.md`
+- **File:** `backend/templates/legal/privacy-policy-IN.md`
+- **File:** `backend/tests/TEST_COVERAGE_FINAL_REPORT.md`
+- **File:** `backend/tests/TEST_COVERAGE_IMPROVEMENT.md`
+- **File:** `backend/tests/TEST_COVERAGE_SUMMARY.md`
+- **File:** `ios/IOS_TEST_COVERAGE_REPORT.md`
+- **File:** `docs/archive/2026/ADMIN-BACKEND-GUIDE.md`
+- **File:** `docs/archive/2026/ANDROID-DEV-GUIDE.md`
+- **File:** `docs/archive/2026/ANDROID-TEST-VERIFICATION.md`
+- **File:** `docs/archive/2026/ANDROID_IOS_PARITY_PLAN.md`
+- **File:** `docs/archive/2026/API_DOCUMENTATION.md`
+- **File:** `docs/archive/2026/BACKEND_EXPLORATION.md`
+- **File:** `docs/archive/2026/BACKEND_QUICK_REFERENCE.txt`
+- **File:** `docs/archive/2026/BRAND-GUIDELINES.md`
+- **File:** `docs/archive/2026/BUNDLE-VERIFICATION.txt`
+- **File:** `docs/archive/2026/CI-PIPELINE-TEST-REPORT.md`
+- **File:** `docs/archive/2026/COMPILATION_ERRORS_BREAKDOWN.md`
+- **File:** `docs/archive/2026/COMPLETE_TEST_COVERAGE_SUMMARY.md`
+- **File:** `docs/archive/2026/COMPONENT-LIBRARY.md`
+- **File:** `docs/archive/2026/COMPREHENSIVE_PARITY_ANALYSIS.md`
+- **File:** `docs/archive/2026/CONTEXT.md`
+- **File:** `docs/archive/2026/COUPONS-PROMOTIONS-GUIDE.md`
+- **File:** `docs/archive/2026/DELIVERY-INTEGRATION-GUIDE.md`
+- **File:** `docs/archive/2026/DEPLOYMENT.md`
+- **File:** `docs/archive/2026/DESIGN-SYSTEM-GUIDE.md`
+- **File:** `docs/archive/2026/ENHANCED-REFERRAL-GUIDE.md`
+- **File:** `docs/archive/2026/GDPR-COMPLIANCE-GUIDE.md`
+- **File:** `docs/archive/2026/I18N-GUIDE.md`
+- **File:** `docs/archive/2026/IMPLEMENTATION-READY.md`
+- **File:** `docs/archive/2026/INDEX.md`
+- **File:** `docs/archive/2026/IOS-IMPLEMENTATION-SUMMARY.md`
+- **File:** `docs/archive/2026/MARKETPLACE-GUIDE.md`
+- **File:** `docs/archive/2026/MOBILE-APPS-IMPLEMENTATION-COMPLETE.md`
+- **File:** `docs/archive/2026/MOBILE-APPS-STATUS.md`
+- **File:** `docs/archive/2026/NEXT-STEPS.md`
+- **File:** `docs/archive/2026/OCR-MENU-IMPORT-GUIDE.md`
+- **File:** `docs/archive/2026/PAYMENT-PROCESSORS-GUIDE.md`
+- **File:** `docs/archive/2026/PAYOUTS-GUIDE.md`
+- **File:** `docs/archive/2026/PHASE-1-POLISH-COMPLETE.md`
+- **File:** `docs/archive/2026/PHASE-1-POLISH-PLAN.md`
+- **File:** `docs/archive/2026/PHASE-2-IMPLEMENTATION-PLAN.md`
+- **File:** `docs/archive/2026/PHASE-2.1-COMPLETION-SUMMARY.md`
+- **File:** `docs/archive/2026/PHASE-2.2-COMPLETION-SUMMARY.md`
+- **File:** `docs/archive/2026/PHASES-EXPANSION-COMPLETE.txt`
+- **File:** `docs/archive/2026/PHASES-EXPANSION-SUMMARY.md`
+- **File:** `docs/archive/2026/PHASES-ROADMAP.md`
+- **File:** `docs/archive/2026/POS-INTEGRATION-GUIDE.md`
+- **File:** `docs/archive/2026/REFERRAL-SYSTEM-GUIDE.md`
+- **File:** `docs/archive/2026/REORDER-FLOW-GUIDE.md`
+- **File:** `docs/archive/2026/REVIEW-SUMMARY.md`
+- **File:** `docs/archive/2026/REVIEWS-GUIDE.md`
+- **File:** `docs/archive/2026/SECURITY_AUDIT.md`
+- **File:** `docs/archive/2026/SECURITY_FIXES.md`
+- **File:** `docs/archive/2026/SECURITY_QUICK_REFERENCE.md`
+- **File:** `docs/archive/2026/SPEC-REVIEW-ANALYSIS.md`
+- **File:** `docs/archive/2026/SPECKIT-BUNDLE-README.md`
+- **File:** `docs/archive/2026/STRIPE-PAYMENT-TESTING.md`
+- **File:** `docs/archive/2026/TAX-COMPLIANCE-GUIDE.md`
+- **File:** `docs/archive/2026/TEST_COVERAGE_FINAL_SUMMARY.md`
+- **File:** `docs/archive/2026/TROUBLESHOOTING.md`
+- **File:** `docs/archive/2026/WHATSAPP-SETUP-GUIDE.md`
+- **File:** `docs/archive/2026/android__ANDROID_TEST_COVERAGE_REPORT.md`
+- **File:** `docs/archive/2026/android__PARITY_AUDIT.md`
+- **File:** `docs/archive/2026/backend__templates__legal__privacy-policy-IN.md`
+- **File:** `docs/archive/2026/backend__tests__TEST_COVERAGE_FINAL_REPORT.md`
+- **File:** `docs/archive/2026/backend__tests__TEST_COVERAGE_IMPROVEMENT.md`
+- **File:** `docs/archive/2026/backend__tests__TEST_COVERAGE_SUMMARY.md`
+- **File:** `docs/archive/2026/ios__IOS_TEST_COVERAGE_REPORT.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/architecture.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/audit-report.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/delivery-order.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/execution-log.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/external-accounts.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/gap-list.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/product-vision.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/release-plan.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/remediation-android-parity-audit.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/remediation-backend-env-validation.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/remediation-backend-stub-remediation.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/remediation-cicd-multi-target-verification.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/remediation-frontend-design-token-sync.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/remediation-infra-restoration.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/remediation-ios-target-linkage.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/revise-report.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/store-submission.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/tasks-android-parity.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/tasks-infra-stubbing.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/ui-reference-source-map.md`
+- **File:** `prompts/outputs/archive/2026-06-19-pre-consolidation-audit/ux-flows.md`
+- **File:** `prompts/outputs/current/remediation-android-parity-audit.md`
+- **File:** `prompts/outputs/current/remediation-backend-env-validation.md`
+- **File:** `prompts/outputs/current/remediation-backend-stub-remediation.md`
+- **File:** `prompts/outputs/current/remediation-cicd-multi-target-verification.md`
+- **File:** `prompts/outputs/current/remediation-frontend-design-token-sync.md`
+- **File:** `prompts/outputs/current/remediation-infra-restoration.md`
+- **File:** `prompts/outputs/current/remediation-ios-target-linkage.md`
+- **File:** `prompts/outputs/current/tasks-android-parity.md`
+- **File:** `prompts/outputs/current/tasks-infra-stubbing.md`
+- **File:** `prompts/outputs/current/ui-reference-source-map.md`
+- **File:** `prompts/outputs/current/ux-flows.md`
+- **Precise change:** Read the approved inventory, move historical/superseded documents to `docs/archive/<year>/` with provenance frontmatter and replacement links, delete generated outputs that are reproducible and unreferenced, rewrite inbound links, and produce a before/after manifest; default to dry run and require explicit approval for delete.
+- **Acceptance:**
+  - Dry run reports every move/delete/link rewrite and hash; apply is idempotent and never touches authoritative/unknown/legal-retained files.
+  - After apply, root-document allowlist and full Markdown link check pass with no unique content silently lost.
+  - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
+- **Depends on:** R4 (canonical replacements)
+- **Test:** `python3 scripts/docs/apply_disposition.py --inventory docs/governance/document-inventory.csv --dry-run && python3 scripts/docs/check_all.py` exits 0.
+- **Estimated LOC:** +300
+- **Phase:** polish
+
+## R6 · Enforce ownership, freshness, and link integrity
+- **Closes user story:** As a documentation owner, I need automated lifecycle checks, so that the corpus does not become scattered and contradictory again.
+- **Change type:** create-new
+- **File:** `scripts/docs/check_all.py`
+- **File:** `scripts/docs/verify_disabled_capability_claims.py`
+- **File:** `scripts/docs/fixtures/good/docs/README.md`
+- **File:** `scripts/docs/fixtures/good/docs/product/status.md`
+- **File:** `scripts/docs/fixtures/good/docs/product/capability-index.md`
+- **File:** `scripts/docs/fixtures/good/docs/product/capability-registry.yaml`
+- **File:** `scripts/docs/fixtures/good/docs/governance/document-inventory.csv`
+- **File:** `scripts/docs/fixtures/good/docs/archive/2026/old-status.md`
+- **File:** `scripts/docs/fixtures/bad-root-clutter/README.md`
+- **File:** `scripts/docs/fixtures/bad-root-clutter/UNOWNED.md`
+- **File:** `scripts/docs/fixtures/bad-unsupported-readiness/docs/README.md`
+- **File:** `scripts/docs/fixtures/bad-unsupported-readiness/docs/product/status.md`
+- **File:** `scripts/docs/fixtures/bad-archive-metadata/docs/README.md`
+- **File:** `scripts/docs/fixtures/bad-archive-metadata/docs/archive/2026/old-status.md`
+- **Precise change:** Validate frontmatter schema/owner/status/review date, relative/anchor/code-path links, authoritative uniqueness, archive replacement links, root allowlist, stale evidence windows, generated-file markers, and prohibited unsupported phrases such as current `production-ready` without evidence.
+- **Acceptance:**
+  - CI fails on orphan current docs, duplicate authority, broken paths, expired review, root clutter, or unsupported readiness statements.
+  - Historical archives are exempt from freshness but must retain provenance/hash/replacement metadata.
+  - Disabled-capability claim verification rejects README/store/release copy that advertises POS, delivery partner, OCR, tax reporting, subscriptions, or enhanced referrals without disabled/gated/historical context.
+  - The task's named verification command is required in CI and returns non-zero with the owning file and actionable diagnostics on regression.
+- **Depends on:** R5 (consolidated corpus)
+- **Test:** `python3 scripts/docs/check_all.py --fixtures scripts/docs/fixtures` accepts the good corpus and rejects each lifecycle violation.
+- **Estimated LOC:** +320
+- **Phase:** polish
+
+## What NOT to do
+
+- Do not delete historical documents before inventory, replacement, inbound-link, provenance, and retention checks.
+- Do not move contradictory claims into `docs/` unchanged and call that consolidation.
+- Do not treat generated coverage/test output as manually maintained documentation.

@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "user-customer-1",
+      "email": "customer@example.com",
+      "name": "Customer One",
+      "role": "customer",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    },
+    "tokens": {
+      "accessToken": "test-access-token",
+      "refreshToken": "test-refresh-token"
+    },
+    "id": "auth_signup",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  }
+}

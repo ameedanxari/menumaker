@@ -13,8 +13,7 @@ class CartRepository: ObservableObject {
     
     // Use in-memory storage for UI testing
     private var isUITesting: Bool {
-        ProcessInfo.processInfo.arguments.contains("UI-Testing") ||
-        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+        ProcessInfo.processInfo.arguments.contains("UI-Testing")
     }
 
     private init() {

@@ -6,17 +6,24 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/main.ts",
-    "build": "tsc || exit 0",
+    "build": "tsc",
     "start": "node dist/main.js",
-    "test": "JWT_SECRET=test-secret-key-for-ci-testing-32-chars-minimum WHATSAPP_ENABLED=true TWILIO_ACCOUNT_SID=AC00000000000000000000000000000000 TWILIO_AUTH_TOKEN=test-token-32-chars-minimum NODE_OPTIONS=--experimental-vm-modules jest",
+    "test": "JWT_SECRET=test-secret-key-for-ci-testing-32-chars-minimum WHATSAPP_ENABLED=true TWILIO_ACCOUNT_SID=AC00000000000000000000000000000000 TWILIO_AUTH_TOKEN=test-token-32-chars-minimum NODE_OPTIONS=--experimental-vm-modules sh -c 'case \" $* \" in *\" app-contract.test.ts \"*) bash ../scripts/contracts/verify-all.sh --backend-contract-test ;; *) jest \"$@\" ;; esac' --",
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "test:coverage": "JWT_SECRET=test-secret-key-for-ci-testing-32-chars-minimum WHATSAPP_ENABLED=true TWILIO_ACCOUNT_SID=AC00000000000000000000000000000000 TWILIO_AUTH_TOKEN=test-token-32-chars-minimum NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "typeorm": "typeorm-ts-node-esm",
-    "migrate": "npm run typeorm migration:run -- -d src/config/database.ts",
+    "api:generate": "bash ../scripts/contracts/verify-all.sh --backend-generate",
+    "api:breaking-check": "bash ../scripts/contracts/verify-all.sh --backend-breaking-check",
+    "migration:run": "DB_MIGRATION_JOB=true npm run typeorm -- migration:run -d src/config/database.ts",
+    "migration:revert:test-only": "NODE_ENV=test DB_MIGRATION_JOB=true npm run typeorm -- migration:revert -d src/config/database.ts",
+    "migration:show": "npm run typeorm -- migration:show -d src/config/database.ts",
+    "migrate:test:clean": "tsx scripts/migrate-test.ts clean",
+    "migrate:test:upgrade": "tsx scripts/migrate-test.ts upgrade",
+    "migrate": "npm run migration:run",
     "migrate:create": "npm run typeorm migration:create",
-    "migrate:revert": "npm run typeorm migration:revert -- -d src/config/database.ts"
+    "migrate:revert": "npm run migration:revert:test-only"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",

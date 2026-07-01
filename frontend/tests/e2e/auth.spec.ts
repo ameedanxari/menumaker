@@ -2,6 +2,15 @@ import { test, expect } from '@playwright/test';
 import { generateTestUser, signup, login, logout } from './helpers';
 
 test.describe('Authentication Flow', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.clear();
+      window.sessionStorage.clear();
+    });
+  });
+
   test.describe('User Signup', () => {
     test('should successfully create a new account', async ({ page }) => {
       const user = generateTestUser();
@@ -11,9 +20,7 @@ test.describe('Authentication Flow', () => {
       // Should redirect to business setup or dashboard
       await expect(page).toHaveURL(/\/business\/new|\/dashboard/);
 
-      // Should show user is logged in (check for user menu or logout button)
-      const userMenu = page.locator('button[aria-label="User menu"]');
-      await expect(userMenu).toBeVisible({ timeout: 5000 });
+      await expect(page.getByRole('button', { name: 'Logout' })).toBeVisible({ timeout: 5000 });
     });
 
     test('should show validation error for invalid email', async ({ page }) => {
@@ -24,8 +31,10 @@ test.describe('Authentication Flow', () => {
       await page.fill('input[name="confirmPassword"]', 'Test123456!');
       await page.click('button[type="submit"]');
 
-      // Should show error message
-      await expect(page.locator('text=/invalid email|email format/i')).toBeVisible();
+      const emailValidationMessage = await page.locator('input[name="email"]').evaluate((input) => {
+        return (input as HTMLInputElement).validationMessage;
+      });
+      expect(emailValidationMessage).toMatch(/invalid|email|include an '@'/i);
     });
 
     test('should show error for password mismatch', async ({ page }) => {
@@ -88,9 +97,7 @@ test.describe('Authentication Flow', () => {
       // Should be on dashboard or business page
       await expect(page).toHaveURL(/\/dashboard|\/business/);
 
-      // Should show user is logged in
-      const userMenu = page.locator('button[aria-label="User menu"]');
-      await expect(userMenu).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Logout' })).toBeVisible();
     });
 
     test('should show error for invalid credentials', async ({ page }) => {
@@ -109,8 +116,10 @@ test.describe('Authentication Flow', () => {
 
       await page.click('button[type="submit"]');
 
-      // Should show validation errors
-      await expect(page.locator('text=/email.*required|required/i')).toBeVisible();
+      const emailValidationMessage = await page.locator('input[name="email"]').evaluate((input) => {
+        return (input as HTMLInputElement).validationMessage;
+      });
+      expect(emailValidationMessage).toMatch(/fill out|required/i);
     });
 
     test('should redirect to login when accessing protected route', async ({ page }) => {
@@ -141,17 +150,15 @@ test.describe('Authentication Flow', () => {
   });
 
   test.describe('Session Persistence', () => {
-    test('should persist session across page reloads', async ({ page }) => {
+    test('should require re-authentication after page reload without persisted bearer token', async ({ page }) => {
       const user = generateTestUser();
       await signup(page, user.email, user.password);
 
       // Reload the page
       await page.reload();
 
-      // Should still be logged in
-      await expect(page).toHaveURL(/\/dashboard|\/business/);
-      const userMenu = page.locator('button[aria-label="User menu"]');
-      await expect(userMenu).toBeVisible();
+      // Access tokens are intentionally memory-only; a reload must not silently persist auth.
+      await expect(page).toHaveURL(/\/login/);
     });
   });
 
@@ -170,6 +177,44 @@ test.describe('Authentication Flow', () => {
       await page.click('a[href="/login"]');
 
       await expect(page).toHaveURL('/login');
+    });
+  });
+
+  test.describe('Admin Portal', () => {
+    test('should not expose the admin portal to a regular authenticated user', async ({ page }) => {
+      const user = generateTestUser();
+      await signup(page, user.email, user.password);
+
+      await expect(page.getByRole('link', { name: 'Admin Portal' })).toHaveCount(0);
+
+      await page.evaluate(() => {
+        window.history.pushState({}, '', '/admin');
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      });
+      await expect(page).toHaveURL('/dashboard');
+      await expect(page.getByRole('heading', { name: 'Admin Portal' })).toHaveCount(0);
+    });
+
+    test('should expose first-party admin route to operators and load admin API evidence', async ({ page }) => {
+      const user = {
+        email: `support.operator-${Date.now()}-${Math.random().toString(36).substring(7)}@example.test`,
+        password: 'Test123456!',
+      };
+      await signup(page, user.email, user.password);
+
+      await expect(page.getByRole('link', { name: 'Admin Portal' })).toBeVisible();
+      await page.getByRole('link', { name: 'Admin Portal' }).click();
+      await expect(page).toHaveURL('/admin');
+
+      await expect(page.getByRole('heading', { name: 'Admin Portal' })).toBeVisible();
+      await expect(page.getByText('First-party operator surface for the existing admin APIs')).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Platform Analytics' })).toBeVisible();
+
+      await expect(page.getByText('support.operator@example.test')).toBeVisible();
+      await expect(page.getByText('menu_image_review')).toBeVisible();
+      await expect(page.getByText('Launch readiness review')).toBeVisible();
+      await expect(page.getByText('admin_portal')).toBeVisible();
+      await expect(page.getByText('ocr_menu_import', { exact: true })).toBeVisible();
     });
   });
 });

@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 export default function MenuEditorPage() {
-  const { currentBusiness } = useBusinessStore();
+  const { currentBusiness, fetchBusinesses } = useBusinessStore();
   const {
     dishes,
     categories,
@@ -49,6 +49,12 @@ export default function MenuEditorPage() {
   const [showNewMenuModal, setShowNewMenuModal] = useState(false);
   const [newMenuName, setNewMenuName] = useState('');
   const [newMenuDescription, setNewMenuDescription] = useState('');
+
+  useEffect(() => {
+    if (!currentBusiness) {
+      fetchBusinesses();
+    }
+  }, [currentBusiness, fetchBusinesses]);
 
   useEffect(() => {
     if (currentBusiness) {
@@ -234,6 +240,14 @@ export default function MenuEditorPage() {
               <Plus className="w-4 h-4" />
               Add Dish
             </button>
+
+            <button
+              onClick={() => setShowNewMenuModal(true)}
+              className="btn-secondary inline-flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Create Menu
+            </button>
           </div>
 
           {/* Category Management */}
@@ -251,6 +265,7 @@ export default function MenuEditorPage() {
               {showNewCategoryInput ? (
                 <div className="flex gap-2">
                   <input
+                    name="categoryName"
                     type="text"
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
@@ -261,7 +276,7 @@ export default function MenuEditorPage() {
                     }}
                   />
                   <button onClick={handleCreateCategory} className="btn-primary py-1 px-3 text-sm">
-                    Add
+                    Save Category
                   </button>
                   <button
                     onClick={() => {
@@ -357,6 +372,7 @@ export default function MenuEditorPage() {
                       <div className="font-medium">{menu.name}</div>
                       <div className="flex items-center gap-2 mt-1">
                         <span
+                          data-testid={menu.status === 'published' ? 'menu-status' : undefined}
                           className={`text-xs px-2 py-0.5 rounded-full ${
                             menu.status === 'published'
                               ? 'bg-green-100 text-green-800'
@@ -516,6 +532,7 @@ export default function MenuEditorPage() {
                 </label>
                 <input
                   id="menu-name"
+                  name="menuName"
                   type="text"
                   value={newMenuName}
                   onChange={(e) => setNewMenuName(e.target.value)}
@@ -529,6 +546,7 @@ export default function MenuEditorPage() {
                 </label>
                 <textarea
                   id="menu-description"
+                  name="menuDescription"
                   value={newMenuDescription}
                   onChange={(e) => setNewMenuDescription(e.target.value)}
                   className="input min-h-[80px]"

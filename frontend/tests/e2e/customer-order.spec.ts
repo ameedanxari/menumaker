@@ -8,6 +8,7 @@ import {
   createBusiness,
   createDish,
   publishMenu,
+  logout,
   fillCheckoutForm,
   assertOrderPlaced,
 } from './helpers';
@@ -33,8 +34,7 @@ test.describe('Customer Order Flow', () => {
       const slug = business.name.toLowerCase().replace(/\s+/g, '-');
 
       // Logout seller (simulate customer)
-      await page.click('button[aria-label="User menu"]');
-      await page.click('text=Logout');
+      await logout(page);
 
       // Navigate to public menu
       await page.goto(`/m/${slug}`);
@@ -174,10 +174,12 @@ test.describe('Customer Order Flow', () => {
 
       // Add different dishes to cart
       const addButtons = page.locator('button:has-text("Add to Cart")');
+      await expect(addButtons.first()).toBeVisible();
       const count = await addButtons.count();
 
       for (let i = 0; i < Math.min(count, 3); i++) {
         await addButtons.nth(i).click();
+        await expect(page.locator('[data-testid="cart-count"]')).toContainText(String(i + 1));
         await page.waitForTimeout(300);
       }
 
@@ -210,8 +212,8 @@ test.describe('Customer Order Flow', () => {
       await page.click('[data-testid="cart-badge"]');
 
       // Should show cart details
-      await expect(page.locator(`text=${dish.name}`)).toBeVisible();
-      await expect(page.locator(`text=${dish.price}`)).toBeVisible();
+      await expect(page.locator(`text=${dish.name}`).first()).toBeVisible();
+      await expect(page.locator(`text=${dish.price}`).first()).toBeVisible();
     });
 
     test('should update quantity in cart', async ({ page }) => {
@@ -365,7 +367,7 @@ test.describe('Customer Order Flow', () => {
       await page.goto('/business/settings');
       await page.selectOption('select[name="deliveryFeeType"]', 'flat');
       await page.fill('input[name="deliveryFee"]', '5.00');
-      await page.click('button[type="submit"]:has-text("Save")');
+      await page.click('button[type="submit"]:has-text("Save Settings")');
 
       // Create and publish menu
       await page.goto('/menu/editor');
@@ -382,7 +384,7 @@ test.describe('Customer Order Flow', () => {
       await page.click('button:has-text("Checkout")');
 
       // Should show delivery fee
-      await expect(page.locator('text=/delivery.*5\\.00/i')).toBeVisible();
+      await expect(page.locator('[data-testid="order-summary"]')).toContainText(/Delivery Fee:[\s\S]*\$5\.00/i);
     });
 
     test('should show validation errors for required checkout fields', async ({ page }) => {
@@ -466,9 +468,9 @@ test.describe('Customer Order Flow', () => {
 
       // Should show order summary
       await expect(page.locator('[data-testid="order-summary"]')).toBeVisible();
-      await expect(page.locator(`text=${dish.name}`)).toBeVisible();
+      await expect(page.locator(`text=${dish.name}`).first()).toBeVisible();
       await expect(page.locator('text=/subtotal/i')).toBeVisible();
-      await expect(page.locator('text=/total/i')).toBeVisible();
+      await expect(page.getByText('Total:', { exact: true })).toBeVisible();
     });
   });
 

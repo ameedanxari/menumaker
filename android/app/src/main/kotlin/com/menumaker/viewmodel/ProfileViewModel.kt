@@ -1,14 +1,17 @@
 package com.menumaker.viewmodel
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.menumaker.data.common.Resource
 import com.menumaker.data.repository.AuthRepository
+import com.menumaker.data.repository.MediaRepository
 import com.menumaker.services.AnalyticsService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -18,6 +21,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val mediaRepository: MediaRepository,
     private val analyticsService: AnalyticsService
 ) : ViewModel() {
 
@@ -153,5 +157,40 @@ class ProfileViewModel @Inject constructor(
     fun clearMessages() {
         _errorMessage.value = null
         _successMessage.value = null
+    }
+
+    fun updateProfilePhoto(uri: Uri) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            _successMessage.value = null
+
+            val uploadResult = mediaRepository.uploadImage(uri).firstNonLoading()
+            if (uploadResult is Resource.Error) {
+                _isLoading.value = false
+                _errorMessage.value = uploadResult.message
+                return@launch
+            }
+
+            val photoUrl = (uploadResult as Resource.Success).data
+            authRepository.updateProfilePhoto(photoUrl).collect { result ->
+                when (result) {
+                    is Resource.Loading -> _isLoading.value = true
+                    is Resource.Success -> {
+                        _isLoading.value = false
+                        _successMessage.value = "Profile photo updated successfully"
+                        analyticsService.track("profile_photo_updated", emptyMap())
+                    }
+                    is Resource.Error -> {
+                        _isLoading.value = false
+                        _errorMessage.value = result.message
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun <T> kotlinx.coroutines.flow.Flow<Resource<T>>.firstNonLoading(): Resource<T> {
+        return first { it !is Resource.Loading }
     }
 }

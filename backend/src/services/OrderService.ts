@@ -9,6 +9,17 @@ import { AppDataSource } from '../config/database.js';
 import { OrderCreateInput, OrderUpdateInput } from '@menumaker/shared';
 import { WhatsAppService } from './WhatsAppService.js';
 
+const ORDER_STATUSES = new Set(['pending', 'confirmed', 'ready', 'fulfilled', 'cancelled']);
+const PAYMENT_STATUSES = new Set(['unpaid', 'paid']);
+const UNSAFE_ORDER_TEXT_CONTROLS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
+const DEFAULT_CUSTOMER_ORDER_LIMIT = 50;
+const MAX_CUSTOMER_ORDER_LIMIT = 100;
+
+type OrderServiceError = Error & {
+  statusCode: number;
+  code: string;
+};
+
 export class OrderService {
   private orderRepository: Repository<Order>;
   private orderItemRepository: Repository<OrderItem>;
@@ -24,6 +35,87 @@ export class OrderService {
     this.settingsRepository = AppDataSource.getRepository(BusinessSettings);
     this.menuRepository = AppDataSource.getRepository(Menu);
     this.dishRepository = AppDataSource.getRepository(Dish);
+  }
+
+  private createValidationError(message: string, code = 'INVALID_ORDER_FILTER'): OrderServiceError {
+    const error = new Error(message) as OrderServiceError;
+    error.statusCode = 400;
+    error.code = code;
+    return error;
+  }
+
+  private normalizeOrderStatus(label: string, status?: string): string | undefined {
+    if (status === undefined || status === null || status === '') return undefined;
+    if (typeof status !== 'string') {
+      throw this.createValidationError(`${label} must be text`, 'INVALID_ORDER_STATUS');
+    }
+    const normalized = status.trim();
+    if (!normalized) return undefined;
+    if (UNSAFE_ORDER_TEXT_CONTROLS.test(normalized)) {
+      throw this.createValidationError(`${label} contains unsafe control characters`, 'INVALID_ORDER_STATUS');
+    }
+    if (!ORDER_STATUSES.has(normalized)) {
+      throw this.createValidationError(`Unsupported ${label.toLowerCase()}`, 'INVALID_ORDER_STATUS');
+    }
+    return normalized;
+  }
+
+  private normalizePaymentStatus(status?: string): string | undefined {
+    if (status === undefined || status === null || status === '') return undefined;
+    if (typeof status !== 'string') {
+      throw this.createValidationError('Payment status must be text', 'INVALID_PAYMENT_STATUS');
+    }
+    const normalized = status.trim();
+    if (!normalized) return undefined;
+    if (UNSAFE_ORDER_TEXT_CONTROLS.test(normalized)) {
+      throw this.createValidationError('Payment status contains unsafe control characters', 'INVALID_PAYMENT_STATUS');
+    }
+    if (!PAYMENT_STATUSES.has(normalized)) {
+      throw this.createValidationError('Unsupported payment status', 'INVALID_PAYMENT_STATUS');
+    }
+    return normalized;
+  }
+
+  private normalizeOptionalOrderText(label: string, value?: string): string | undefined {
+    if (value === undefined || value === null || value === '') return undefined;
+    if (typeof value !== 'string') {
+      throw this.createValidationError(`${label} must be text`, 'INVALID_ORDER_TEXT');
+    }
+    const normalized = value.trim();
+    if (!normalized) return undefined;
+    if (normalized.length > 500) {
+      throw this.createValidationError(`${label} must be 500 characters or less`, 'INVALID_ORDER_TEXT');
+    }
+    if (UNSAFE_ORDER_TEXT_CONTROLS.test(normalized)) {
+      throw this.createValidationError(`${label} contains unsafe control characters`, 'INVALID_ORDER_TEXT');
+    }
+    return normalized;
+  }
+
+  private assertValidDateRange(startDate?: Date, endDate?: Date): void {
+    if (startDate && Number.isNaN(startDate.getTime())) {
+      throw this.createValidationError('startDate must be a valid date');
+    }
+    if (endDate && Number.isNaN(endDate.getTime())) {
+      throw this.createValidationError('endDate must be a valid date');
+    }
+    if (startDate && endDate && startDate > endDate) {
+      throw this.createValidationError('startDate must be before or equal to endDate');
+    }
+  }
+
+  private normalizePagination(filters: { limit?: number; offset?: number }): { limit: number; offset: number } {
+    const limit = filters.limit ?? DEFAULT_CUSTOMER_ORDER_LIMIT;
+    const offset = filters.offset ?? 0;
+
+    if (!Number.isSafeInteger(limit) || limit < 0 || limit > MAX_CUSTOMER_ORDER_LIMIT) {
+      throw this.createValidationError(`limit must be a safe integer between 0 and ${MAX_CUSTOMER_ORDER_LIMIT}`);
+    }
+    if (!Number.isSafeInteger(offset) || offset < 0) {
+      throw this.createValidationError('offset must be a non-negative safe integer');
+    }
+
+    return { limit, offset };
   }
 
   private calculateDeliveryFee(settings: BusinessSettings, distance?: number): number {
@@ -291,6 +383,9 @@ export class OrderService {
       endDate?: Date;
     }
   ): Promise<Order[]> {
+    const normalizedStatus = this.normalizeOrderStatus('Order status', filters?.status);
+    this.assertValidDateRange(filters?.startDate, filters?.endDate);
+
     // Verify business ownership
     const business = await this.businessRepository.findOne({
       where: { id: businessId },
@@ -312,8 +407,8 @@ export class OrderService {
       .leftJoinAndSelect('items.dish', 'dish')
       .where('order.business_id = :businessId', { businessId });
 
-    if (filters?.status) {
-      queryBuilder.andWhere('order.order_status = :status', { status: filters.status });
+    if (normalizedStatus) {
+      queryBuilder.andWhere('order.order_status = :status', { status: normalizedStatus });
     }
 
     if (filters?.startDate) {
@@ -333,6 +428,9 @@ export class OrderService {
 
   async updateOrder(orderId: string, userId: string, data: OrderUpdateInput): Promise<Order> {
     const order = await this.getOrderById(orderId);
+    const normalizedOrderStatus = this.normalizeOrderStatus('Order status', data.order_status);
+    const normalizedPaymentStatus = this.normalizePaymentStatus(data.payment_status);
+    const normalizedNotes = this.normalizeOptionalOrderText('Order notes', data.notes);
 
     // Verify business ownership
     const business = await this.businessRepository.findOne({
@@ -350,21 +448,21 @@ export class OrderService {
     }
 
     // Update order
-    if (data.order_status) {
-      order.order_status = data.order_status;
+    if (normalizedOrderStatus) {
+      order.order_status = normalizedOrderStatus as Order['order_status'];
 
       // Set fulfilled_at timestamp when order is fulfilled
-      if (data.order_status === 'fulfilled' && !order.fulfilled_at) {
+      if (normalizedOrderStatus === 'fulfilled' && !order.fulfilled_at) {
         order.fulfilled_at = new Date();
       }
     }
 
-    if (data.payment_status) {
-      order.payment_status = data.payment_status;
+    if (normalizedPaymentStatus) {
+      order.payment_status = normalizedPaymentStatus as Order['payment_status'];
     }
 
     if (data.notes !== undefined) {
-      order.notes = data.notes;
+      order.notes = normalizedNotes;
     }
 
     await this.orderRepository.save(order);
@@ -383,6 +481,8 @@ export class OrderService {
     averageOrderValue: number;
     ordersByStatus: Record<string, number>;
   }> {
+    this.assertValidDateRange(startDate, endDate);
+
     // Verify business ownership
     const business = await this.businessRepository.findOne({
       where: { id: businessId },
@@ -437,25 +537,30 @@ export class OrderService {
       offset?: number;
     }
   ): Promise<Order[]> {
+    const normalizedStatus = this.normalizeOrderStatus('Order status', filters.status);
+    const pagination = this.normalizePagination(filters);
+
     const queryBuilder = this.orderRepository
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.items', 'items')
       .leftJoinAndSelect('order.business', 'business')
       .where('order.customer_id = :userId', { userId });
 
-    if (filters.status) {
-      queryBuilder.andWhere('order.order_status = :status', { status: filters.status });
+    if (normalizedStatus) {
+      queryBuilder.andWhere('order.order_status = :status', { status: normalizedStatus });
     }
 
     queryBuilder
       .orderBy('order.created_at', 'DESC')
-      .take(filters.limit || 50)
-      .skip(filters.offset || 0);
+      .take(pagination.limit)
+      .skip(pagination.offset);
 
     return queryBuilder.getMany();
   }
 
   async cancelOrder(orderId: string, userId: string, reason?: string): Promise<Order> {
+    const normalizedReason = this.normalizeOptionalOrderText('Cancellation reason', reason);
+
     const order = await this.orderRepository.findOne({
       where: { id: orderId },
       relations: ['business'],
@@ -495,8 +600,8 @@ export class OrderService {
 
     // Update order status to cancelled
     order.order_status = 'cancelled';
-    if (reason) {
-      order.notes = (order.notes ? order.notes + '\n' : '') + `Cancellation reason: ${reason}`;
+    if (normalizedReason) {
+      order.notes = (order.notes ? order.notes + '\n' : '') + `Cancellation reason: ${normalizedReason}`;
     }
 
     await this.orderRepository.save(order);

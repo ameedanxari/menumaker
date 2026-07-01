@@ -51,6 +51,9 @@ fun ProfileScreen(
     var showEditProfile by remember { mutableStateOf(false) }
     var showChangePassword by remember { mutableStateOf(false) }
     var showLogoutConfirmation by remember { mutableStateOf(false) }
+    val profilePhotoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { profileViewModel.updateProfilePhoto(it) }
+    }
 
     // Error dialog
     errorMessage?.let { message ->
@@ -146,7 +149,7 @@ fun ProfileScreen(
                 ProfileHeader(
                     user = user,
                     onEditPhoto = {
-                        // TODO: Implement photo upload
+                        profilePhotoPicker.launch("image/*")
                     }
                 )
             }

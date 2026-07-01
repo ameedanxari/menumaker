@@ -70,7 +70,7 @@ struct MenuMakerApp: App {
     - [x] Added accessibility label to Coupons link in MoreView <!-- id: 6 -->
 
     ## Phase 3: Mock Data Seeding
-    - [x] Seeded default coupons in `APIClient.mockCoupons` <!-- id: 7 -->
+    - [x] Moved coupon fixture seeding out of production API transport <!-- id: 7 -->
 
     ## Phase 4: Business ID Storage Fix
     - [x] Added `businessId` to `User` model (optional, for sellers) <!-- id: 8 -->

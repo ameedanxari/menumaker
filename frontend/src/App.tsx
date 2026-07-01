@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuthStore } from './stores/authStore';
+import { isAdminOperator, useAuthStore } from './stores/authStore';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { usePageTracking } from './utils/analytics';
 import { SkipToContent } from './utils/accessibility';
@@ -19,6 +19,7 @@ const OrdersPage = lazy(() => import('./pages/OrdersPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
 const PublicMenuPage = lazy(() => import('./pages/PublicMenuPage'));
+const AdminPortalPage = lazy(() => import('./pages/AdminPortalPage'));
 
 // Phase 3 Pages
 const PaymentProcessorsPage = lazy(() => import('./pages/PaymentProcessorsPage'));
@@ -54,6 +55,16 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const user = useAuthStore((state) => state.user);
+
+  if (!isAdminOperator(user)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 function AppContent() {
   // Track page views automatically
   usePageTracking();
@@ -63,9 +74,6 @@ function AppContent() {
       <SkipToContent />
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          {/* Public routes */}
-          <Route path="/:businessSlug" element={<PublicMenuPage />} />
-
           {/* Auth routes */}
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<LoginPage />} />
@@ -82,10 +90,21 @@ function AppContent() {
           >
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/business/profile" element={<BusinessProfilePage />} />
+            <Route path="/business/new" element={<BusinessProfilePage />} />
+            <Route path="/business/settings" element={<BusinessProfilePage />} />
             <Route path="/menu" element={<MenuEditorPage />} />
+            <Route path="/menu/editor" element={<MenuEditorPage />} />
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/subscription" element={<SubscriptionPage />} />
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminPortalPage />
+                </AdminRoute>
+              }
+            />
             {/* Phase 3 Routes */}
             <Route path="/payments" element={<PaymentProcessorsPage />} />
             <Route path="/payouts" element={<PayoutsPage />} />
@@ -97,6 +116,11 @@ function AppContent() {
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/my-orders" element={<MyOrdersPage />} />
           </Route>
+
+          {/* Public menu slug route must come after concrete app routes. */}
+          <Route path="/order-confirmation" element={<PublicMenuPage />} />
+          <Route path="/m/:businessSlug" element={<PublicMenuPage />} />
+          <Route path="/:businessSlug" element={<PublicMenuPage />} />
 
           {/* Redirect root to dashboard or login */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

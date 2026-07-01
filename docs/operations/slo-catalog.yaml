@@ -1,0 +1,224 @@
+{
+  "schema_version": 1,
+  "generated_for": "MenuMaker observability foundation",
+  "defaults": {
+    "window": "30d",
+    "no_data": "page_for_tier0_ticket_for_tier1",
+    "exclusions": ["planned_maintenance_with_change_record", "synthetic_probe_from_unowned_network"]
+  },
+  "services": [
+    {
+      "id": "auth",
+      "owner": "backend-platform",
+      "tier": 1,
+      "customer_impact": "Users cannot sign in, refresh sessions, or access seller/customer workflows.",
+      "runbook": "docs/operations/runbooks/index.md#api-outage-and-auth-failure",
+      "slos": [
+        {
+          "name": "auth_api_availability",
+          "sli": "successful_login_or_refresh_requests / total_login_or_refresh_requests",
+          "query": "sum(rate(menumaker_auth_requests_total{result=\"success\"}[5m])) / sum(rate(menumaker_auth_requests_total[5m]))",
+          "target": 99.9,
+          "window": "30d",
+          "page_threshold": "2_percent_1h_burn",
+          "ticket_threshold": "1_percent_6h_burn",
+          "severity": "sev2",
+          "no_data": "ticket_after_15m"
+        },
+        {
+          "name": "auth_latency_p95",
+          "sli": "p95 login and refresh latency below 500ms",
+          "query": "histogram_quantile(0.95, rate(http_server_duration_bucket{route=~\"/api/v1/auth/(login|refresh)\"}[5m]))",
+          "target": 95,
+          "window": "7d",
+          "page_threshold": "p95_gt_1500ms_15m",
+          "ticket_threshold": "p95_gt_500ms_30m",
+          "severity": "sev3",
+          "no_data": "ticket_after_30m"
+        }
+      ]
+    },
+    {
+      "id": "public_menu",
+      "owner": "frontend-platform",
+      "tier": 1,
+      "customer_impact": "Customers/diners cannot view a restaurant menu or begin an order.",
+      "runbook": "docs/operations/runbooks/index.md#media-and-public-menu-outage",
+      "slos": [
+        {
+          "name": "public_menu_availability",
+          "sli": "public menu HTTP success and canary success",
+          "query": "sum(rate(menumaker_public_menu_success_total[5m])) / sum(rate(menumaker_public_menu_requests_total[5m]))",
+          "target": 99.9,
+          "window": "30d",
+          "page_threshold": "2_percent_1h_burn",
+          "ticket_threshold": "1_percent_6h_burn",
+          "severity": "sev2",
+          "no_data": "ticket_after_15m"
+        }
+      ]
+    },
+    {
+      "id": "order_creation",
+      "owner": "ordering",
+      "tier": 0,
+      "customer_impact": "Customers cannot place orders or restaurants receive duplicate/lost/invalid orders.",
+      "runbook": "docs/operations/runbooks/index.md#duplicate-order-or-payment-suspicion",
+      "slos": [
+        {
+          "name": "order_create_availability",
+          "sli": "accepted order creations / attempted order creations",
+          "query": "sum(rate(menumaker_order_create_total{result=\"accepted\"}[5m])) / sum(rate(menumaker_order_create_total[5m]))",
+          "target": 99.95,
+          "window": "30d",
+          "page_threshold": "tier0_correctness_failure_or_2_percent_30m_burn",
+          "ticket_threshold": "1_percent_2h_burn",
+          "severity": "sev1",
+          "no_data": "page_after_10m"
+        },
+        {
+          "name": "order_correctness",
+          "sli": "1 - duplicate/lost/invalid-transition orders per accepted order",
+          "query": "1 - (sum(rate(menumaker_order_correctness_errors_total{type=~\"duplicate|lost|invalid_transition\"}[5m])) / sum(rate(menumaker_order_create_total{result=\"accepted\"}[5m])))",
+          "target": 99.99,
+          "window": "30d",
+          "page_threshold": "any_duplicate_lost_or_invalid_transition_5m",
+          "ticket_threshold": "any_duplicate_lost_or_invalid_transition_30m",
+          "severity": "sev1",
+          "no_data": "page_after_10m"
+        }
+      ]
+    },
+    {
+      "id": "order_status",
+      "owner": "ordering",
+      "tier": 0,
+      "customer_impact": "Customers and sellers see stale or impossible order states.",
+      "runbook": "docs/operations/runbooks/index.md#outbox-dlq-replay-and-stale-order-status",
+      "slos": [
+        {
+          "name": "order_status_freshness",
+          "sli": "order status events visible to clients within 30 seconds",
+          "query": "histogram_quantile(0.95, rate(menumaker_order_status_lag_seconds_bucket[5m])) < 30",
+          "target": 99.9,
+          "window": "7d",
+          "page_threshold": "tier0_status_stale_or_p95_gt_120s_15m",
+          "ticket_threshold": "p95_gt_30s_30m",
+          "severity": "sev1",
+          "no_data": "ticket_after_15m"
+        }
+      ]
+    },
+    {
+      "id": "payment_webhook",
+      "owner": "payments",
+      "tier": 0,
+      "customer_impact": "Customers with paid orders may be unfulfilled, duplicated, or marked with invalid payment transitions.",
+      "runbook": "docs/operations/runbooks/index.md#payment-webhook-backlog",
+      "slos": [
+        {
+          "name": "payment_webhook_correctness",
+          "sli": "1 - duplicate/lost/invalid-transition payment events per signed event",
+          "query": "1 - (sum(rate(menumaker_payment_correctness_errors_total{type=~\"duplicate|lost|invalid_transition\"}[5m])) / sum(rate(menumaker_payment_webhook_total{signature=\"valid\"}[5m])))",
+          "target": 99.99,
+          "window": "30d",
+          "page_threshold": "any_duplicate_lost_or_invalid_transition_5m",
+          "ticket_threshold": "any_duplicate_lost_or_invalid_transition_30m",
+          "severity": "sev1",
+          "no_data": "page_after_10m"
+        },
+        {
+          "name": "payment_signature_failures",
+          "sli": "valid signed payment events / all payment webhook events",
+          "query": "sum(rate(menumaker_payment_webhook_total{signature=\"valid\"}[5m])) / sum(rate(menumaker_payment_webhook_total[5m]))",
+          "target": 99.95,
+          "window": "7d",
+          "page_threshold": "signature_failures_gt_1_percent_10m",
+          "ticket_threshold": "signature_failures_gt_0_1_percent_1h",
+          "severity": "sev1",
+          "no_data": "page_after_10m"
+        }
+      ]
+    },
+    {
+      "id": "seller_mutation",
+      "owner": "seller-platform",
+      "tier": 1,
+      "customer_impact": "Seller users/restaurants cannot update menus, availability, promotions, or settings.",
+      "runbook": "docs/operations/runbooks/index.md#api-outage-and-auth-failure",
+      "slos": [
+        {
+          "name": "seller_mutation_availability",
+          "sli": "successful seller mutations / attempted seller mutations",
+          "query": "sum(rate(menumaker_seller_mutation_total{result=\"success\"}[5m])) / sum(rate(menumaker_seller_mutation_total[5m]))",
+          "target": 99.9,
+          "window": "30d",
+          "page_threshold": "2_percent_1h_burn",
+          "ticket_threshold": "1_percent_6h_burn",
+          "severity": "sev2",
+          "no_data": "ticket_after_15m"
+        }
+      ]
+    },
+    {
+      "id": "media",
+      "owner": "platform",
+      "tier": 1,
+      "customer_impact": "Customer menu images and seller uploads fail or serve stale/broken assets.",
+      "runbook": "docs/operations/runbooks/index.md#media-and-public-menu-outage",
+      "slos": [
+        {
+          "name": "media_delivery_success",
+          "sli": "successful media uploads and reads / all media operations",
+          "query": "sum(rate(menumaker_media_operations_total{result=\"success\"}[5m])) / sum(rate(menumaker_media_operations_total[5m]))",
+          "target": 99.9,
+          "window": "30d",
+          "page_threshold": "5_percent_1h_burn",
+          "ticket_threshold": "2_percent_6h_burn",
+          "severity": "sev2",
+          "no_data": "ticket_after_30m"
+        }
+      ]
+    },
+    {
+      "id": "notification_outbox",
+      "owner": "messaging",
+      "tier": 1,
+      "customer_impact": "Customers and sellers miss order, payment, or operational notifications.",
+      "runbook": "docs/operations/runbooks/index.md#outbox-dlq-replay-and-stale-order-status",
+      "slos": [
+        {
+          "name": "notification_outbox_lag",
+          "sli": "p95 notification outbox lag below 120 seconds",
+          "query": "histogram_quantile(0.95, rate(menumaker_notification_outbox_lag_seconds_bucket[5m])) < 120",
+          "target": 99.5,
+          "window": "7d",
+          "page_threshold": "p95_gt_600s_15m",
+          "ticket_threshold": "p95_gt_120s_30m",
+          "severity": "sev2",
+          "no_data": "ticket_after_30m"
+        }
+      ]
+    },
+    {
+      "id": "background_sync",
+      "owner": "mobile-platform",
+      "tier": 1,
+      "customer_impact": "Customer offline orders, seller menu updates, or client state fail to reconcile after connectivity returns.",
+      "runbook": "docs/operations/runbooks/index.md#mobile-bad-release-and-sync-failure",
+      "slos": [
+        {
+          "name": "background_sync_success",
+          "sli": "successful sync operations / attempted sync operations by platform and app version",
+          "query": "sum(rate(menumaker_client_sync_total{result=\"success\"}[5m])) / sum(rate(menumaker_client_sync_total[5m]))",
+          "target": 99.0,
+          "window": "7d",
+          "page_threshold": "tier0_sync_loss_or_10_percent_1h_burn",
+          "ticket_threshold": "5_percent_6h_burn",
+          "severity": "sev2",
+          "no_data": "ticket_after_1h"
+        }
+      ]
+    }
+  ]
+}

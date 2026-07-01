@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "owner": "platform-ci",
+  "reviewed_at": "2026-06-20",
+  "graph_rendering": {
+    "loading": "Loading workflow ownership metadata from .github/workflows and this ledger.",
+    "empty": "No workflows are configured; required checks are unavailable.",
+    "error": "Invalid workflow/check ownership is shown with the offending workflow path and check name.",
+    "legend": {
+      "active": "Required workflow/check that owns current CI or deployment behavior.",
+      "legacy": "Historical workflow retained during observation window.",
+      "retired": "Workflow/check approved for removal after zero-reference proof."
+    },
+    "tooltip": "Each workflow node tooltip shows trigger, owner, required-check, artifact, and replacement metadata."
+  },
+  "workflows": [
+    {
+      "path": ".github/workflows/smart-ci.yml",
+      "status": "active",
+      "owner": "platform-ci",
+      "triggers": ["pull_request", "push"],
+      "required_checks": ["smart-ci"],
+      "artifacts": ["contracts", "security-gate", "backend", "frontend", "mobile"],
+      "replacement_for": [".github/workflows/ci.yml", ".github/workflows/pr-checks.yml", ".github/workflows/nightly-e2e.yml"],
+      "rollback": "restore legacy workflow trigger set if smart-ci fails during observation"
+    },
+    {
+      "path": ".github/workflows/deploy.yml",
+      "status": "active",
+      "owner": "platform-release",
+      "triggers": ["workflow_dispatch"],
+      "required_checks": ["deploy"],
+      "artifacts": ["ecs-task-definition", "deployment-verification"],
+      "replacement_for": [],
+      "rollback": "revert deployment workflow to previous known-good commit"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "status": "legacy",
+      "owner": "platform-ci",
+      "triggers": ["workflow_dispatch"],
+      "required_checks": [],
+      "artifacts": [],
+      "replacement_for": [],
+      "replacement": ".github/workflows/smart-ci.yml",
+      "rollback": "restore original push/pull_request triggers if branch protection still references legacy CI"
+    },
+    {
+      "path": ".github/workflows/pr-checks.yml",
+      "status": "legacy",
+      "owner": "platform-ci",
+      "triggers": ["workflow_dispatch"],
+      "required_checks": [],
+      "artifacts": [],
+      "replacement": ".github/workflows/smart-ci.yml",
+      "rollback": "restore original PR checks workflow if unique check is missing from smart-ci"
+    },
+    {
+      "path": ".github/workflows/nightly-e2e.yml",
+      "status": "legacy",
+      "owner": "platform-ci",
+      "triggers": ["workflow_dispatch"],
+      "required_checks": [],
+      "artifacts": [],
+      "replacement": ".github/workflows/smart-ci.yml",
+      "rollback": "restore nightly schedule if smoke coverage is not represented elsewhere"
+    }
+  ],
+  "deprecation_links": ["docs/architecture/deprecation-ledger.yaml", "docs/engineering/cleanup-ledger.yaml"]
+}

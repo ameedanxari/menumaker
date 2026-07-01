@@ -1,3 +1,8 @@
+@file:OptIn(
+    androidx.compose.foundation.layout.ExperimentalLayoutApi::class,
+    androidx.compose.material3.ExperimentalMaterial3Api::class
+)
+
 package com.menumaker.ui.screens.seller
 
 import androidx.compose.foundation.layout.Arrangement
@@ -6,10 +11,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.horizontalScroll
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -18,17 +24,18 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Money
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.IconButton
-import androidx.compose.material.TopAppBar
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,10 +45,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.menumaker.data.remote.models.OrderDto
-import com.menumaker.data.remote.models.ReviewDto
 import com.menumaker.ui.navigation.Destination
+import com.menumaker.viewmodel.SellerDashboardStatus
+import com.menumaker.viewmodel.SellerDashboardUiState
 import com.menumaker.viewmodel.SellerViewModel
 
 @Composable
@@ -51,10 +60,13 @@ fun SellerDashboardScreen(
 ) {
     val pendingOrders by viewModel.pendingOrders.collectAsState()
     val todayRevenue by viewModel.todayRevenue.collectAsState()
+    val dashboardState by viewModel.dashboardState.collectAsState()
     SellerDashboardContent(
         navController = navController,
         pendingOrders = pendingOrders,
-        todayRevenue = todayRevenue
+        todayRevenue = todayRevenue,
+        dashboardState = dashboardState,
+        onRetry = { viewModel.retryDashboardSection() }
     )
 }
 
@@ -63,7 +75,12 @@ fun SellerDashboardScreen(
 fun SellerDashboardContent(
     navController: NavController,
     pendingOrders: Int,
-    todayRevenue: Double
+    todayRevenue: Double,
+    dashboardState: SellerDashboardUiState = SellerDashboardUiState(
+        pendingOrders = pendingOrders,
+        todayRevenue = todayRevenue
+    ),
+    onRetry: () -> Unit = {}
 ) {
     val quickActions = remember {
         listOf(
@@ -94,6 +111,11 @@ fun SellerDashboardContent(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            DashboardStateBanner(
+                state = dashboardState,
+                onRetry = onRetry
+            )
+
             Text(
                 text = "Quick Actions",
                 style = MaterialTheme.typography.titleMedium
@@ -119,8 +141,10 @@ fun SellerDashboardContent(
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("Today", style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(8.dp))
-                    Text("Pending orders: $pendingOrders", modifier = Modifier.testTag("pending-count"))
-                    Text("Revenue: \$${todayRevenue}", modifier = Modifier.testTag("revenue-today"))
+                    Text("Pending orders: ${dashboardState.pendingOrders}", modifier = Modifier.testTag("pending-count"))
+                    Text("Revenue: \$${dashboardState.todayRevenue}", modifier = Modifier.testTag("revenue-today"))
+                    Text("Available dishes: ${dashboardState.availableDishes}", modifier = Modifier.testTag("available-dishes"))
+                    Text("Average rating: ${"%.1f".format(dashboardState.averageRating)}", modifier = Modifier.testTag("average-rating"))
                 }
             }
         }
@@ -133,7 +157,7 @@ fun SellerOrdersScreen(
     viewModel: SellerViewModel
 ) {
     val orders by viewModel.todayOrders.collectAsState()
-    val items = if (orders.isNotEmpty()) orders else sampleOrders()
+    val dashboardState by viewModel.dashboardState.collectAsState()
 
     Scaffold(
         topBar = {
@@ -154,7 +178,14 @@ fun SellerOrdersScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(items) { order ->
+            item {
+                DashboardStateBanner(
+                    state = dashboardState,
+                    emptyMessage = "No orders yet. New orders will appear here as soon as customers place them.",
+                    onRetry = { viewModel.retryDashboardSection("orders") }
+                )
+            }
+            items(orders) { order ->
                 ElevatedCard(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -198,9 +229,8 @@ fun OrderDetailScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text("Order ID: $orderId", style = MaterialTheme.typography.titleMedium)
-            Text("Customer: Demo User")
-            Text("Items: 3")
-            Text("Status: Preparing")
+            Text("Customer details load from the orders API when available.")
+            Text("Item counts and status are not fabricated in this launch build.")
             Button(
                 onClick = { navController.navigate(Destination.OrderTracking.createRoute(orderId)) }
             ) {
@@ -216,7 +246,7 @@ fun MenuEditorScreen(
     viewModel: SellerViewModel
 ) {
     val dishes by viewModel.dishes.collectAsState()
-    val list = if (dishes.isNotEmpty()) dishes else sampleDishes()
+    val dashboardState by viewModel.dashboardState.collectAsState()
 
     Scaffold(
         topBar = {
@@ -242,7 +272,14 @@ fun MenuEditorScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(list) { dish ->
+            item {
+                DashboardStateBanner(
+                    state = dashboardState,
+                    emptyMessage = "Your menu is empty. Add a dish to publish your first live menu item.",
+                    onRetry = { viewModel.retryDashboardSection("dishes") }
+                )
+            }
+            items(dishes) { dish ->
                 ElevatedCard(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -288,18 +325,20 @@ fun DishEditorScreen(
             OutlinedTextField(
                 value = dishId ?: "",
                 onValueChange = {},
-                label = { Text("Dish ID (demo)") },
+                label = { Text("Dish ID") },
                 enabled = false
             )
             OutlinedTextField(
-                value = if (isNew) "" else "Dish name",
+                value = "",
                 onValueChange = {},
-                label = { Text("Name") }
+                label = { Text("Name") },
+                placeholder = { Text("Enter a dish name") }
             )
             OutlinedTextField(
-                value = "9.99",
+                value = "",
                 onValueChange = {},
-                label = { Text("Price") }
+                label = { Text("Price") },
+                placeholder = { Text("Enter a price") }
             )
             Button(onClick = { navController.popBackStack() }) {
                 Text(if (isNew) "Create Dish" else "Save Changes")
@@ -310,15 +349,12 @@ fun DishEditorScreen(
 
 @Composable
 fun CouponsScreen(navController: NavController) {
-    val coupons = remember {
-        listOf(
-            "NEW10" to "10% off for new users",
-            "FREESHIP" to "Free delivery on orders over \$25"
-        )
-    }
     SimpleListScreen(
         title = "Coupons",
-        items = coupons.map { "${it.first} - ${it.second}" },
+        items = listOf(
+            "No live coupons loaded",
+            "Create and validate coupons from the web/admin tools before advertising offers"
+        ),
         onBack = { navController.popBackStack() }
     )
 }
@@ -327,7 +363,10 @@ fun CouponsScreen(navController: NavController) {
 fun PaymentProcessorsScreen(navController: NavController) {
     SimpleListScreen(
         title = "Payment Processors",
-        items = listOf("Stripe (connected)", "PayPal (connect)", "Square (beta)"),
+        items = listOf(
+            "No payment processor is shown as connected in this launch build",
+            "Provider status must come from verified backend configuration before payment methods are advertised"
+        ),
         onBack = { navController.popBackStack() },
         trailingContent = {
             Icon(
@@ -343,9 +382,8 @@ fun PayoutsScreen(navController: NavController) {
     SimpleListScreen(
         title = "Payouts",
         items = listOf(
-            "Next payout: Jan 15 - \$4,000",
-            "Pending: \$1,250",
-            "Completed: \$38,500"
+            "No live payout schedule loaded",
+            "Pending and completed payout amounts are hidden until backed by settlement data"
         ),
         onBack = { navController.popBackStack() }
     )
@@ -356,17 +394,21 @@ fun IntegrationsScreen(navController: NavController) {
     SimpleListScreen(
         title = "Integrations",
         items = listOf(
-            "POS: Toast (connected)",
-            "Delivery: DoorDash (connected)",
-            "Marketing: Mailchimp (connect)"
+            "POS providers: launch gated",
+            "Delivery providers: launch gated",
+            "Provider connections are disabled until certification evidence is recorded"
         ),
         onBack = { navController.popBackStack() }
     )
 }
 
 @Composable
-fun SellerReviewsScreen(navController: NavController) {
-    val reviews = remember { sampleReviews() }
+fun SellerReviewsScreen(
+    navController: NavController,
+    viewModel: SellerViewModel = hiltViewModel()
+) {
+    val reviews by viewModel.recentReviews.collectAsState()
+    val dashboardState by viewModel.dashboardState.collectAsState()
     Scaffold(
         topBar = {
             TopAppBar(
@@ -386,14 +428,107 @@ fun SellerReviewsScreen(navController: NavController) {
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            item {
+                DashboardStateBanner(
+                    state = dashboardState,
+                    emptyMessage = "No reviews yet. Customer feedback will appear here after completed orders.",
+                    onRetry = { viewModel.retryDashboardSection("reviews") }
+                )
+            }
             items(reviews) { review ->
                 ElevatedCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("${review.customerName} • ${review.rating}★", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(4.dp))
-                        Text(review.comment ?: "Great service!")
+                        Text(review.comment ?: "No written comment provided.")
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DashboardStateBanner(
+    state: SellerDashboardUiState,
+    emptyMessage: String = "No live seller data yet. Add menu items or wait for customer activity to populate this screen.",
+    onRetry: () -> Unit
+) {
+    when (state.status) {
+        SellerDashboardStatus.Loading -> {
+            ElevatedCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("seller-loading")
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator()
+                    Text("Loading live seller data…")
+                }
+            }
+        }
+        SellerDashboardStatus.Empty -> {
+            StateMessageCard(
+                tag = "seller-empty",
+                title = "Nothing to show yet",
+                message = emptyMessage,
+                onRetry = onRetry
+            )
+        }
+        SellerDashboardStatus.StaleOffline -> {
+            StateMessageCard(
+                tag = "seller-stale-offline",
+                title = "Showing cached data",
+                message = "Some live sources failed. Cached sections remain visible and are marked stale until retry succeeds.",
+                onRetry = onRetry
+            )
+        }
+        SellerDashboardStatus.PartialError -> {
+            val failedSources = state.sectionErrors.joinToString { it.source }
+            StateMessageCard(
+                tag = "seller-partial-error",
+                title = "Some sections need attention",
+                message = "Failed sources: ${failedSources.ifBlank { "unknown" }}.",
+                onRetry = onRetry
+            )
+        }
+        SellerDashboardStatus.FatalError -> {
+            StateMessageCard(
+                tag = "seller-fatal-error",
+                title = "Seller data could not load",
+                message = state.sectionErrors.firstOrNull()?.message ?: "Please check your connection and retry.",
+                onRetry = onRetry
+            )
+        }
+        SellerDashboardStatus.Content,
+        SellerDashboardStatus.Idle -> Unit
+    }
+}
+
+@Composable
+private fun StateMessageCard(
+    tag: String,
+    title: String,
+    message: String,
+    onRetry: () -> Unit
+) {
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag(tag)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(title, fontWeight = FontWeight.Bold)
+            Text(message)
+            Button(onClick = onRetry, modifier = Modifier.testTag("$tag-retry")) {
+                Text("Retry")
             }
         }
     }
@@ -439,80 +574,3 @@ private fun SimpleListScreen(
         }
     }
 }
-
-private fun sampleDishes() = listOf(
-    com.menumaker.data.remote.models.DishDto(
-        id = "dish-1",
-        businessId = "business-1",
-        name = "Margherita Pizza",
-        description = "Classic with basil",
-        priceCents = 1299,
-        imageUrl = null,
-        category = "Pizza",
-        isVegetarian = true,
-        isAvailable = true,
-        createdAt = "2025-01-01",
-        updatedAt = "2025-01-01"
-    ),
-    com.menumaker.data.remote.models.DishDto(
-        id = "dish-2",
-        businessId = "business-1",
-        name = "Spicy Pasta",
-        description = "Arrabbiata sauce",
-        priceCents = 1199,
-        imageUrl = null,
-        category = "Pasta",
-        isVegetarian = false,
-        isAvailable = true,
-        createdAt = "2025-01-01",
-        updatedAt = "2025-01-01"
-    )
-)
-
-private fun sampleOrders() = listOf(
-    OrderDto(
-        id = "order-1",
-        businessId = "business-1",
-        customerName = "Aisha Singh",
-        customerPhone = "+1234567890",
-        customerEmail = "aisha@example.com",
-        totalCents = 2599,
-        status = "pending",
-        items = emptyList(),
-        createdAt = "2025-01-01",
-        updatedAt = "2025-01-01"
-    ),
-    OrderDto(
-        id = "order-2",
-        businessId = "business-1",
-        customerName = "Carlos Diaz",
-        customerPhone = "+1098765432",
-        customerEmail = "carlos@example.com",
-        totalCents = 1899,
-        status = "preparing",
-        items = emptyList(),
-        createdAt = "2025-01-02",
-        updatedAt = "2025-01-02"
-    )
-)
-
-private fun sampleReviews(): List<ReviewDto> = listOf(
-    ReviewDto(
-        id = "rev-1",
-        businessId = "business-1",
-        customerName = "Jamie",
-        rating = 5,
-        comment = "Loved the pizzas and quick service.",
-        imageUrls = emptyList(),
-        createdAt = "2025-01-01T00:00:00Z"
-    ),
-    ReviewDto(
-        id = "rev-2",
-        businessId = "business-1",
-        customerName = "Priya",
-        rating = 4,
-        comment = "Great vegetarian options.",
-        imageUrls = emptyList(),
-        createdAt = "2025-01-02T00:00:00Z"
-    )
-)

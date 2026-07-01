@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../stores/authStore';
+import { isAdminOperator, useAuthStore } from '../../stores/authStore';
 import {
   LayoutDashboard,
   Store,
@@ -7,6 +7,7 @@ import {
   ShoppingBag,
   BarChart3,
   CreditCard,
+  ShieldCheck,
   LogOut,
   Menu,
   User,
@@ -17,6 +18,7 @@ import NotificationBell from '../notifications/NotificationBell';
 
 export default function DashboardLayout() {
   const { user, logout } = useAuthStore();
+  const canAccessAdminPortal = isAdminOperator(user);
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -31,7 +33,8 @@ export default function DashboardLayout() {
     { to: '/menu', icon: ChefHat, label: 'Menu Editor' },
     { to: '/orders', icon: ShoppingBag, label: 'Orders' },
     { to: '/reports', icon: BarChart3, label: 'Reports' },
-    { to: '/subscription', icon: CreditCard, label: 'Subscription' },
+    { to: '/subscription', icon: CreditCard, label: 'Billing' },
+    ...(canAccessAdminPortal ? [{ to: '/admin', icon: ShieldCheck, label: 'Admin Portal' }] : []),
     { to: '/profile', icon: User, label: 'Profile' },
     { to: '/settings', icon: Settings, label: 'Settings' },
   ];

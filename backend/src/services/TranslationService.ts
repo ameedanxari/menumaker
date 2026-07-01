@@ -10,6 +10,28 @@ import {
   getTranslation,
 } from '../config/i18n.js';
 
+const UNSAFE_TRANSLATION_TEXT_CONTROLS =
+  /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/u;
+
+function hasUnsafeTranslationTextControls(value: string): boolean {
+  return UNSAFE_TRANSLATION_TEXT_CONTROLS.test(value);
+}
+
+function assertSupportedTranslationLocales(
+  label: string,
+  translations: Record<string, string>
+): void {
+  const localeKeys = Object.keys(translations);
+  if (localeKeys.some((locale) => hasUnsafeTranslationTextControls(locale))) {
+    throw new Error(`${label} locale field names must not include unsafe control characters`);
+  }
+
+  const invalidLocales = localeKeys.filter((locale) => !isSupportedLocale(locale));
+  if (invalidLocales.length > 0) {
+    throw new Error(`Unsupported locales: ${invalidLocales.join(', ')}`);
+  }
+}
+
 /**
  * TranslationService
  * Phase 3 - US3.3: Multi-Language Support
@@ -180,13 +202,7 @@ export class TranslationService {
     }
 
     if (translations.name) {
-      // Validate locales
-      const invalidLocales = Object.keys(translations.name).filter(
-        (l) => !isSupportedLocale(l)
-      );
-      if (invalidLocales.length > 0) {
-        throw new Error(`Unsupported locales: ${invalidLocales.join(', ')}`);
-      }
+      assertSupportedTranslationLocales('Dish name translations', translations.name);
 
       dish.name_translations = {
         ...(dish.name_translations || {}),
@@ -195,13 +211,7 @@ export class TranslationService {
     }
 
     if (translations.description) {
-      // Validate locales
-      const invalidLocales = Object.keys(translations.description).filter(
-        (l) => !isSupportedLocale(l)
-      );
-      if (invalidLocales.length > 0) {
-        throw new Error(`Unsupported locales: ${invalidLocales.join(', ')}`);
-      }
+      assertSupportedTranslationLocales('Dish description translations', translations.description);
 
       dish.description_translations = {
         ...(dish.description_translations || {}),
@@ -233,13 +243,7 @@ export class TranslationService {
     }
 
     if (translations.name) {
-      // Validate locales
-      const invalidLocales = Object.keys(translations.name).filter(
-        (l) => !isSupportedLocale(l)
-      );
-      if (invalidLocales.length > 0) {
-        throw new Error(`Unsupported locales: ${invalidLocales.join(', ')}`);
-      }
+      assertSupportedTranslationLocales('Category name translations', translations.name);
 
       category.name_translations = {
         ...(category.name_translations || {}),
@@ -248,13 +252,7 @@ export class TranslationService {
     }
 
     if (translations.description) {
-      // Validate locales
-      const invalidLocales = Object.keys(translations.description).filter(
-        (l) => !isSupportedLocale(l)
-      );
-      if (invalidLocales.length > 0) {
-        throw new Error(`Unsupported locales: ${invalidLocales.join(', ')}`);
-      }
+      assertSupportedTranslationLocales('Category description translations', translations.description);
 
       category.description_translations = {
         ...(category.description_translations || {}),

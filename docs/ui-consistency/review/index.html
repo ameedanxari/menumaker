@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MenuMaker Design-System Consolidation Review</title>
+  <style>
+    :root {
+      --brand: #cc4116;
+      --brand-soft: #fff5f0;
+      --surface: #ffffff;
+      --canvas: #f8f9fa;
+      --text: #212529;
+      --muted: #495057;
+      --border: #dee2e6;
+      --success: #146c29;
+      --error: #c62828;
+      --warning: #ffc107;
+      --info: #002c4d;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: var(--canvas);
+    }
+    body { margin: 0; }
+    main { max-width: 1180px; margin: 0 auto; padding: 32px 20px 64px; }
+    section { margin-top: 32px; padding: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    h1 { font-size: clamp(2rem, 5vw, 3.5rem); margin: 0 0 12px; }
+    h2 { margin-top: 0; }
+    h3 { margin-bottom: 8px; }
+    p, li { line-height: 1.55; color: var(--muted); }
+    code { background: var(--brand-soft); color: var(--brand); padding: 2px 6px; border-radius: 6px; }
+    a { color: var(--brand); font-weight: 600; }
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .swatch { min-height: 94px; border-radius: 14px; border: 1px solid var(--border); padding: 14px; display: flex; flex-direction: column; justify-content: end; }
+    .swatch strong, .swatch span { background: rgba(255,255,255,.86); border-radius: 8px; padding: 2px 6px; width: fit-content; }
+    .dark-card { background: #212529; color: #f8f9fa; }
+    .dark-card p, .dark-card li { color: #e9ecef; }
+    .component-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .button { min-height: 44px; border: 0; border-radius: 12px; padding: 0 18px; font-weight: 700; cursor: default; }
+    .button.primary { background: var(--brand); color: white; }
+    .button.secondary { background: #003d6b; color: white; }
+    .button.outline { background: white; color: var(--brand); border: 2px solid var(--brand); }
+    .button.danger { background: #d32f2f; color: white; }
+    .button.disabled { background: #e9ecef; color: #6c757d; }
+    .field { min-height: 44px; border: 1px solid var(--border); border-radius: 12px; padding: 0 12px; min-width: 220px; }
+    .card { border: 1px solid var(--border); border-radius: 16px; padding: 18px; background: white; }
+    .state { border-inline-start: 6px solid var(--brand); background: #fff5f0; border-radius: 12px; padding: 14px; }
+    .state.success { border-color: var(--success); background: #e8f5e9; }
+    .state.error { border-color: var(--error); background: #ffebee; }
+    .state.warning { border-color: #b45309; background: #fff8e1; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid var(--border); padding: 10px; text-align: left; vertical-align: top; }
+    th { background: #f1f3f5; color: #212529; }
+    .rtl { direction: rtl; text-align: right; }
+    .focus-demo { outline: 2px solid var(--brand); outline-offset: 3px; }
+    @media (prefers-color-scheme: dark) {
+      :root { --surface: #343a40; --canvas: #212529; --text: #f8f9fa; --muted: #e9ecef; --border: #495057; }
+      .card, .field { background: #343a40; color: #f8f9fa; }
+      th { background: #495057; color: #f8f9fa; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <p><strong>Review checkpoint:</strong> Design-system and UI-state consolidation · non-redesign foundation task</p>
+      <h1>MenuMaker Design-System Consolidation Review</h1>
+      <p>This artifact is self-contained and loads from disk without a build server. It preserves the existing orange brand, typography intent, density, and navigation while consolidating token and primitive authority.</p>
+    </header>
+
+    <section id="source-links">
+      <h2>Authoritative local source links</h2>
+      <ul>
+        <li><a href="../../../frontend/design-tokens.json">frontend/design-tokens.json</a> — canonical platform-neutral token authority.</li>
+        <li><a href="../../../frontend/src/styles/tokens.css">frontend/src/styles/tokens.css</a> — generated web CSS variables.</li>
+        <li><a href="../../../android/app/src/main/kotlin/com/menumaker/ui/theme/">android/app/src/main/kotlin/com/menumaker/ui/theme/</a> — Android Compose theme source.</li>
+        <li><a href="../../../ios/MenuMaker/Shared/Theme/ColorTheme.swift">ios/MenuMaker/Shared/Theme/ColorTheme.swift</a> — current iOS theme source.</li>
+      </ul>
+      <p>External Mobbin/Figma research is not needed for this non-redesign consolidation; the local product sources above are the reviewed evidence.</p>
+    </section>
+
+    <section id="tokens">
+      <h2>Token swatches, typography, spacing, radius, and motion</h2>
+      <div class="grid">
+        <div class="swatch" style="background:#ff6b35"><strong>orange.500</strong><span>#FF6B35</span></div>
+        <div class="swatch" style="background:#cc4116"><strong>action.primary</strong><span>#CC4116 AA on white text</span></div>
+        <div class="swatch" style="background:#004e89"><strong>blue.500</strong><span>#004E89</span></div>
+        <div class="swatch" style="background:#212529;color:white"><strong>neutral.900</strong><span>#212529</span></div>
+        <div class="swatch" style="background:#28a745"><strong>success.500</strong><span>#28A745</span></div>
+        <div class="swatch" style="background:#dc3545"><strong>error.500</strong><span>#DC3545</span></div>
+      </div>
+      <div class="grid" style="margin-top:16px">
+        <div class="card"><h3>Typography</h3><p>Sans: Inter/system · base 16px · normal 1.5 · semibold/bold for emphasis.</p></div>
+        <div class="card"><h3>Spacing/density</h3><p>4px grid, 44px web/iOS minimum targets, 48dp Android targets.</p></div>
+        <div class="card"><h3>Radius/elevation</h3><p>6–16px default radii, soft shadows only for elevated cards/modals.</p></div>
+        <div class="card"><h3>Motion</h3><p>150–300ms standard easing; reduced motion maps duration to 0ms.</p></div>
+      </div>
+    </section>
+
+    <section id="platform-mappings">
+      <h2>Web / Android / iOS mappings</h2>
+      <table>
+        <thead><tr><th>Role</th><th>Web</th><th>Android</th><th>iOS</th></tr></thead>
+        <tbody>
+          <tr><td>Brand action</td><td><code>--mm-semantic-action-primary</code></td><td><code>GeneratedTokens.LightActionPrimary</code></td><td><code>GeneratedTokens.Light.action_primary</code></td></tr>
+          <tr><td>Surface</td><td><code>--mm-semantic-background-surface</code></td><td><code>generated_colors.xml</code></td><td><code>asset-colors.json</code></td></tr>
+          <tr><td>Focus</td><td>2px ring + 2px offset</td><td>48dp touch target</td><td>44pt touch target</td></tr>
+          <tr><td>Dark appearance</td><td><code>.dark</code>/<code>data-theme</code></td><td>Generated dark values</td><td>Generated dark values</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="component-variants">
+      <h2>Component variants and contracts</h2>
+      <div class="component-row">
+        <button class="button primary">Primary</button>
+        <button class="button secondary">Secondary</button>
+        <button class="button outline">Outline</button>
+        <button class="button danger">Danger</button>
+        <button class="button disabled" disabled>Disabled</button>
+      </div>
+      <div class="component-row" style="margin-top:18px">
+        <input class="field focus-demo" value="Focused input" aria-label="Focused input demo">
+        <select class="field" aria-label="Select demo"><option>Select primitive</option></select>
+        <textarea class="field" aria-label="Textarea demo">Textarea primitive</textarea>
+      </div>
+      <div class="grid" style="margin-top:18px">
+        <div class="card"><h3>Modal</h3><p>Role dialog, focus trap, Escape close, focus restore, named title/description.</p></div>
+        <div class="card"><h3>Table</h3><p>Caption, header/body/footer roles, keyboard reachability, responsive overflow.</p></div>
+        <div class="card"><h3>Dashboard components</h3><p>KPI, filter, chart, table, tooltip, and legend behavior use the shared state contracts below.</p></div>
+      </div>
+    </section>
+
+    <section id="state-matrix">
+      <h2>Default/loading/empty/error/disabled/success state matrix</h2>
+      <table>
+        <thead><tr><th>State</th><th>Copy and behavior</th><th>Accessibility</th></tr></thead>
+        <tbody>
+          <tr><td>Default</td><td>Primary action visible; data is current.</td><td>Keyboard order follows visual order.</td></tr>
+          <tr><td>Loading</td><td>“Loading…” plus skeleton/spinner; duplicate submit disabled.</td><td><code>aria-live="polite"</code>, no motion if reduced-motion.</td></tr>
+          <tr><td>Empty</td><td>Explains no data and gives one recovery/creation action.</td><td>Icon is decorative; message is text.</td></tr>
+          <tr><td>Error</td><td>Plain-language cause, retry/support action.</td><td><code>role="alert"</code>; not color-only.</td></tr>
+          <tr><td>Disabled</td><td>Unavailable action is visually disabled and explained near the control.</td><td>Native disabled where appropriate; tooltip/help text for business rules.</td></tr>
+          <tr><td>Success</td><td>Confirms completed mutation and names next step.</td><td><code>aria-live="polite"</code>.</td></tr>
+          <tr><td>Offline/pending</td><td>Preserve local work and expose sync/retry status.</td><td>Status text plus icon, never color only.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="light-dark-rtl-responsive">
+      <h2>Light/dark, responsive widths, RTL, Dynamic Type/font scaling</h2>
+      <div class="grid">
+        <div class="card"><h3>Light</h3><p>Neutral canvas, white surface, high-contrast primary text.</p></div>
+        <div class="card dark-card"><h3>Dark</h3><p>Neutral 900 canvas, neutral 800 surface, generated semantic text.</p></div>
+        <div class="card rtl"><h3>RTL</h3><p>زر أساسي · order totals, labels, icons, and focus order mirror with document direction.</p></div>
+        <div class="card"><h3>Responsive</h3><p>320px, 768px, 1024px, and 1280px widths keep 44px/48dp/44pt touch targets.</p></div>
+      </div>
+    </section>
+
+    <section id="keyboard-screen-reader">
+      <h2>Keyboard/focus and screen-reader notes</h2>
+      <ul>
+        <li>Every interactive primitive has a visible focus ring sourced from <code>semantic.border.focus</code>.</li>
+        <li>Modals trap focus, restore focus on close, and expose title/description.</li>
+        <li>Loading and success are polite live regions; errors are assertive live regions.</li>
+        <li>VoiceOver/TalkBack labels are required for icon-only controls and status badges.</li>
+        <li>Dynamic Type/font scaling must preserve text wrapping and tap target size.</li>
+      </ul>
+    </section>
+
+    <section id="contrast-results">
+      <h2>Contrast results</h2>
+      <table>
+        <thead><tr><th>Pair</th><th>Ratio</th><th>Requirement</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Light text primary on canvas</td><td>14.78:1</td><td>4.5:1 normal text</td><td>Pass</td></tr>
+          <tr><td>Light primary action with white text</td><td>5.71:1</td><td>4.5:1 normal text</td><td>Pass</td></tr>
+          <tr><td>Dark text primary on canvas</td><td>14.63:1</td><td>4.5:1 normal text</td><td>Pass</td></tr>
+          <tr><td>Dark primary action with white text</td><td>3.67:1</td><td>3:1 UI / large text</td><td>Pass</td></tr>
+          <tr><td>Error text on error background</td><td>7.13:1</td><td>4.5:1 normal text</td><td>Pass</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="approval">
+      <h2>User-review checkpoint</h2>
+      <p>Approval or feedback is required here before dependent screen-level migration tasks proceed. This checkpoint confirms consolidation only: no screen redesign, no new external component library, and no visual-baseline update without linked design review.</p>
+    </section>
+  </main>
+</body>
+</html>

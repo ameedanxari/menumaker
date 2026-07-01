@@ -1,0 +1,253 @@
+schema_version: 1
+generated_by: remediation-backend-stub-and-domain-workflow-completion
+review_owner: product-platform
+statuses:
+  implemented: "Launch-scope behavior is complete, tested, and visible to at least one client or operator."
+  disabled: "Advertised domain is intentionally unavailable and must return FEATURE_UNAVAILABLE without partial writes."
+  deprecated: "Compatibility-only surface with removal milestone and replacement."
+
+capabilities:
+  - name: identity_auth
+    owner: identity
+    launch_scope: true
+    status: implemented
+    feature_flag: AUTH_ENABLED
+    dependencies: [jwt_secret, refresh_session_store]
+    route_prefixes: [/api/v1/auth]
+    contract_operation_ids: [login, signup, refreshToken, logout]
+    client_or_operator_consumers: [web_auth_store, android_token_store, ios_auth_view_model]
+    tests: [auth-session-routes.test.ts, jwt.test.ts, RefreshSession.test.ts]
+    known_stub_markers:
+      - backend/src/services/AuthService.ts:forgot-password-reset-token:reset-token persistence and provider email required before public auth launch review
+    removal_milestone: forgot-password token persistence and notification outbox/provider email wired before public auth launch review
+
+  - name: business_catalog
+    owner: seller-experience
+    launch_scope: true
+    status: implemented
+    feature_flag: BUSINESS_CATALOG_ENABLED
+    dependencies: [postgres]
+    route_prefixes: [/api/v1/businesses, /api/v1/dishes, /api/v1/menus, /api/v1/media]
+    contract_operation_ids: [listBusinesses, createDish, updateDish, uploadMedia]
+    client_or_operator_consumers: [frontend_menu_editor, android_seller_dashboard, ios_menu_editor]
+    tests: [BusinessService.test.ts, DishService.test.ts, MenuService.test.ts]
+    known_stub_markers:
+      - backend/src/services/MediaService.ts:ownership verification:database ownership check before deletion is tracked by seller-experience hardening
+    removal_milestone: media ownership verification wired before public upload/delete launch review
+
+  - name: ordering_checkout
+    owner: ordering
+    launch_scope: true
+    status: implemented
+    feature_flag: ORDERING_ENABLED
+    dependencies: [postgres, payment_boundary]
+    route_prefixes: [/api/v1/orders, /api/v1/cart, /api/v1/reorder]
+    contract_operation_ids: [createOrder, getOrder, listCustomerOrders]
+    client_or_operator_consumers: [frontend_orders, android_checkout, ios_cart]
+    tests: [OrderService.test.ts, OrderServiceFailure.test.ts]
+    known_stub_markers: []
+    removal_milestone: null
+
+  - name: payments
+    owner: payments
+    launch_scope: true
+    status: implemented
+    feature_flag: PAYMENTS_ENABLED
+    dependencies: [STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET]
+    route_prefixes: [/api/v1/payments, /api/v1/payment-processors, /api/v1/payouts]
+    contract_operation_ids: [createPaymentIntent, handlePaymentWebhook, listPaymentProcessors]
+    client_or_operator_consumers: [frontend_payment_processors, android_customer_payment, ios_payment_view_model]
+    tests: [payment-webhook.integration.test.ts, credential-encryption.test.ts]
+    known_stub_markers:
+      - backend/src/routes/payments.ts:/mock-charge:test-only fake payment route guarded by ENABLE_FAKE_PAYMENTS
+      - backend/src/services/PaymentProcessorService.ts:Stripe service needs interface adapter:adapter guard tracked by payment boundary task
+      - backend/src/services/PayoutService.ts:seller email notification:notification outbox follow-up classified under notification_outbox
+    removal_milestone: mock-charge route removed before public production launch
+
+  - name: platform_health
+    owner: platform-ops
+    launch_scope: true
+    status: implemented
+    feature_flag: HEALTH_ENABLED
+    dependencies: [postgres, telemetry_adapter]
+    route_prefixes: [/api/v1/reports]
+    contract_operation_ids: [getReports, exportAnalytics]
+    client_or_operator_consumers: [admin_reports_dashboard]
+    tests: [AnalyticsService.test.ts, telemetry.test.ts, health.test.ts]
+    known_stub_markers: []
+    removal_milestone: null
+
+  - name: privacy_compliance
+    owner: privacy
+    launch_scope: true
+    status: implemented
+    feature_flag: PRIVACY_ENABLED
+    dependencies: [postgres, notification_outbox]
+    route_prefixes: [/api/v1/gdpr, /api/v1/settings]
+    contract_operation_ids: [exportPrivacyData, requestDeletion, updateSettings]
+    client_or_operator_consumers: [frontend_settings, ios_settings, support_operations]
+    tests: [GDPRService.integration.test.ts]
+    known_stub_markers:
+      - backend/src/services/GDPRService.ts:confirmation notification:notification outbox follow-up is tracked by notification_outbox
+    removal_milestone: notification side-effect wired through outbox before privacy launch review
+
+  - name: reviews_marketplace
+    owner: marketplace
+    launch_scope: true
+    status: implemented
+    feature_flag: MARKETPLACE_ENABLED
+    dependencies: [postgres, moderation]
+    route_prefixes: [/api/v1/reviews, /api/v1/marketplace]
+    contract_operation_ids: [listMarketplace, submitReview, favoriteBusiness]
+    client_or_operator_consumers: [frontend_public_menu, android_marketplace, ios_marketplace]
+    tests: [ReviewService.test.ts]
+    known_stub_markers: []
+    removal_milestone: null
+
+  - name: coupons_promotions
+    owner: growth
+    launch_scope: true
+    status: implemented
+    feature_flag: COUPONS_ENABLED
+    dependencies: [postgres, notification_outbox]
+    route_prefixes: [/api/v1/coupons]
+    contract_operation_ids: [createCoupon, validateCoupon, applyCoupon]
+    client_or_operator_consumers: [frontend_coupons, android_cart, ios_coupon_browser]
+    tests: [CouponService.test.ts, EnhancedReferralService.test.ts]
+    known_stub_markers: []
+    removal_milestone: null
+
+  - name: referrals
+    owner: growth
+    launch_scope: true
+    status: implemented
+    feature_flag: REFERRALS_ENABLED
+    dependencies: [postgres, coupon_service, notification_outbox]
+    route_prefixes: [/api/v1/referrals]
+    contract_operation_ids: [createReferral, claimReferralReward]
+    client_or_operator_consumers: [frontend_referrals, ios_referral_view]
+    tests: [EnhancedReferralService.test.ts]
+    known_stub_markers:
+      - backend/src/services/ReferralService.ts:referrer-notification:simple-referral notification is tracked by notification_outbox
+      - backend/src/services/ReferralService.ts:reward-congratulations:reward congratulations notifications are tracked by notification_outbox
+    removal_milestone: legacy notification exception removed when simple referral route migrates to outbox
+
+  - name: enhanced_referrals_affiliates
+    owner: growth
+    launch_scope: false
+    status: disabled
+    feature_flag: ENHANCED_REFERRALS_ENABLED
+    dependencies: [coupon_service, notification_outbox]
+    route_prefixes: [/api/v1/affiliate, /api/v1/viral, /api/v1/leaderboard]
+    contract_operation_ids: [applyForAffiliate, approveAffiliate, claimViralReward]
+    client_or_operator_consumers: [admin_growth_console]
+    tests: [EnhancedReferralService.test.ts]
+    known_stub_markers: []
+    removal_milestone: enabled only after affiliate payout provider launch review
+
+  - name: moderation
+    owner: trust-safety
+    launch_scope: true
+    status: implemented
+    feature_flag: MODERATION_ENABLED
+    dependencies: [postgres, audit_log, notification_outbox]
+    route_prefixes: [/api/v1/admin]
+    contract_operation_ids: [submitFlag, approveFlag, rejectFlag]
+    client_or_operator_consumers: [admin_moderation_queue]
+    tests: [ModerationService.test.ts]
+    known_stub_markers:
+      - backend/src/services/AdminService.ts:user email notification:admin notifications routed through notification_outbox follow-up
+    removal_milestone: admin user notifications wired through outbox before operator launch
+
+  - name: notification_outbox
+    owner: notifications
+    launch_scope: true
+    status: implemented
+    feature_flag: NOTIFICATIONS_ENABLED
+    dependencies: [postgres, email_provider, push_provider, whatsapp_provider]
+    route_prefixes: [/api/v1/notifications, /api/v1/whatsapp]
+    contract_operation_ids: [registerNotificationDevice, listNotifications, sendWhatsApp]
+    client_or_operator_consumers: [ios_notifications, android_notifications, support_operations]
+    tests: [NotificationOutbox.integration.test.ts, WhatsAppService.test.ts]
+    known_stub_markers:
+      - backend/src/services/SupportTicketService.ts:ticket email notification:outbox intent required; no synchronous email send in launch scope
+    removal_milestone: support notifications must use outbox before support SLA launch
+
+  - name: pos_sync
+    owner: integrations
+    launch_scope: false
+    status: disabled
+    feature_flag: POS_SYNC_ENABLED
+    dependencies: [provider_oauth_credentials, encrypted_credentials]
+    route_prefixes: [/api/v1/pos]
+    contract_operation_ids: [createPOSIntegration, syncPOSOrder]
+    client_or_operator_consumers: [frontend_integrations]
+    tests: [POSSyncService.test.ts]
+    known_stub_markers: []
+    removal_milestone: enable square only after provider certification and merchant pilot
+
+  - name: delivery_partner
+    owner: logistics
+    launch_scope: false
+    status: disabled
+    feature_flag: DELIVERY_PARTNER_ENABLED
+    dependencies: [delivery_provider_credentials]
+    route_prefixes: [/api/v1/delivery]
+    contract_operation_ids: [createDelivery, trackDelivery, cancelDelivery]
+    client_or_operator_consumers: [seller_order_detail]
+    tests: [DeliveryService.test.ts]
+    known_stub_markers: []
+    removal_milestone: remove route exposure or certify provider before launch
+
+  - name: ocr_import
+    owner: seller-experience
+    launch_scope: false
+    status: disabled
+    feature_flag: OCR_ENABLED
+    dependencies: [ANTHROPIC_API_KEY]
+    route_prefixes: [/api/v1/ocr]
+    contract_operation_ids: [parseMenuImage, parseMenuText]
+    client_or_operator_consumers: [seller_menu_import]
+    tests: [OCRService.test.ts]
+    known_stub_markers: []
+    removal_milestone: enable only after provider key and privacy review
+
+  - name: tax_reporting
+    owner: finance
+    launch_scope: false
+    status: disabled
+    feature_flag: TAX_REPORTING_ENABLED
+    dependencies: [invoice_numbering_policy]
+    route_prefixes: [/api/v1/tax]
+    contract_operation_ids: [generateTaxReport, downloadTaxInvoice]
+    client_or_operator_consumers: [seller_reports]
+    tests: [TaxReportService.test.ts]
+    known_stub_markers:
+      - backend/src/services/TaxReportService.ts:delivery_waivers_cents:waiver tracking not in launch scope
+    removal_milestone: enable after tax evidence and waiver tracking are complete
+
+  - name: subscriptions
+    owner: monetization
+    launch_scope: false
+    status: disabled
+    feature_flag: SUBSCRIPTIONS_ENABLED
+    dependencies: [STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET_SUBSCRIPTIONS]
+    route_prefixes: [/api/v1/subscriptions]
+    contract_operation_ids: [createSubscription, handleSubscriptionWebhook]
+    client_or_operator_consumers: [frontend_subscription_page]
+    tests: [subscription-webhook.integration.test.ts]
+    known_stub_markers: []
+    removal_milestone: enable after paid-plan launch decision
+
+  - name: i18n
+    owner: localization
+    launch_scope: true
+    status: implemented
+    feature_flag: I18N_ENABLED
+    dependencies: [postgres]
+    route_prefixes: [/api/v1/i18n]
+    contract_operation_ids: [listTranslations, updateTranslation]
+    client_or_operator_consumers: [frontend_settings, seller_menu_editor]
+    tests: [TranslationService.test.ts]
+    known_stub_markers: []
+    removal_milestone: null

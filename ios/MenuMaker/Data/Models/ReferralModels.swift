@@ -39,27 +39,27 @@ struct ReferralStats: Codable {
     let leaderboardPosition: Int?
 
     var totalEarnings: Double {
-        Double(totalEarningsCents) / 100.0
+        0.0
     }
 
     var formattedEarnings: String {
-        String(format: "₹%.2f", totalEarnings)
+        "Rewards disabled"
     }
 
     var availableCredits: Double {
-        Double(availableCreditsCents) / 100.0
+        0.0
     }
 
     var formattedAvailableCredits: String {
-        String(format: "₹%.2f", availableCredits)
+        "Rewards disabled"
     }
 
     var pendingRewards: Double {
-        Double(pendingRewardsCents) / 100.0
+        0.0
     }
 
     var formattedPendingRewards: String {
-        String(format: "₹%.2f", pendingRewards)
+        "Rewards disabled"
     }
 
     var successRate: Double {
@@ -72,10 +72,7 @@ struct ReferralStats: Codable {
     }
 
     var leaderboardDisplay: String {
-        guard let position = leaderboardPosition else {
-            return "Not ranked"
-        }
-        return "#\(position)"
+        "Not ranked"
     }
 }
 
@@ -88,11 +85,11 @@ struct ReferralLeaderboard: Codable, Identifiable {
     var id: Int { rank }
 
     var earnings: Double {
-        Double(earningsCents) / 100.0
+        0.0
     }
 
     var formattedEarnings: String {
-        String(format: "₹%.2f", earnings)
+        "Rewards disabled"
     }
 
     var medalEmoji: String {
@@ -123,11 +120,11 @@ struct ReferralHistory: Codable, Identifiable {
     let rewardCents: Int
 
     var reward: Double {
-        Double(rewardCents) / 100.0
+        0.0
     }
 
     var formattedReward: String {
-        String(format: "₹%.2f", reward)
+        "Rewards disabled"
     }
 
     var formattedDate: String {
@@ -137,7 +134,7 @@ struct ReferralHistory: Codable, Identifiable {
     }
 
     var rewardAmountCents: Int {
-        rewardCents
+        0
     }
 
     enum CodingKeys: String, CodingKey {

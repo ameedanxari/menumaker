@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "data": {
+    "id": "order-created-1",
+    "business_id": "business-1",
+    "status": "pending",
+    "total_cents": 1899,
+    "idempotency_key": "test-idempotency-key",
+    "created_at": "2024-02-01T10:00:00Z",
+    "updated_at": "2024-02-01T10:00:00Z"
+  }
+}

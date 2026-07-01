@@ -7,6 +7,24 @@ import { PaymentProcessor } from '../models/PaymentProcessor.js';
 import { Subscription } from '../models/Subscription.js';
 import { logMetric } from '../utils/logger.js';
 
+export interface PayoutExecutionResult {
+  processorPayoutId: string;
+  bankTransactionId?: string;
+}
+
+export interface PayoutExecutionGateway {
+  executePayout(payout: Payout): Promise<PayoutExecutionResult>;
+}
+
+class PayoutProcessorUnavailableError extends Error {
+  readonly retryable = false;
+
+  constructor(message = 'Payout processor integration unavailable: no payout execution gateway configured') {
+    super(message);
+    this.name = 'PayoutProcessorUnavailableError';
+  }
+}
+
 /**
  * PayoutService
  * Phase 3: Automated Tiered Payouts (US3.2)
@@ -26,19 +44,340 @@ export class PayoutService {
   private paymentRepository: Repository<Payment>;
   private processorRepository: Repository<PaymentProcessor>;
   private subscriptionRepository: Repository<Subscription>;
+  private payoutExecutionGateway?: PayoutExecutionGateway;
 
   // Constants
   private static readonly VOLUME_DISCOUNT_THRESHOLD_CENTS = 10000000; // Rs. 1L (100,000 rupees)
   private static readonly VOLUME_DISCOUNT_PERCENTAGE = 0.5; // 0.5% fee reduction
   private static readonly MAX_RETRY_COUNT = 3;
   private static readonly RETRY_DELAY_DAYS = 1;
+  private static readonly VALID_PAYOUT_STATUSES = new Set<PayoutStatus>([
+    'pending',
+    'processing',
+    'completed',
+    'failed',
+    'held',
+    'cancelled',
+  ]);
+  private static readonly VALID_PAYOUT_FREQUENCIES = new Set<PayoutFrequency>([
+    'daily',
+    'weekly',
+    'monthly',
+  ]);
+  private static readonly VALID_RECONCILIATION_STATUSES = new Set([
+    'pending',
+    'reconciled',
+    'exception',
+  ]);
+  private static readonly PAYOUT_METADATA_KEYS = new Set(['payment_ids']);
+  private static readonly MAX_PAYOUT_PROVIDER_ID_LENGTH = 255;
 
-  constructor() {
+  constructor(payoutExecutionGateway?: PayoutExecutionGateway) {
     this.payoutRepository = AppDataSource.getRepository(Payout);
     this.scheduleRepository = AppDataSource.getRepository(PayoutSchedule);
     this.paymentRepository = AppDataSource.getRepository(Payment);
     this.processorRepository = AppDataSource.getRepository(PaymentProcessor);
     this.subscriptionRepository = AppDataSource.getRepository(Subscription);
+    this.payoutExecutionGateway = payoutExecutionGateway;
+  }
+
+  private static assertNonEmptyString(value: unknown, fieldName: string): string {
+    if (typeof value !== 'string' || value.trim().length === 0) {
+      throw new Error(`${fieldName} must be a non-empty string`);
+    }
+    if (PayoutService.hasUnsafePayoutTextControls(value)) {
+      throw new Error(`${fieldName} must not include unsafe control characters`);
+    }
+    const normalizedValue = value.trim();
+    if (PayoutService.hasUnsafePayoutTextControls(normalizedValue)) {
+      throw new Error(`${fieldName} must not include unsafe control characters`);
+    }
+    return normalizedValue;
+  }
+
+  private static hasUnsafePayoutTextControls(value: string): boolean {
+    return /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/u.test(value);
+  }
+
+  private static assertOptionalString(value: unknown, fieldName: string): string | undefined {
+    if (value === undefined || value === null) return undefined;
+    return PayoutService.assertNonEmptyString(value, fieldName);
+  }
+
+  private static assertPayoutProviderId(value: unknown, fieldName: string): string {
+    const normalizedValue = PayoutService.assertNonEmptyString(value, fieldName);
+    if (normalizedValue.length > PayoutService.MAX_PAYOUT_PROVIDER_ID_LENGTH) {
+      throw new Error(`${fieldName} must be at most ${PayoutService.MAX_PAYOUT_PROVIDER_ID_LENGTH} characters`);
+    }
+    return normalizedValue;
+  }
+
+  private static assertOptionalPayoutProviderId(value: unknown, fieldName: string): string | undefined {
+    if (value === undefined || value === null) return undefined;
+    return PayoutService.assertPayoutProviderId(value, fieldName);
+  }
+
+  private static assertNonNegativeSafeInteger(value: unknown, fieldName: string): number {
+    const numericValue =
+      typeof value === 'string' && /^\d+$/.test(value.trim()) ? Number(value.trim()) : value;
+
+    if (typeof numericValue !== 'number' || !Number.isInteger(numericValue)) {
+      throw new Error(`${fieldName} must be an integer`);
+    }
+    if (!Number.isSafeInteger(numericValue)) {
+      throw new Error(`${fieldName} must be a safe integer`);
+    }
+    if (numericValue < 0) {
+      throw new Error(`${fieldName} must be non-negative`);
+    }
+    return numericValue;
+  }
+
+  private static assertPositiveSafeInteger(value: unknown, fieldName: string): number {
+    const numericValue = PayoutService.assertNonNegativeSafeInteger(value, fieldName);
+    if (numericValue <= 0) {
+      throw new Error(`${fieldName} must be positive`);
+    }
+    return numericValue;
+  }
+
+  private static assertBoolean(value: unknown, fieldName: string): boolean {
+    if (typeof value !== 'boolean') {
+      throw new Error(`${fieldName} must be a boolean`);
+    }
+    return value;
+  }
+
+  private static assertDayOfWeek(value: unknown, fieldName: string): number {
+    const numericValue = PayoutService.assertNonNegativeSafeInteger(value, fieldName);
+    if (numericValue > 6) {
+      throw new Error(`${fieldName} must be between 0 and 6`);
+    }
+    return numericValue;
+  }
+
+  private static assertDayOfMonth(value: unknown, fieldName: string): number {
+    const numericValue = PayoutService.assertPositiveSafeInteger(value, fieldName);
+    if (numericValue > 28) {
+      throw new Error(`${fieldName} must be between 1 and 28`);
+    }
+    return numericValue;
+  }
+
+  private static assertOptionalEmail(value: unknown, fieldName: string): string | null | undefined {
+    if (value === undefined) return undefined;
+    if (value === null) return null;
+
+    const email = PayoutService.assertNonEmptyString(value, fieldName);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new Error(`${fieldName} must be a valid email address`);
+    }
+    return email;
+  }
+
+  private static assertValidDate(value: unknown, fieldName: string): Date {
+    if (value === undefined || value === null) {
+      throw new Error(`${fieldName} must be a valid Date`);
+    }
+    const date = value instanceof Date ? value : new Date(value as any);
+    if (Number.isNaN(date.getTime())) {
+      throw new Error(`${fieldName} must be a valid Date`);
+    }
+    return date;
+  }
+
+  private static assertOptionalDate(value: unknown, fieldName: string): Date | undefined {
+    if (value === undefined || value === null) return undefined;
+    return PayoutService.assertValidDate(value, fieldName);
+  }
+
+  private static assertValidPayoutStatus(value: unknown, fieldName: string): PayoutStatus {
+    if (typeof value === 'string' && PayoutService.hasUnsafePayoutTextControls(value)) {
+      throw new Error(`${fieldName} must not include unsafe control characters`);
+    }
+    if (typeof value !== 'string' || !PayoutService.VALID_PAYOUT_STATUSES.has(value as PayoutStatus)) {
+      throw new Error(`${fieldName} has an invalid status`);
+    }
+    return value as PayoutStatus;
+  }
+
+  private static assertValidFrequency(value: unknown, fieldName: string): PayoutFrequency {
+    if (typeof value === 'string' && PayoutService.hasUnsafePayoutTextControls(value)) {
+      throw new Error(`${fieldName} must not include unsafe control characters`);
+    }
+    if (typeof value !== 'string' || !PayoutService.VALID_PAYOUT_FREQUENCIES.has(value as PayoutFrequency)) {
+      throw new Error(`${fieldName} has an invalid frequency`);
+    }
+    return value as PayoutFrequency;
+  }
+
+  private static isRetryablePayoutError(error: unknown): boolean {
+    return !(error instanceof PayoutProcessorUnavailableError);
+  }
+
+  private async executeProcessorPayout(payout: Payout): Promise<PayoutExecutionResult> {
+    if (!this.payoutExecutionGateway) {
+      throw new PayoutProcessorUnavailableError();
+    }
+
+    const result = await this.payoutExecutionGateway.executePayout(payout);
+    return {
+      processorPayoutId: PayoutService.assertPayoutProviderId(
+        result?.processorPayoutId,
+        'Payout processor payout id'
+      ),
+      bankTransactionId: PayoutService.assertOptionalPayoutProviderId(
+        result?.bankTransactionId,
+        'Payout bank transaction id'
+      ),
+    };
+  }
+
+  private static assertReadablePayoutRow(
+    payout: Payout,
+    label: string,
+    expected?: { businessId?: string }
+  ): void {
+    PayoutService.assertOptionalString(payout.id, `${label} id`);
+    const businessId = PayoutService.assertNonEmptyString(payout.business_id, `${label} business_id`);
+    if (expected?.businessId && businessId !== expected.businessId) {
+      throw new Error(`${label} business_id must match requested business`);
+    }
+    PayoutService.assertOptionalString(payout.payment_processor_id, `${label} payment_processor_id`);
+
+    const periodStart = PayoutService.assertValidDate(payout.period_start, `${label} period_start`);
+    const periodEnd = PayoutService.assertValidDate(payout.period_end, `${label} period_end`);
+    if (periodStart > periodEnd) {
+      throw new Error(`${label} period_start must be before or equal to period_end`);
+    }
+    PayoutService.assertValidDate(payout.scheduled_payout_date, `${label} scheduled_payout_date`);
+    if (payout.frequency !== undefined && payout.frequency !== null) {
+      PayoutService.assertValidFrequency(payout.frequency, `${label} frequency`);
+    }
+
+    const grossAmountCents = PayoutService.assertNonNegativeSafeInteger(
+      payout.gross_amount_cents,
+      `${label} gross_amount_cents`
+    );
+    const processorFeeCents = PayoutService.assertNonNegativeSafeInteger(
+      payout.processor_fee_cents,
+      `${label} processor_fee_cents`
+    );
+    const subscriptionFeeCents = PayoutService.assertNonNegativeSafeInteger(
+      payout.subscription_fee_cents,
+      `${label} subscription_fee_cents`
+    );
+    const platformFeeCents = PayoutService.assertNonNegativeSafeInteger(
+      payout.platform_fee_cents,
+      `${label} platform_fee_cents`
+    );
+    const volumeDiscountCents = PayoutService.assertNonNegativeSafeInteger(
+      payout.volume_discount_cents,
+      `${label} volume_discount_cents`
+    );
+    const netAmountCents = PayoutService.assertNonNegativeSafeInteger(
+      payout.net_amount_cents,
+      `${label} net_amount_cents`
+    );
+    const expectedNetAmountCents =
+      grossAmountCents - processorFeeCents - subscriptionFeeCents - platformFeeCents + volumeDiscountCents;
+    if (netAmountCents !== expectedNetAmountCents) {
+      throw new Error(`${label} net_amount_cents must equal gross minus fees plus volume discount`);
+    }
+
+    const paymentCount = PayoutService.assertNonNegativeSafeInteger(payout.payment_count, `${label} payment_count`);
+    const status = PayoutService.assertValidPayoutStatus(payout.status, `${label} status`);
+    const processorPayoutId = PayoutService.assertOptionalPayoutProviderId(
+      payout.processor_payout_id,
+      `${label} processor_payout_id`
+    );
+    PayoutService.assertOptionalPayoutProviderId(payout.bank_transaction_id, `${label} bank_transaction_id`);
+    const failureReason = PayoutService.assertOptionalString(payout.failure_reason, `${label} failure_reason`);
+    PayoutService.assertNonNegativeSafeInteger(payout.retry_count, `${label} retry_count`);
+    PayoutService.assertOptionalDate(payout.next_retry_date, `${label} next_retry_date`);
+
+    if (
+      payout.reconciliation_status !== undefined &&
+      payout.reconciliation_status !== null &&
+      !PayoutService.VALID_RECONCILIATION_STATUSES.has(payout.reconciliation_status)
+    ) {
+      throw new Error(`${label} reconciliation_status has an invalid status`);
+    }
+    PayoutService.assertNonNegativeSafeInteger(payout.taxable_amount_cents, `${label} taxable_amount_cents`);
+    PayoutService.assertNonNegativeSafeInteger(payout.tds_cents, `${label} tds_cents`);
+    if (typeof payout.currency !== 'string' || !/^[A-Z]{3}$/.test(payout.currency)) {
+      throw new Error(`${label} currency must be a 3-letter uppercase code`);
+    }
+
+    if (payout.metadata !== undefined && payout.metadata !== null) {
+      if (typeof payout.metadata !== 'object' || Array.isArray(payout.metadata)) {
+        throw new Error(`${label} metadata must be an object`);
+      }
+
+      const metadataRecord = payout.metadata as Record<string, unknown>;
+      const unsafeMetadataKeys = Object.keys(metadataRecord).filter((key) =>
+        PayoutService.hasUnsafePayoutTextControls(key)
+      );
+      if (unsafeMetadataKeys.length > 0) {
+        throw new Error(`${label} metadata field names contain unsafe control characters`);
+      }
+
+      const unsupportedMetadataKeys = Object.keys(metadataRecord).filter(
+        (key) => !PayoutService.PAYOUT_METADATA_KEYS.has(key)
+      );
+      if (unsupportedMetadataKeys.length > 0) {
+        throw new Error(
+          `${label} metadata include unsupported field(s): ${unsupportedMetadataKeys.sort().join(', ')}`
+        );
+      }
+
+      const paymentIds = metadataRecord.payment_ids;
+      if (paymentIds !== undefined) {
+        if (!Array.isArray(paymentIds)) {
+          throw new Error(`${label} metadata.payment_ids must be an array`);
+        }
+        if (paymentIds.length !== paymentCount) {
+          throw new Error(`${label} metadata.payment_ids count must match payment_count`);
+        }
+        const seenPaymentIds = new Set<string>();
+        paymentIds.forEach((paymentId, index) => {
+          const normalizedPaymentId = PayoutService.assertNonEmptyString(
+            paymentId,
+            `${label} metadata.payment_ids[${index}]`
+          );
+          if (seenPaymentIds.has(normalizedPaymentId)) {
+            throw new Error(`${label} metadata.payment_ids[${index}] must be unique`);
+          }
+          seenPaymentIds.add(normalizedPaymentId);
+        });
+      }
+    }
+
+    PayoutService.assertOptionalString(payout.notes, `${label} notes`);
+    const completedAt = PayoutService.assertOptionalDate(payout.completed_at, `${label} completed_at`);
+    const failedAt = PayoutService.assertOptionalDate(payout.failed_at, `${label} failed_at`);
+    if (status === 'completed') {
+      if (!processorPayoutId) {
+        throw new Error(`${label} completed status requires processor_payout_id evidence`);
+      }
+      if (!completedAt) {
+        throw new Error(`${label} completed status requires completed_at evidence`);
+      }
+      if (failureReason || failedAt || payout.next_retry_date) {
+        throw new Error(`${label} completed status cannot include failure or retry evidence`);
+      }
+    }
+    if (status === 'failed') {
+      if (!failureReason) {
+        throw new Error(`${label} failed status requires failure_reason evidence`);
+      }
+      if (!failedAt) {
+        throw new Error(`${label} failed status requires failed_at evidence`);
+      }
+      if (completedAt) {
+        throw new Error(`${label} failed status cannot include completed_at evidence`);
+      }
+    }
   }
 
   /**
@@ -353,8 +692,9 @@ export class PayoutService {
 
     for (const payout of pendingPayouts) {
       try {
-        await this.processPayout(payout);
-        processedCount++;
+        if (await this.processPayout(payout)) {
+          processedCount++;
+        }
       } catch (error: any) {
         console.error(`[PayoutService] Failed to process payout ${payout.id}:`, error.message);
       }
@@ -367,18 +707,24 @@ export class PayoutService {
   /**
    * Process a single payout
    */
-  private async processPayout(payout: Payout): Promise<void> {
+  private async processPayout(payout: Payout): Promise<boolean> {
+    PayoutService.assertReadablePayoutRow(payout, 'Pending payout row');
+
     payout.status = 'processing';
     await this.payoutRepository.save(payout);
 
     try {
-      // In production, this would call the processor's payout API
-      // For now, we simulate success
-      const processorPayoutId = `payout_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+      const payoutExecution = await this.executeProcessorPayout(payout);
 
       payout.status = 'completed';
-      payout.processor_payout_id = processorPayoutId;
+      payout.processor_payout_id = payoutExecution.processorPayoutId;
+      if (payoutExecution.bankTransactionId !== undefined) {
+        payout.bank_transaction_id = payoutExecution.bankTransactionId;
+      }
       payout.completed_at = new Date();
+      payout.failure_reason = null;
+      payout.failed_at = null;
+      payout.next_retry_date = null;
       payout.reconciliation_status = 'pending'; // Will be reconciled later
 
       // Update payment settlement status
@@ -407,21 +753,40 @@ export class PayoutService {
       }
 
       console.log(`[PayoutService] Successfully processed payout ${payout.id}`);
+      return true;
     } catch (error: any) {
-      await this.handlePayoutFailure(payout, error.message);
+      await this.handlePayoutFailure(payout, error.message, {
+        retryable: PayoutService.isRetryablePayoutError(error),
+      });
+      return false;
     }
   }
 
   /**
    * Handle payout failure with retry logic
    */
-  private async handlePayoutFailure(payout: Payout, reason: string): Promise<void> {
+  private async handlePayoutFailure(
+    payout: Payout,
+    reason: string,
+    options: { retryable?: boolean } = {}
+  ): Promise<void> {
+    const retryable = options.retryable ?? true;
+    const safeFailureReason =
+      typeof reason === 'string' &&
+      reason.trim().length > 0 &&
+      !PayoutService.hasUnsafePayoutTextControls(reason) &&
+      !PayoutService.hasUnsafePayoutTextControls(reason.trim())
+        ? reason.trim()
+        : 'Payout processor returned an unsafe error message';
+
     payout.status = 'failed';
-    payout.failure_reason = reason;
+    payout.failure_reason = safeFailureReason;
     payout.failed_at = new Date();
+    payout.completed_at = null;
+    payout.processor_payout_id = null;
     payout.retry_count++;
 
-    if (payout.retry_count < PayoutService.MAX_RETRY_COUNT) {
+    if (retryable && payout.retry_count < PayoutService.MAX_RETRY_COUNT) {
       // Schedule retry
       const retryDate = new Date();
       retryDate.setDate(retryDate.getDate() + PayoutService.RETRY_DELAY_DAYS);
@@ -431,13 +796,18 @@ export class PayoutService {
       console.log(
         `[PayoutService] Payout ${payout.id} failed, retry ${payout.retry_count}/${PayoutService.MAX_RETRY_COUNT} scheduled for ${retryDate.toISOString()}`
       );
-    } else {
+    } else if (retryable) {
+      payout.next_retry_date = null;
       console.error(`[PayoutService] Payout ${payout.id} failed after ${PayoutService.MAX_RETRY_COUNT} retries`);
+    } else {
+      payout.next_retry_date = null;
+      console.error(`[PayoutService] Payout ${payout.id} failed with a non-retryable error: ${reason}`);
     }
 
     await this.payoutRepository.save(payout);
 
-    // TODO: Send email notification to seller
+    // Launch exception: seller payout-failure notification is tracked in
+    // docs/product/capability-registry.yaml under notification_outbox before payout SLA launch.
   }
 
   /**
@@ -477,6 +847,11 @@ export class PayoutService {
       take: options?.limit || 50,
       skip: options?.offset || 0,
     });
+
+    PayoutService.assertNonNegativeSafeInteger(total, 'Payout history total');
+    payouts.forEach((payout, index) =>
+      PayoutService.assertReadablePayoutRow(payout, `Payout row ${index + 1}`, { businessId })
+    );
 
     return { payouts, total };
   }
@@ -519,18 +894,74 @@ export class PayoutService {
       notification_email?: string;
     }
   ): Promise<PayoutSchedule> {
+    const normalizedScheduleId = PayoutService.assertNonEmptyString(scheduleId, 'Payout schedule id');
+    if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
+      throw new Error('Payout schedule updates must be an object');
+    }
+
     const schedule = await this.scheduleRepository.findOne({
-      where: { id: scheduleId },
+      where: { id: normalizedScheduleId },
     });
 
     if (!schedule) {
       throw new Error('Payout schedule not found');
     }
 
-    Object.assign(schedule, updates);
+    const hasUpdate = (field: keyof typeof updates): boolean =>
+      Object.prototype.hasOwnProperty.call(updates, field);
 
-    // Recalculate next payout date if frequency changed
-    if (updates.frequency) {
+    const normalizedUpdates: Partial<PayoutSchedule> = {};
+    if (hasUpdate('frequency')) {
+      normalizedUpdates.frequency = PayoutService.assertValidFrequency(
+        updates.frequency,
+        'Payout schedule frequency'
+      );
+    }
+    if (hasUpdate('min_payout_threshold_cents')) {
+      normalizedUpdates.min_payout_threshold_cents = PayoutService.assertNonNegativeSafeInteger(
+        updates.min_payout_threshold_cents,
+        'Payout schedule minimum threshold'
+      );
+    }
+    if (hasUpdate('max_hold_period_days')) {
+      normalizedUpdates.max_hold_period_days = PayoutService.assertPositiveSafeInteger(
+        updates.max_hold_period_days,
+        'Payout schedule maximum hold period'
+      );
+    }
+    if (hasUpdate('weekly_day_of_week')) {
+      normalizedUpdates.weekly_day_of_week = PayoutService.assertDayOfWeek(
+        updates.weekly_day_of_week,
+        'Payout schedule weekly day'
+      );
+    }
+    if (hasUpdate('monthly_day_of_month')) {
+      normalizedUpdates.monthly_day_of_month = PayoutService.assertDayOfMonth(
+        updates.monthly_day_of_month,
+        'Payout schedule monthly day'
+      );
+    }
+    if (hasUpdate('email_notifications_enabled')) {
+      normalizedUpdates.email_notifications_enabled = PayoutService.assertBoolean(
+        updates.email_notifications_enabled,
+        'Payout schedule email notifications flag'
+      );
+    }
+    if (hasUpdate('notification_email')) {
+      normalizedUpdates.notification_email = PayoutService.assertOptionalEmail(
+        updates.notification_email,
+        'Payout schedule notification email'
+      );
+    }
+
+    Object.assign(schedule, normalizedUpdates);
+
+    // Recalculate next payout date if cadence changed
+    if (
+      hasUpdate('frequency') ||
+      hasUpdate('weekly_day_of_week') ||
+      hasUpdate('monthly_day_of_month')
+    ) {
       schedule.next_payout_date = this.calculateNextPayoutDate(schedule);
     }
 

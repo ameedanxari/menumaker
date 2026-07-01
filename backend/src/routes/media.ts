@@ -8,7 +8,8 @@ export async function mediaRoutes(fastify: FastifyInstance): Promise<void> {
   // POST /media/upload - Upload image (authenticated)
   fastify.post('/upload', {
     preHandler: authenticate,
-  }, async (request, reply) => {    // Get file from multipart request
+  }, async (request, reply) => {
+    // Get file from multipart request
     const data = await request.file();
 
     if (!data) {
@@ -22,28 +23,31 @@ export async function mediaRoutes(fastify: FastifyInstance): Promise<void> {
       return;
     }
 
+    const metadata = mediaService.normalizeUploadMetadata(data.filename, data.mimetype);
+
     // Validate file
-    mediaService.validateImageFile(data.mimetype, 0); // Size validation happens during buffer read
+    mediaService.validateImageFile(metadata.mimeType, 0); // Size validation happens during buffer read
 
     // Read file buffer
     const buffer = await data.toBuffer();
 
     // Validate file size with actual buffer
-    mediaService.validateImageFile(data.mimetype, buffer.length);
+    mediaService.validateImageFile(metadata.mimeType, buffer.length);
 
     // Upload file
     const url = await mediaService.uploadFile(
       buffer,
-      data.filename,
-      data.mimetype
+      metadata.filename,
+      metadata.mimeType,
+      request.user.userId
     );
 
     reply.send({
       success: true,
       data: {
         url,
-        filename: data.filename,
-        mimeType: data.mimetype,
+        filename: metadata.filename,
+        mimeType: metadata.mimeType,
         size: buffer.length,
       },
     });
@@ -53,7 +57,8 @@ export async function mediaRoutes(fastify: FastifyInstance): Promise<void> {
   // POST /media/upload-multiple - Upload multiple images (authenticated)
   fastify.post('/upload-multiple', {
     preHandler: authenticate,
-  }, async (request, reply) => {    const parts = request.parts();
+  }, async (request, reply) => {
+    const parts = request.parts();
     const uploadedFiles: Array<{
       url: string;
       filename: string;
@@ -63,26 +68,29 @@ export async function mediaRoutes(fastify: FastifyInstance): Promise<void> {
 
     for await (const part of parts) {
       if (part.type === 'file') {
+        const metadata = mediaService.normalizeUploadMetadata(part.filename, part.mimetype);
+
         // Validate file
-        mediaService.validateImageFile(part.mimetype, 0);
+        mediaService.validateImageFile(metadata.mimeType, 0);
 
         // Read file buffer
         const buffer = await part.toBuffer();
 
         // Validate file size
-        mediaService.validateImageFile(part.mimetype, buffer.length);
+        mediaService.validateImageFile(metadata.mimeType, buffer.length);
 
         // Upload file
         const url = await mediaService.uploadFile(
           buffer,
-          part.filename,
-          part.mimetype
+          metadata.filename,
+          metadata.mimeType,
+          request.user.userId
         );
 
         uploadedFiles.push({
           url,
-          filename: part.filename,
-          mimeType: part.mimetype,
+          filename: metadata.filename,
+          mimeType: metadata.mimeType,
           size: buffer.length,
         });
       }

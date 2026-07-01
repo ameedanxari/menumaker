@@ -1,3 +1,5 @@
+@file:JvmName("MainNavGraphKt")
+
 package com.menumaker.ui.navigation
 
 import androidx.compose.runtime.Composable
@@ -20,6 +22,7 @@ import com.menumaker.ui.screens.customer.CheckoutScreen
 import com.menumaker.ui.screens.customer.CustomerReviewsScreen
 import com.menumaker.ui.screens.customer.FavoritesScreen
 import com.menumaker.ui.screens.customer.MarketplaceScreen
+import com.menumaker.ui.screens.customer.MenuScreen
 import com.menumaker.ui.screens.customer.MyOrdersScreen
 import com.menumaker.ui.screens.customer.OrderTrackingScreen
 import com.menumaker.ui.screens.customer.PaymentScreen
@@ -162,8 +165,6 @@ fun NavGraph(
             )
         }
 
-import com.menumaker.ui.screens.customer.MenuScreen
-...
         composable(
             route = Destination.SellerMenu.route,
             arguments = listOf(navArgument("sellerId") { type = NavType.StringType })

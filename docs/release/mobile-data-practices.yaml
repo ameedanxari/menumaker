@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "review": {
+    "owner": "mobile-release",
+    "last_reviewed": "2026-06-20",
+    "source_ids": ["SRC-031", "SRC-032", "SRC-033"],
+    "status": "release-blocking"
+  },
+  "android": {
+    "permissions": {
+      "android.permission.INTERNET": {
+        "feature": "API access",
+        "data_category": "app_activity",
+        "purpose": "sync menus, orders, profile, payments, and notifications",
+        "optional": false,
+        "retention": "server-side retention by data category",
+        "sharing": ["AWS", "Stripe", "Twilio", "Firebase"],
+        "denial_behavior": "app cannot operate without network"
+      },
+      "android.permission.ACCESS_NETWORK_STATE": {
+        "feature": "offline/retry UI",
+        "data_category": "device_or_other_ids",
+        "purpose": "detect connectivity state without collecting location",
+        "optional": false,
+        "retention": "not retained",
+        "sharing": [],
+        "denial_behavior": "not user-deniable"
+      },
+      "android.permission.ACCESS_FINE_LOCATION": {
+        "feature": "marketplace distance and delivery distance",
+        "data_category": "location",
+        "purpose": "show nearby sellers and delivery distance after just-in-time consent",
+        "optional": true,
+        "retention": "not stored unless user saves an address/order",
+        "sharing": ["AWS"],
+        "denial_behavior": "manual address entry and non-location marketplace browsing remain available"
+      },
+      "android.permission.ACCESS_COARSE_LOCATION": {
+        "feature": "approximate marketplace distance",
+        "data_category": "location",
+        "purpose": "support approximate location when precise location is denied",
+        "optional": true,
+        "retention": "not stored unless user saves an address/order",
+        "sharing": ["AWS"],
+        "denial_behavior": "manual address entry remains available"
+      },
+      "android.permission.CAMERA": {
+        "feature": "dish/menu photo capture",
+        "data_category": "photos_or_videos",
+        "purpose": "capture seller dish photos with just-in-time education",
+        "optional": true,
+        "retention": "device cache until upload/cleanup; uploaded media until menu deletion",
+        "sharing": ["AWS S3", "Anthropic OCR when enabled"],
+        "denial_behavior": "photo library/manual URL flows remain available"
+      },
+      "android.permission.POST_NOTIFICATIONS": {
+        "feature": "order and account notifications",
+        "data_category": "app_activity",
+        "purpose": "notify sellers/customers about order status and account events",
+        "optional": true,
+        "retention": "device token until logout/account deletion",
+        "sharing": ["Firebase", "AWS"],
+        "denial_behavior": "in-app notification center remains available"
+      }
+    },
+    "cleartext_traffic_allowed": false
+  },
+  "ios": {
+    "usage_descriptions": {
+      "NSCameraUsageDescription": {
+        "feature": "dish/menu photo capture",
+        "data_category": "photos_or_videos",
+        "purpose": "capture seller dish and menu photos",
+        "optional": true,
+        "denial_behavior": "photo library/manual URL flows remain available"
+      },
+      "NSPhotoLibraryUsageDescription": {
+        "feature": "dish/menu photo selection",
+        "data_category": "photos_or_videos",
+        "purpose": "select seller dish and menu photos",
+        "optional": true,
+        "denial_behavior": "camera/manual URL flows remain available"
+      },
+      "NSPhotoLibraryAddUsageDescription": {
+        "feature": "save captured dish photos",
+        "data_category": "photos_or_videos",
+        "purpose": "save seller-created media when requested",
+        "optional": true,
+        "denial_behavior": "app still uploads selected/captured images without saving locally"
+      },
+      "NSLocationWhenInUseUsageDescription": {
+        "feature": "marketplace distance and delivery distance",
+        "data_category": "location",
+        "purpose": "calculate nearby sellers and delivery distance after just-in-time consent",
+        "optional": true,
+        "denial_behavior": "manual address entry remains available"
+      },
+      "NSUserNotificationsUsageDescription": {
+        "feature": "order and account notifications",
+        "data_category": "app_activity",
+        "purpose": "notify about order status, reviews, and account events",
+        "optional": true,
+        "denial_behavior": "in-app notification center remains available"
+      },
+      "NSFaceIDUsageDescription": {
+        "feature": "local account protection",
+        "data_category": "credentials",
+        "purpose": "unlock local session with biometric authentication when enabled",
+        "optional": true,
+        "denial_behavior": "password/session sign-in remains available"
+      },
+      "NSLocalNetworkUsageDescription": {
+        "feature": "local printer discovery",
+        "data_category": "device_or_other_ids",
+        "purpose": "discover seller-owned printers on the local network when that workflow is enabled",
+        "optional": true,
+        "denial_behavior": "cloud/manual setup remains available"
+      }
+    },
+    "background_modes": ["fetch", "remote-notification"]
+  },
+  "store_declarations": {
+    "app_store_privacy_nutrition": {
+      "data_linked_to_user": ["contact_info", "user_content", "identifiers", "purchases", "location_when_used"],
+      "data_not_linked_to_user": ["diagnostics_when_redacted"],
+      "tracking": false
+    },
+    "google_play_data_safety": {
+      "collected": ["location_optional", "personal_info", "photos_videos_optional", "app_activity", "device_or_other_ids", "financial_info_payment_metadata"],
+      "shared": ["service_providers_only"],
+      "security_practices": ["encrypted_in_transit", "deletion_request_available"]
+    }
+  }
+}

@@ -1,275 +1,402 @@
 {
-  "$schema": "https://tr-fe.github.io/design-tokens-schema/design-tokens.schema.json",
-  "description": "MenuMaker Design System - Design Tokens v1.0.0",
-  "version": "1.0.0",
-  "colors": {
-    "primary": {
-      "50": "#FFF5F0",
-      "100": "#FFE8DD",
-      "200": "#FFD1BB",
-      "300": "#FFB999",
-      "400": "#FFA277",
-      "500": "#FF6B35",
-      "600": "#E65620",
-      "700": "#CC4116",
-      "800": "#B32C0C",
-      "900": "#991702"
-    },
-    "secondary": {
-      "50": "#E6F2F8",
-      "100": "#CCE5F1",
-      "200": "#99CBE3",
-      "300": "#66B1D5",
-      "400": "#3397C7",
-      "500": "#004E89",
-      "600": "#003D6B",
-      "700": "#002C4D",
-      "800": "#001B2F",
-      "900": "#000A11"
-    },
-    "success": {
-      "50": "#E8F5E9",
-      "100": "#C8E6C9",
-      "200": "#A5D6A7",
-      "300": "#81C784",
-      "400": "#66BB6A",
-      "500": "#28A745",
-      "600": "#239B3E",
-      "700": "#1E8E37",
-      "800": "#198230",
-      "900": "#146C29"
-    },
-    "warning": {
-      "50": "#FFF8E1",
-      "100": "#FFECB3",
-      "200": "#FFE082",
-      "300": "#FFD54F",
-      "400": "#FFCA28",
-      "500": "#FFC107",
-      "600": "#FFB300",
-      "700": "#FFA000",
-      "800": "#FF8F00",
-      "900": "#FF6F00"
-    },
-    "error": {
-      "50": "#FFEBEE",
-      "100": "#FFCDD2",
-      "200": "#EF9A9A",
-      "300": "#E57373",
-      "400": "#EF5350",
-      "500": "#DC3545",
-      "600": "#D32F2F",
-      "700": "#C62828",
-      "800": "#B71C1C",
-      "900": "#A50F15"
-    },
-    "neutral": {
-      "0": "#FFFFFF",
-      "50": "#F8F9FA",
-      "100": "#F1F3F5",
-      "200": "#E9ECEF",
-      "300": "#DEE2E6",
-      "400": "#CED4DA",
-      "500": "#ADB5BD",
-      "600": "#6C757D",
-      "700": "#495057",
-      "800": "#343A40",
-      "900": "#212529",
-      "1000": "#000000"
-    },
-    "semantic": {
-      "text": {
-        "primary": "#212529",
-        "secondary": "#6C757D",
-        "tertiary": "#ADB5BD",
-        "inverse": "#FFFFFF",
-        "disabled": "#CED4DA",
-        "error": "#DC3545",
-        "success": "#28A745",
-        "warning": "#FFC107"
+  "$schema": "https://menumaker.local/design-system/token-schema.v1.json",
+  "schema_version": "1.0.0",
+  "brand": {
+    "namespace": "menumaker",
+    "display_name": "MenuMaker",
+    "non_redesign_statement": "This token update preserves the existing orange brand palette, neutral scale, semantic roles, typography intent, density, and current navigation. It consolidates authority only."
+  },
+  "metadata": {
+    "owner": "design-system",
+    "source_of_truth": "frontend/design-tokens.json",
+    "generated_outputs": [
+      "frontend/src/styles/tokens.css",
+      "frontend/tailwind-tokens.cjs",
+      "android/app/src/main/kotlin/com/menumaker/ui/theme/GeneratedTokens.kt",
+      "android/app/src/main/res/values/generated_colors.xml",
+      "ios/MenuMaker/Shared/Theme/GeneratedTokens.swift",
+      "ios/MenuMaker/Generated/DesignTokens/asset-colors.json"
+    ],
+    "deprecations": [
+      {
+        "path": "frontend/src/design-tokens.json",
+        "replacement": "frontend/design-tokens.json",
+        "status": "removed",
+        "migration": "Use frontend/scripts/sync-tokens.cjs to generate platform outputs."
       },
+      {
+        "path": "frontend/src/components/common/Button",
+        "replacement": "frontend/src/components/ui/Button",
+        "status": "deprecated",
+        "migration": "Import Button from @/components/ui."
+      }
+    ],
+    "platform_exceptions": [
+      {
+        "platform": "ios",
+        "path": "ios/MenuMaker/Shared/Theme/ColorTheme.swift",
+        "reason": "Status colors use SwiftUI named/system colors until dependent iOS target consolidation migrates all call sites."
+      },
+      {
+        "platform": "web",
+        "path": "frontend/src/styles/mobile.css",
+        "reason": "Legacy mobile affordance styles are audited by drift gate and scheduled for cleanup after screen migration."
+      }
+    ]
+  },
+  "primitives": {
+    "color": {
+      "orange": {
+        "50": "#fff5f0",
+        "100": "#ffe8dd",
+        "200": "#ffd1bb",
+        "300": "#ffb999",
+        "400": "#ffa277",
+        "500": "#ff6b35",
+        "600": "#e65620",
+        "700": "#cc4116",
+        "800": "#b32c0c",
+        "900": "#991702"
+      },
+      "blue": {
+        "50": "#e6f2f8",
+        "100": "#cce5f1",
+        "200": "#99cbe3",
+        "300": "#66b1d5",
+        "400": "#3397c7",
+        "500": "#004e89",
+        "600": "#003d6b",
+        "700": "#002c4d",
+        "800": "#001b2f",
+        "900": "#000a11"
+      },
+      "green": {
+        "50": "#e8f5e9",
+        "100": "#c8e6c9",
+        "500": "#28a745",
+        "600": "#239b3e",
+        "700": "#1e8e37",
+        "800": "#198230",
+        "900": "#146c29"
+      },
+      "yellow": {
+        "50": "#fff8e1",
+        "100": "#ffecb3",
+        "500": "#ffc107",
+        "600": "#ffb300",
+        "700": "#ffa000",
+        "800": "#ff8f00",
+        "900": "#ff6f00"
+      },
+      "red": {
+        "50": "#ffebee",
+        "100": "#ffcdd2",
+        "400": "#ef5350",
+        "500": "#dc3545",
+        "600": "#d32f2f",
+        "700": "#c62828",
+        "800": "#b71c1c",
+        "900": "#a50f15"
+      },
+      "neutral": {
+        "0": "#ffffff",
+        "50": "#f8f9fa",
+        "100": "#f1f3f5",
+        "200": "#e9ecef",
+        "300": "#dee2e6",
+        "400": "#ced4da",
+        "500": "#adb5bd",
+        "600": "#6c757d",
+        "700": "#495057",
+        "800": "#343a40",
+        "900": "#212529",
+        "1000": "#000000"
+      }
+    },
+    "typography": {
+      "family": {
+        "sans": "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+        "mono": "'JetBrains Mono', 'Fira Code', 'Courier New', monospace"
+      },
+      "size": {
+        "xs": "12px",
+        "sm": "14px",
+        "base": "16px",
+        "lg": "18px",
+        "xl": "20px",
+        "2xl": "24px",
+        "3xl": "30px",
+        "4xl": "36px"
+      },
+      "weight": {
+        "regular": 400,
+        "medium": 500,
+        "semibold": 600,
+        "bold": 700
+      },
+      "line_height": {
+        "tight": 1.2,
+        "normal": 1.5,
+        "relaxed": 1.625
+      }
+    },
+    "spacing": {
+      "0": "0px",
+      "0_5": "2px",
+      "1": "4px",
+      "1_5": "6px",
+      "2": "8px",
+      "2_5": "10px",
+      "3": "12px",
+      "3_5": "14px",
+      "4": "16px",
+      "5": "20px",
+      "6": "24px",
+      "8": "32px",
+      "10": "40px",
+      "11": "44px",
+      "12": "48px",
+      "16": "64px",
+      "20": "80px",
+      "24": "96px",
+      "32": "128px"
+    },
+    "radius": {
+      "none": "0px",
+      "sm": "4px",
+      "base": "6px",
+      "md": "8px",
+      "lg": "12px",
+      "xl": "16px",
+      "2xl": "24px",
+      "full": "9999px"
+    },
+    "elevation": {
+      "none": "none",
+      "sm": "0 1px 3px rgba(0, 0, 0, 0.10)",
+      "md": "0 10px 15px rgba(0, 0, 0, 0.10)",
+      "lg": "0 20px 25px rgba(0, 0, 0, 0.10)"
+    },
+    "motion": {
+      "duration": {
+        "instant": "0ms",
+        "fast": "150ms",
+        "base": "200ms",
+        "slow": "300ms"
+      },
+      "easing": {
+        "linear": "linear",
+        "standard": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "out": "cubic-bezier(0, 0, 0.2, 1)"
+      },
+      "reduced_motion": {
+        "duration": "0ms",
+        "transform": "none"
+      }
+    },
+    "breakpoint": {
+      "sm": "640px",
+      "md": "768px",
+      "lg": "1024px",
+      "xl": "1280px",
+      "2xl": "1536px"
+    },
+    "focus": {
+      "ring_width": "2px",
+      "ring_offset": "2px",
+      "target_web": "44px",
+      "target_android": "48dp",
+      "target_ios": "44pt"
+    }
+  },
+  "semantic": {
+    "light": {
       "background": {
-        "primary": "#FFFFFF",
-        "secondary": "#F8F9FA",
-        "tertiary": "#E9ECEF",
-        "inverse": "#212529",
-        "overlay": "rgba(0, 0, 0, 0.5)"
+        "canvas": "{color.neutral.50}",
+        "surface": "{color.neutral.0}",
+        "surface_elevated": "{color.neutral.0}",
+        "subtle": "{color.neutral.100}",
+        "inverse": "{color.neutral.900}"
+      },
+      "text": {
+        "primary": "{color.neutral.900}",
+        "secondary": "{color.neutral.700}",
+        "muted": "{color.neutral.600}",
+        "inverse": "{color.neutral.0}",
+        "disabled": "{color.neutral.500}",
+        "on_brand": "{color.neutral.0}",
+        "success": "{color.green.800}",
+        "warning": "{color.neutral.900}",
+        "error": "{color.red.700}",
+        "info": "{color.blue.700}"
       },
       "border": {
-        "default": "#DEE2E6",
-        "hover": "#ADB5BD",
-        "focus": "#FF6B35",
-        "error": "#DC3545",
-        "success": "#28A745"
+        "default": "{color.neutral.300}",
+        "strong": "{color.neutral.500}",
+        "focus": "{color.orange.600}",
+        "error": "{color.red.600}",
+        "success": "{color.green.700}"
       },
-      "surface": {
-        "default": "#FFFFFF",
-        "elevated": "#FFFFFF",
-        "hover": "#F8F9FA",
-        "pressed": "#E9ECEF",
-        "disabled": "#F1F3F5"
+      "action": {
+        "primary": "{color.orange.700}",
+        "primary_hover": "{color.orange.700}",
+        "primary_pressed": "{color.orange.800}",
+        "secondary": "{color.blue.600}",
+        "secondary_hover": "{color.blue.700}",
+        "danger": "{color.red.600}",
+        "danger_hover": "{color.red.700}",
+        "disabled": "{color.neutral.200}"
+      },
+      "state": {
+        "success_bg": "{color.green.50}",
+        "success_fg": "{color.green.900}",
+        "warning_bg": "{color.yellow.50}",
+        "warning_fg": "{color.neutral.900}",
+        "error_bg": "{color.red.50}",
+        "error_fg": "{color.red.700}",
+        "info_bg": "{color.blue.50}",
+        "info_fg": "{color.blue.700}",
+        "empty_bg": "{color.neutral.100}",
+        "loading_bg": "{color.neutral.200}"
       }
     },
     "dark": {
       "background": {
-        "primary": "#1A1A1A",
-        "secondary": "#2A2A2A",
-        "tertiary": "#3A3A3A"
+        "canvas": "{color.neutral.900}",
+        "surface": "{color.neutral.800}",
+        "surface_elevated": "{color.neutral.700}",
+        "subtle": "{color.neutral.700}",
+        "inverse": "{color.neutral.0}"
       },
       "text": {
-        "primary": "#E0E0E0",
-        "secondary": "#B0B0B0",
-        "tertiary": "#808080"
+        "primary": "{color.neutral.50}",
+        "secondary": "{color.neutral.200}",
+        "muted": "{color.neutral.300}",
+        "inverse": "{color.neutral.900}",
+        "disabled": "{color.neutral.500}",
+        "on_brand": "{color.neutral.0}",
+        "success": "{color.green.100}",
+        "warning": "{color.neutral.900}",
+        "error": "{color.red.100}",
+        "info": "{color.blue.100}"
       },
       "border": {
-        "default": "#404040",
-        "hover": "#505050",
-        "focus": "#FF6B35"
+        "default": "{color.neutral.700}",
+        "strong": "{color.neutral.500}",
+        "focus": "{color.orange.400}",
+        "error": "{color.red.500}",
+        "success": "{color.green.500}"
+      },
+      "action": {
+        "primary": "{color.orange.600}",
+        "primary_hover": "{color.orange.500}",
+        "primary_pressed": "{color.orange.300}",
+        "secondary": "{color.blue.400}",
+        "secondary_hover": "{color.blue.300}",
+        "danger": "{color.red.500}",
+        "danger_hover": "{color.red.400}",
+        "disabled": "{color.neutral.700}"
+      },
+      "state": {
+        "success_bg": "{color.green.900}",
+        "success_fg": "{color.green.100}",
+        "warning_bg": "{color.yellow.600}",
+        "warning_fg": "{color.neutral.900}",
+        "error_bg": "{color.red.900}",
+        "error_fg": "{color.red.100}",
+        "info_bg": "{color.blue.900}",
+        "info_fg": "{color.blue.100}",
+        "empty_bg": "{color.neutral.800}",
+        "loading_bg": "{color.neutral.700}"
       }
     }
   },
-  "typography": {
-    "fontFamily": {
-      "sans": "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
-      "serif": "Georgia, 'Times New Roman', Times, serif",
-      "mono": "'JetBrains Mono', 'Fira Code', 'Courier New', monospace"
+  "components": {
+    "button": {
+      "height": {
+        "sm": "36px",
+        "md": "{spacing.11}",
+        "lg": "{spacing.12}"
+      },
+      "radius": "{radius.lg}",
+      "variants": {
+        "primary": {
+          "background": "{semantic.light.action.primary}",
+          "text": "{semantic.light.text.on_brand}",
+          "hover": "{semantic.light.action.primary_hover}",
+          "focus": "{semantic.light.border.focus}"
+        },
+        "secondary": {
+          "background": "{semantic.light.action.secondary}",
+          "text": "{semantic.light.text.on_brand}",
+          "hover": "{semantic.light.action.secondary_hover}",
+          "focus": "{semantic.light.border.focus}"
+        },
+        "danger": {
+          "background": "{semantic.light.action.danger}",
+          "text": "{semantic.light.text.on_brand}",
+          "hover": "{semantic.light.action.danger_hover}",
+          "focus": "{semantic.light.border.error}"
+        }
+      }
     },
-    "fontSize": {
-      "xs": "12px",
-      "sm": "14px",
-      "base": "16px",
-      "lg": "18px",
-      "xl": "20px",
-      "2xl": "24px",
-      "3xl": "30px",
-      "4xl": "36px",
-      "5xl": "48px",
-      "6xl": "60px",
-      "7xl": "72px"
+    "field": {
+      "height": "{spacing.11}",
+      "radius": "{radius.lg}",
+      "border": "{semantic.light.border.default}",
+      "focus": "{semantic.light.border.focus}",
+      "error": "{semantic.light.border.error}",
+      "disabled_background": "{semantic.light.action.disabled}"
     },
-    "fontWeight": {
-      "normal": 400,
-      "medium": 500,
-      "semibold": 600,
-      "bold": 700,
-      "extrabold": 800
+    "card": {
+      "background": "{semantic.light.background.surface}",
+      "radius": "{radius.xl}",
+      "shadow": "{elevation.sm}",
+      "padding": "{spacing.6}"
     },
-    "lineHeight": {
-      "none": 1,
-      "tight": 1.2,
-      "snug": 1.375,
-      "normal": 1.5,
-      "relaxed": 1.625,
-      "loose": 1.75
+    "modal": {
+      "background": "{semantic.light.background.surface}",
+      "radius": "{radius.2xl}",
+      "shadow": "{elevation.lg}",
+      "focus_restore": true,
+      "focus_trap": true
     },
-    "letterSpacing": {
-      "tighter": "-0.05em",
-      "tight": "-0.025em",
-      "normal": "0",
-      "wide": "0.025em",
-      "wider": "0.05em",
-      "widest": "0.1em"
+    "table": {
+      "row_height": "{spacing.12}",
+      "border": "{semantic.light.border.default}",
+      "header_background": "{semantic.light.background.subtle}"
+    },
+    "feedback": {
+      "loading_live_region": "polite",
+      "error_live_region": "assertive",
+      "success_live_region": "polite",
+      "empty_icon_color": "{semantic.light.text.muted}"
     }
   },
-  "spacing": {
-    "0": "0px",
-    "0.5": "2px",
-    "1": "4px",
-    "1.5": "6px",
-    "2": "8px",
-    "2.5": "10px",
-    "3": "12px",
-    "3.5": "14px",
-    "4": "16px",
-    "5": "20px",
-    "6": "24px",
-    "7": "28px",
-    "8": "32px",
-    "9": "36px",
-    "10": "40px",
-    "11": "44px",
-    "12": "48px",
-    "14": "56px",
-    "16": "64px",
-    "20": "80px",
-    "24": "96px",
-    "28": "112px",
-    "32": "128px"
-  },
-  "borderRadius": {
-    "none": "0px",
-    "sm": "4px",
-    "base": "6px",
-    "md": "8px",
-    "lg": "12px",
-    "xl": "16px",
-    "2xl": "24px",
-    "3xl": "32px",
-    "full": "9999px"
-  },
-  "borderWidth": {
-    "0": "0px",
-    "1": "1px",
-    "2": "2px",
-    "4": "4px",
-    "8": "8px"
-  },
-  "boxShadow": {
-    "xs": "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-    "sm": "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)",
-    "base": "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)",
-    "md": "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)",
-    "lg": "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-    "xl": "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-    "2xl": "0 50px 100px -20px rgba(0, 0, 0, 0.25)",
-    "inner": "inset 0 2px 4px 0 rgba(0, 0, 0, 0.05)",
-    "none": "none"
-  },
-  "breakpoints": {
-    "sm": "640px",
-    "md": "768px",
-    "lg": "1024px",
-    "xl": "1280px",
-    "2xl": "1536px"
-  },
-  "transitions": {
-    "duration": {
-      "fast": "150ms",
-      "base": "200ms",
-      "slow": "300ms",
-      "slower": "500ms"
+  "states": {
+    "default": {
+      "description": "Primary interactive state with visible affordance."
     },
-    "easing": {
-      "linear": "linear",
-      "in": "cubic-bezier(0.4, 0, 1, 1)",
-      "out": "cubic-bezier(0, 0, 0.2, 1)",
-      "inOut": "cubic-bezier(0.4, 0, 0.2, 1)"
+    "loading": {
+      "description": "Non-blocking progress with polite live announcement and disabled duplicate submission."
+    },
+    "empty": {
+      "description": "No user data yet; must provide one next action."
+    },
+    "error": {
+      "description": "Recoverable failure with assertive announcement, action, and non-color-only icon/text."
+    },
+    "disabled": {
+      "description": "Unavailable action with explanation where business logic is not obvious."
+    },
+    "success": {
+      "description": "Completed action with confirmation copy and next step."
+    },
+    "offline": {
+      "description": "Network unavailable; preserve local work and expose retry/sync state."
+    },
+    "pending": {
+      "description": "Background operation accepted but not complete."
     }
-  },
-  "zIndex": {
-    "dropdown": 1000,
-    "sticky": 1020,
-    "fixed": 1030,
-    "modalBackdrop": 1040,
-    "modal": 1050,
-    "popover": 1060,
-    "tooltip": 1070
-  },
-  "opacity": {
-    "0": "0",
-    "5": "0.05",
-    "10": "0.1",
-    "20": "0.2",
-    "25": "0.25",
-    "30": "0.3",
-    "40": "0.4",
-    "50": "0.5",
-    "60": "0.6",
-    "70": "0.7",
-    "75": "0.75",
-    "80": "0.8",
-    "90": "0.9",
-    "95": "0.95",
-    "100": "1"
   }
 }

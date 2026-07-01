@@ -29,8 +29,18 @@ class ReferralViewModel: ObservableObject {
 
         do {
             let data = try await repository.getReferralStats()
-            stats = data.stats
-            leaderboard = data.leaderboard
+            stats = ReferralStats(
+                totalReferrals: data.stats.totalReferrals,
+                successfulReferrals: data.stats.successfulReferrals,
+                pendingReferrals: data.stats.pendingReferrals,
+                monthlyReferrals: data.stats.monthlyReferrals,
+                totalEarningsCents: 0,
+                availableCreditsCents: 0,
+                pendingRewardsCents: 0,
+                referralCode: data.stats.referralCode,
+                leaderboardPosition: nil
+            )
+            leaderboard = []
 
             // Load referral history
             referralHistory = try await repository.getReferralHistory()
@@ -77,11 +87,11 @@ class ReferralViewModel: ObservableObject {
     }
 
     func getTotalEarnings() -> Double {
-        repository.getTotalEarnings()
+        0.0
     }
 
     func getFormattedEarnings() -> String {
-        stats?.formattedEarnings ?? "₹0.00"
+        stats?.formattedEarnings ?? "Rewards disabled"
     }
 
     func getSuccessRate() -> Double {
@@ -93,22 +103,21 @@ class ReferralViewModel: ObservableObject {
     }
 
     func getLeaderboardPosition() -> String {
-        stats?.leaderboardDisplay ?? "Not ranked"
+        "Not ranked"
     }
 
     // MARK: - Leaderboard
 
     func getTopReferrers(count: Int = 10) -> [ReferralLeaderboard] {
-        repository.getTopReferrers(count: count)
+        []
     }
 
     func getCurrentUserRank() -> Int? {
-        repository.getCurrentUserRank()
+        nil
     }
 
     func isInTopTen() -> Bool {
-        guard let rank = getCurrentUserRank() else { return false }
-        return rank <= 10
+        false
     }
 
     // MARK: - Apply Referral Code
@@ -134,10 +143,10 @@ class ReferralViewModel: ObservableObject {
             let result = try await repository.applyReferralCode(code)
 
             if result.success {
-                referralCodeMessage = result.message ?? "Referral code applied successfully! ₹50 credit added."
+                referralCodeMessage = "Referral code applied successfully. Reward credits are disabled for this launch build."
                 referralCodeSuccess = true
 
-                // Refresh data to show updated credits
+                // Refresh data to show updated referral status.
                 await loadReferralData()
 
                 analyticsService.track(.referralCodeApplied, parameters: ["code": code])

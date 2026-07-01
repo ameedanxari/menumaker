@@ -1,0 +1,5 @@
+schema_version: 1
+flows:
+  auth:
+    states: [default, loading]
+    web_components: [Button]

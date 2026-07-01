@@ -4,6 +4,7 @@ import com.menumaker.data.common.Resource
 import com.menumaker.data.remote.models.AuthData
 import com.menumaker.data.remote.models.UserDto
 import com.menumaker.data.repository.AuthRepository
+import com.menumaker.data.repository.MediaRepository
 import com.menumaker.services.AnalyticsService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -28,6 +29,9 @@ class ProfileViewModelTest {
 
     @Mock
     private lateinit var authRepository: AuthRepository
+
+    @Mock
+    private lateinit var mediaRepository: MediaRepository
     
     @Mock
     private lateinit var analyticsService: AnalyticsService
@@ -41,7 +45,7 @@ class ProfileViewModelTest {
         MockitoAnnotations.openMocks(this)
         Dispatchers.setMain(testDispatcher)
 
-        viewModel = ProfileViewModel(authRepository, analyticsService)
+        viewModel = ProfileViewModel(authRepository, mediaRepository, analyticsService)
     }
 
     @After

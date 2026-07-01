@@ -1,0 +1,57 @@
+schema_version: 1
+generated_by: remediation-bounded-context-and-code-ownership-consolidation
+policy:
+  deprecation_window: "one minor release with telemetry evidence"
+  removal_requires:
+    - consumer_search
+    - contract_diff
+    - migration_impact
+    - rollback_plan
+aliases:
+  - alias: "Order.status legacy values: confirmed, delivered"
+    owner: Ordering
+    replacement: "OpenAPI order_status enum: accepted, completed"
+    consumers:
+      - Android order repository
+      - iOS order views
+      - web order store
+    telemetry: "order_status_legacy_value_seen"
+    removal_release: "v1.2"
+    rollback: "server accepts legacy values at boundary and emits canonical status"
+    status: active
+    evidence: "openapi/menumaker.v1.yaml"
+  - alias: "Order.total_amount_cents"
+    owner: Ordering
+    replacement: "total_cents"
+    consumers:
+      - shared generated API
+      - Android generated transport
+      - iOS generated transport
+    telemetry: "order_total_amount_cents_seen"
+    removal_release: "v1.2"
+    rollback: "compatibility adapter maps total_amount_cents to total_cents"
+    status: active
+    evidence: "docs/architecture/adr/0003-api-contract-authority.md"
+  - alias: "legacy endpoint paths without /api/v1"
+    owner: Business Catalog
+    replacement: "/api/v1/* canonical paths"
+    consumers:
+      - public menu links
+      - mobile deep links
+    telemetry: "legacy_endpoint_path_seen"
+    removal_release: "v1.3"
+    rollback: "edge redirect preserves old paths until telemetry is zero"
+    status: active
+    evidence: "scripts/contracts/verify-all.sh"
+  - alias: "duplicate handwritten DTOs"
+    owner: Reporting
+    replacement: "generated transport DTO mapped to domain models"
+    consumers:
+      - frontend stores
+      - Android repositories
+      - iOS repositories
+    telemetry: "handwritten_dto_import_seen"
+    removal_release: "v1.3"
+    rollback: "restore mapper-only compatibility type without endpoint ownership"
+    status: active
+    evidence: "docs/architecture/client-layering.md"

@@ -220,11 +220,13 @@ describe('OrderService', () => {
     });
 
     it('should create order successfully', async () => {
-      const orderData = baseOrderData;
-
       const mockDish = {
         ...sharedDishes[0],
         is_available: true,
+      };
+      const orderData = {
+        ...baseOrderData,
+        items: [{ dish_id: mockDish.id, quantity: 1 }],
       };
 
       const mockBusiness = { id: orderData.business_id, name: 'Test Restaurant', owner_id: 'owner-id' };
@@ -340,6 +342,33 @@ describe('OrderService', () => {
         { status: 'pending' }
       );
     });
+
+    it('should reject unsupported order status filters before querying', async () => {
+      await expect(
+        orderService.getBusinessOrders('business-id', 'user-id', { status: 'pending\u0000' })
+      ).rejects.toMatchObject({
+        code: 'INVALID_ORDER_STATUS',
+        statusCode: 400,
+      });
+
+      expect(mockBusinessRepository.findOne).not.toHaveBeenCalled();
+      expect(mockOrderRepository.createQueryBuilder).not.toHaveBeenCalled();
+    });
+
+    it('should reject invalid date ranges before querying business orders', async () => {
+      await expect(
+        orderService.getBusinessOrders('business-id', 'user-id', {
+          startDate: new Date('2025-02-01'),
+          endDate: new Date('2025-01-01'),
+        })
+      ).rejects.toMatchObject({
+        code: 'INVALID_ORDER_FILTER',
+        statusCode: 400,
+      });
+
+      expect(mockBusinessRepository.findOne).not.toHaveBeenCalled();
+      expect(mockOrderRepository.createQueryBuilder).not.toHaveBeenCalled();
+    });
   });
 
   describe('updateOrder', () => {
@@ -400,6 +429,46 @@ describe('OrderService', () => {
       const result = await orderService.updateOrder(orderId, userId, updateData);
 
       expect(result.fulfilled_at).toBeDefined();
+    });
+
+    it('should reject unsupported status updates before saving', async () => {
+      const mockOrder = {
+        id: 'order-id',
+        business_id: 'business-id',
+        order_status: 'pending',
+      };
+
+      mockOrderRepository.findOne.mockResolvedValue(mockOrder);
+
+      await expect(
+        orderService.updateOrder('order-id', 'user-id', { order_status: 'pending\u0000' as any })
+      ).rejects.toMatchObject({
+        code: 'INVALID_ORDER_STATUS',
+        statusCode: 400,
+      });
+
+      expect(mockBusinessRepository.findOne).not.toHaveBeenCalled();
+      expect(mockOrderRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('should trim safe notes and reject unsafe note text', async () => {
+      const mockOrder = {
+        id: 'order-id',
+        business_id: 'business-id',
+        order_status: 'pending',
+      };
+
+      mockOrderRepository.findOne.mockResolvedValue(mockOrder);
+
+      await expect(
+        orderService.updateOrder('order-id', 'user-id', { notes: 'kitchen\u0000note' })
+      ).rejects.toMatchObject({
+        code: 'INVALID_ORDER_TEXT',
+        statusCode: 400,
+      });
+
+      expect(mockBusinessRepository.findOne).not.toHaveBeenCalled();
+      expect(mockOrderRepository.save).not.toHaveBeenCalled();
     });
   });
 
@@ -499,6 +568,23 @@ describe('OrderService', () => {
       expect(result.totalSales).toBe(5000);
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('order.created_at >= :startDate', { startDate });
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('order.created_at <= :endDate', { endDate });
+    });
+
+    it('should reject invalid summary date ranges before authorization lookup', async () => {
+      await expect(
+        orderService.getOrderSummary(
+          'business-123',
+          'user-123',
+          new Date('not-a-date'),
+          new Date('2025-01-31')
+        )
+      ).rejects.toMatchObject({
+        code: 'INVALID_ORDER_FILTER',
+        statusCode: 400,
+      });
+
+      expect(mockBusinessRepository.findOne).not.toHaveBeenCalled();
+      expect(mockOrderRepository.createQueryBuilder).not.toHaveBeenCalled();
     });
   });
 
@@ -642,6 +728,17 @@ describe('OrderService', () => {
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('order.order_status = :status', { status: 'pending' });
     });
 
+    it('should reject unsafe customer order status filters before querying', async () => {
+      await expect(
+        orderService.getCustomerOrders('user-123', { status: 'ready\u0000' })
+      ).rejects.toMatchObject({
+        code: 'INVALID_ORDER_STATUS',
+        statusCode: 400,
+      });
+
+      expect(mockOrderRepository.createQueryBuilder).not.toHaveBeenCalled();
+    });
+
     it('should apply pagination limits', async () => {
       const mockQueryBuilder = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
@@ -659,6 +756,36 @@ describe('OrderService', () => {
 
       expect(mockQueryBuilder.take).toHaveBeenCalledWith(20);
       expect(mockQueryBuilder.skip).toHaveBeenCalledWith(10);
+    });
+
+    it('should preserve zero limit and reject invalid pagination values', async () => {
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([] as any) as any,
+      } as any;
+
+      mockOrderRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+      await orderService.getCustomerOrders('user-123', { limit: 0, offset: 0 });
+
+      expect(mockQueryBuilder.take).toHaveBeenCalledWith(0);
+      expect(mockQueryBuilder.skip).toHaveBeenCalledWith(0);
+
+      jest.clearAllMocks();
+
+      await expect(
+        orderService.getCustomerOrders('user-123', { limit: -1, offset: 0 })
+      ).rejects.toMatchObject({
+        code: 'INVALID_ORDER_FILTER',
+        statusCode: 400,
+      });
+
+      expect(mockOrderRepository.createQueryBuilder).not.toHaveBeenCalled();
     });
 
     it('should order by created_at DESC', async () => {
@@ -738,6 +865,34 @@ describe('OrderService', () => {
       const result = await orderService.cancelOrder('order-123', 'user-123', 'Changed my mind');
 
       expect(result.notes).toContain('Cancellation reason: Changed my mind');
+    });
+
+    it('should trim cancellation reason before appending to notes', async () => {
+      const mockOrder = {
+        id: 'order-123',
+        customer_id: 'user-123',
+        order_status: 'pending',
+        notes: null,
+      };
+
+      mockOrderRepository.findOne.mockResolvedValue(mockOrder);
+      mockOrderRepository.save.mockImplementation(async (order: any) => order);
+
+      const result = await orderService.cancelOrder('order-123', 'user-123', '  Changed my mind  ');
+
+      expect(result.notes).toBe('Cancellation reason: Changed my mind');
+    });
+
+    it('should reject unsafe cancellation reason text before loading the order', async () => {
+      await expect(
+        orderService.cancelOrder('order-123', 'user-123', 'bad\u0000reason')
+      ).rejects.toMatchObject({
+        code: 'INVALID_ORDER_TEXT',
+        statusCode: 400,
+      });
+
+      expect(mockOrderRepository.findOne).not.toHaveBeenCalled();
+      expect(mockOrderRepository.save).not.toHaveBeenCalled();
     });
 
     it('should throw error if order not found', async () => {

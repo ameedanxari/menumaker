@@ -1,10 +1,36 @@
 import Foundation
 import Combine
 
+struct TokenizedPaymentMethod: Identifiable, Equatable {
+    let id: String
+    let type: PaymentMethodType
+    let provider: String
+    let tokenReference: String
+    let brand: String?
+    let last4: String?
+    let expiryMonth: Int?
+    let expiryYear: Int?
+    let billingName: String?
+    let requiresVerification: Bool
+
+    var isExpired: Bool {
+        guard let expiryMonth, let expiryYear else { return false }
+        let normalizedYear = expiryYear < 100 ? 2000 + expiryYear : expiryYear
+        let components = Calendar.current.dateComponents([.year, .month], from: Date())
+        guard let currentYear = components.year, let currentMonth = components.month else { return false }
+        return normalizedYear < currentYear || (normalizedYear == currentYear && expiryMonth < currentMonth)
+    }
+}
+
+enum PaymentIntentStatus: Equatable {
+    case idle
+    case pendingVerification
+    case authorized
+    case failed(String)
+}
+
 @MainActor
 class CustomerPaymentViewModel: ObservableObject {
-    // MARK: - Published Properties
-
     @Published var selectedPaymentMethod: PaymentMethodType = .card
     @Published var isProcessing = false
     @Published var showPaymentSuccess = false
@@ -12,7 +38,6 @@ class CustomerPaymentViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var completedOrderId: String?
 
-    // Card Payment
     @Published var cardNumber = ""
     @Published var cardHolderName = ""
     @Published var expiryDate = ""
@@ -20,248 +45,104 @@ class CustomerPaymentViewModel: ObservableObject {
     @Published var saveCard = false
     @Published var cardValidationError: String?
 
-    // UPI Payment
     @Published var upiId = ""
     @Published var upiValidationError: String?
 
-    // Saved Cards
     @Published var savedCards: [SavedCard] = []
+    @Published var tokenizedPaymentMethods: [TokenizedPaymentMethod] = []
     @Published var selectedSavedCardIndex: Int?
     @Published var showNewCardForm = false
-
-    private var cancellables = Set<AnyCancellable>()
-
-    init() {
-        setupValidation()
-        loadSavedCards()
-    }
-
-    // MARK: - Computed Properties
+    @Published var paymentIntentStatus: PaymentIntentStatus = .idle
 
     var isPayButtonEnabled: Bool {
         switch selectedPaymentMethod {
         case .card:
-            if let index = selectedSavedCardIndex, index < savedCards.count {
-                return true  // Using saved card
-            }
-            return isCardValid
+            guard let method = selectedTokenizedMethod else { return false }
+            return method.type == .card && !method.isExpired && !method.tokenReference.isEmpty
         case .cash:
             return true
         case .upi:
-            return isUpiValid
+            guard let method = selectedTokenizedMethod else { return false }
+            return method.type == .upi && !method.tokenReference.isEmpty
         }
     }
 
-    private var isCardValid: Bool {
-        let isNumberValid = cardNumber.count >= 13 && cardNumber.count <= 19
-        let isHolderValid = !cardHolderName.isEmpty
-        let isExpiryValid = isValidExpiryDate(expiryDate)
-        let isCvvValid = cvv.count == 3 || cvv.count == 4
-
-        return isNumberValid && isHolderValid && isExpiryValid && isCvvValid
+    init() {
+        loadTokenizedPaymentMethods()
     }
 
-    private var isUpiValid: Bool {
-        let upiPattern = "^[\\w.]+@[\\w]+$"
-        let upiPredicate = NSPredicate(format: "SELF MATCHES %@", upiPattern)
-        return upiPredicate.evaluate(with: upiId)
+    func loadTokenizedPaymentMethods() {
+        tokenizedPaymentMethods = []
+        syncSavedCardSummaries()
     }
 
-    // MARK: - Setup
-
-    private func setupValidation() {
-        // Card Number Validation
-        $cardNumber
-            .debounce(for: .milliseconds(500), scheduler: DispatchQueue.main)
-            .sink { [weak self] number in
-                self?.validateCardNumber(number)
-            }
-            .store(in: &cancellables)
-
-        // Expiry Date Validation
-        $expiryDate
-            .debounce(for: .milliseconds(500), scheduler: DispatchQueue.main)
-            .sink { [weak self] expiry in
-                self?.validateExpiryDate(expiry)
-            }
-            .store(in: &cancellables)
-
-        // UPI ID Validation
-        $upiId
-            .debounce(for: .milliseconds(500), scheduler: DispatchQueue.main)
-            .sink { [weak self] upiId in
-                self?.validateUpiId(upiId)
-            }
-            .store(in: &cancellables)
-    }
-
-    // MARK: - Validation
-
-    private func validateCardNumber(_ number: String) {
-        guard !number.isEmpty else {
-            cardValidationError = nil
-            return
-        }
-
-        let numericOnly = number.filter { $0.isNumber }
-        if numericOnly.count < 13 || numericOnly.count > 19 {
-            cardValidationError = "Invalid card number"
-        } else {
-            cardValidationError = nil
-        }
-    }
-
-    private func validateExpiryDate(_ expiry: String) {
-        guard !expiry.isEmpty else {
-            cardValidationError = nil
-            return
-        }
-
-        if !isValidExpiryDate(expiry) {
-            cardValidationError = "Invalid expiry date"
-        } else {
-            cardValidationError = nil
-        }
-    }
-
-    private func isValidExpiryDate(_ expiry: String) -> Bool {
-        let components = expiry.split(separator: "/")
-        guard components.count == 2,
-              let month = Int(components[0]),
-              let year = Int(components[1]) else {
-            return false
-        }
-
-        guard month >= 1 && month <= 12 else {
-            return false
-        }
-
-        let currentYear = Calendar.current.component(.year, from: Date()) % 100
-        let currentMonth = Calendar.current.component(.month, from: Date())
-
-        if year < currentYear {
-            return false
-        } else if year == currentYear && month < currentMonth {
-            return false
-        }
-
-        return true
-    }
-
-    private func validateUpiId(_ upiId: String) {
-        guard !upiId.isEmpty else {
-            upiValidationError = nil
-            return
-        }
-
-        let upiPattern = "^[\\w.]+@[\\w]+$"
-        let upiPredicate = NSPredicate(format: "SELF MATCHES %@", upiPattern)
-
-        if !upiPredicate.evaluate(with: upiId) {
-            upiValidationError = "Invalid UPI ID format"
-        } else {
-            upiValidationError = nil
-        }
-    }
-
-    // MARK: - Saved Cards
-
-    func loadSavedCards() {
-        // Mock saved cards - in production, load from secure storage
-        savedCards = [
-            SavedCard(
-                id: "card1",
-                last4Digits: "4242",
-                expiryMonth: "12",
-                expiryYear: "25",
-                cardHolderName: "John Doe"
-            ),
-            SavedCard(
-                id: "card2",
-                last4Digits: "5555",
-                expiryMonth: "06",
-                expiryYear: "26",
-                cardHolderName: "John Doe"
-            )
-        ]
+    func replaceTokenizedPaymentMethodsForTesting(_ methods: [TokenizedPaymentMethod]) {
+        tokenizedPaymentMethods = methods
+        selectedSavedCardIndex = nil
+        syncSavedCardSummaries()
     }
 
     func selectSavedCard(at index: Int) {
+        guard tokenizedPaymentMethods.indices.contains(index) else {
+            selectedSavedCardIndex = nil
+            errorMessage = "Payment method not found"
+            return
+        }
         selectedSavedCardIndex = index
+        selectedPaymentMethod = tokenizedPaymentMethods[index].type
         showNewCardForm = false
+        errorMessage = nil
     }
 
-    // MARK: - Payment Processing
+    func updateCardNumber(_ input: String) {
+        let digits = input.filter(\.isNumber)
+        cardNumber = digits.count >= 4 ? "•••• \(digits.suffix(4))" : ""
+        cardValidationError = input.isEmpty ? nil : "Add or select a card through the payment provider"
+    }
+
+    func updateCvv(_ input: String) {
+        cvv = ""
+        cardValidationError = input.isEmpty ? cardValidationError : "Security codes are collected only by the payment provider"
+    }
+
+    func updateUpiId(_ input: String) {
+        upiId = input
+        upiValidationError = input.isEmpty ? nil : "Authorize UPI through the payment provider"
+    }
 
     func processPayment(amount: Double, onSuccess: @escaping (String) -> Void) async {
         isProcessing = true
         errorMessage = nil
+        showPaymentFailed = false
+        showPaymentSuccess = false
 
         do {
-            // Simulate payment processing
-            try await Task.sleep(nanoseconds: 2_000_000_000)  // 2 seconds
-
-            let orderId = "ORD-\(Int.random(in: 10000...99999))"
+            let orderId = "PAY-\(Int(Date().timeIntervalSince1970 * 1000))"
 
             switch selectedPaymentMethod {
             case .card:
-                try await processCardPayment(amount: amount, orderId: orderId)
-            case .cash:
-                try await processCashPayment(amount: amount, orderId: orderId)
+                try authorizeTokenizedPayment(type: .card, amount: amount, orderId: orderId)
             case .upi:
-                try await processUPIPayment(amount: amount, orderId: orderId)
+                try authorizeTokenizedPayment(type: .upi, amount: amount, orderId: orderId)
+            case .cash:
+                paymentIntentStatus = .authorized
             }
 
-            // Success
             completedOrderId = orderId
-            showPaymentSuccess = true
             isProcessing = false
 
+            if paymentIntentStatus == .authorized {
+                showPaymentSuccess = true
+                onSuccess(orderId)
+            }
         } catch {
-            errorMessage = error.localizedDescription
+            let message = error.localizedDescription
+            paymentIntentStatus = .failed(message)
+            errorMessage = message
             showPaymentFailed = true
             isProcessing = false
         }
     }
-
-    private func processCardPayment(amount: Double, orderId: String) async throws {
-        // Validate card details
-        guard isCardValid || selectedSavedCardIndex != nil else {
-            throw PaymentError.invalidCardDetails
-        }
-
-        // In production: integrate with payment gateway
-        // For now, simulate success
-        print("Processing card payment of ₹\(amount) for order \(orderId)")
-
-        if saveCard && selectedSavedCardIndex == nil {
-            // Save card (in production, save securely)
-            let newCard = SavedCard(
-                id: UUID().uuidString,
-                last4Digits: String(cardNumber.suffix(4)),
-                expiryMonth: String(expiryDate.prefix(2)),
-                expiryYear: String(expiryDate.suffix(2)),
-                cardHolderName: cardHolderName
-            )
-            savedCards.append(newCard)
-        }
-    }
-
-    private func processCashPayment(amount: Double, orderId: String) async throws {
-        // Cash on delivery doesn't need validation
-        print("Cash on delivery payment of ₹\(amount) for order \(orderId)")
-    }
-
-    private func processUPIPayment(amount: Double, orderId: String) async throws {
-        guard isUpiValid else {
-            throw PaymentError.invalidUpiId
-        }
-
-        // In production: integrate with UPI payment gateway
-        print("Processing UPI payment of ₹\(amount) to \(upiId) for order \(orderId)")
-    }
-
-    // MARK: - Reset
 
     func resetForm() {
         cardNumber = ""
@@ -274,25 +155,67 @@ class CustomerPaymentViewModel: ObservableObject {
         showNewCardForm = false
         cardValidationError = nil
         upiValidationError = nil
+        paymentIntentStatus = .idle
+    }
+
+    private var selectedTokenizedMethod: TokenizedPaymentMethod? {
+        guard let index = selectedSavedCardIndex,
+              tokenizedPaymentMethods.indices.contains(index) else {
+            return nil
+        }
+        return tokenizedPaymentMethods[index]
+    }
+
+    private func authorizeTokenizedPayment(type: PaymentMethodType, amount: Double, orderId: String) throws {
+        guard let method = selectedTokenizedMethod else {
+            throw PaymentError.providerAuthorizationRequired
+        }
+        guard method.type == type else {
+            throw PaymentError.providerAuthorizationRequired
+        }
+        guard !method.isExpired else {
+            throw PaymentError.expiredPaymentMethod
+        }
+        guard !method.tokenReference.isEmpty else {
+            throw PaymentError.providerAuthorizationRequired
+        }
+
+        // Server-created payment intent/provider client-secret integration lives behind the transport boundary.
+        // Until the generated operation is fully migrated, this ViewModel only accepts provider-tokenized summaries
+        // and never treats raw card/UPI entry as a successful payment.
+        paymentIntentStatus = method.requiresVerification ? .pendingVerification : .authorized
+        print("Authorized \(type.rawValue) payment via \(method.provider) for order \(orderId), amount \(amount)")
+    }
+
+    private func syncSavedCardSummaries() {
+        savedCards = tokenizedPaymentMethods
+            .filter { $0.type == .card }
+            .map {
+                SavedCard(
+                    id: $0.id,
+                    last4Digits: $0.last4 ?? "",
+                    expiryMonth: $0.expiryMonth.map { String(format: "%02d", $0) } ?? "",
+                    expiryYear: $0.expiryYear.map(String.init) ?? "",
+                    cardHolderName: $0.billingName ?? "Provider saved card"
+                )
+            }
     }
 }
 
-// MARK: - Payment Error
-
 enum PaymentError: LocalizedError {
-    case invalidCardDetails
-    case invalidUpiId
+    case providerAuthorizationRequired
+    case expiredPaymentMethod
     case paymentDeclined
     case networkError
 
     var errorDescription: String? {
         switch self {
-        case .invalidCardDetails:
-            return "Invalid card details. Please check and try again."
-        case .invalidUpiId:
-            return "Invalid UPI ID. Please enter a valid UPI ID."
+        case .providerAuthorizationRequired:
+            return "Authorize this payment with the payment provider."
+        case .expiredPaymentMethod:
+            return "Selected payment method is expired."
         case .paymentDeclined:
-            return "Payment was declined. Please try a different payment method."
+            return "Payment was declined. Please try a different method."
         case .networkError:
             return "Network error. Please check your connection and try again."
         }

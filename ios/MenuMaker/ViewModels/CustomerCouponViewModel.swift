@@ -22,7 +22,7 @@ class CustomerCouponViewModel: ObservableObject {
         let isUITesting = ProcessInfo.processInfo.arguments.contains("UI-Testing")
         if isUITesting {
             // Force deterministic seed regardless of business to keep UI tests stable
-            let seed = CouponRepository.shared.loadFixtureCoupons() ?? APIClient.mockCoupons
+            let seed = CouponRepository.shared.loadFixtureCoupons() ?? []
             availableCoupons = seed.filter { $0.isActive && !$0.isExpired }
             searchResults = availableCoupons
             isLoading = false

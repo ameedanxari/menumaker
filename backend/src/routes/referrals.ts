@@ -19,6 +19,148 @@ interface ValidateCodeRequest {
   referral_code: string;
 }
 
+const LEGACY_REFERRAL_LIST_QUERY_FIELDS = new Set(['limit', 'offset', 'status']);
+const LEGACY_REFERRAL_TRACK_CLICK_BODY_FIELDS = new Set(['referral_code', 'source', 'utm_source']);
+const LEGACY_REFERRAL_VALIDATE_BODY_FIELDS = new Set(['referral_code']);
+const MAX_LEGACY_REFERRAL_CODE_LENGTH = 128;
+const MAX_LEGACY_REFERRAL_ATTRIBUTION_LENGTH = 100;
+const MAX_LEGACY_REFERRAL_USER_ID_LENGTH = 255;
+const LEGACY_REFERRAL_STATUSES = new Set([
+  'link_clicked',
+  'signup_completed',
+  'first_menu_published',
+  'expired',
+]);
+const UNSAFE_REFERRAL_ROUTE_TEXT_CONTROLS =
+  /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/u;
+
+function normalizeReferralRequestBodyRecord(body: unknown): Record<string, unknown> | null {
+  if (body === undefined || body === null) {
+    return {};
+  }
+
+  if (typeof body !== 'object' || Array.isArray(body)) {
+    return null;
+  }
+
+  return body as Record<string, unknown>;
+}
+
+function normalizeReferralQueryRecord(query: unknown): Record<string, unknown> | null {
+  if (query === undefined || query === null) {
+    return {};
+  }
+
+  if (typeof query !== 'object' || Array.isArray(query)) {
+    return null;
+  }
+
+  return query as Record<string, unknown>;
+}
+
+function normalizeRequiredReferralString(value: unknown): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  if (UNSAFE_REFERRAL_ROUTE_TEXT_CONTROLS.test(value)) {
+    return value;
+  }
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function hasUnsafeReferralRouteText(value: string): boolean {
+  return UNSAFE_REFERRAL_ROUTE_TEXT_CONTROLS.test(value);
+}
+
+function hasOversizedLegacyReferralUserId(value: string): boolean {
+  return value.length > MAX_LEGACY_REFERRAL_USER_ID_LENGTH;
+}
+
+function getAuthenticatedLegacyReferralUserId(user: unknown): string | null {
+  if (!user || typeof user !== 'object') {
+    return null;
+  }
+
+  const userRecord = user as { userId?: unknown; id?: unknown };
+  return (
+    normalizeRequiredReferralString(userRecord.userId) ??
+    normalizeRequiredReferralString(userRecord.id)
+  );
+}
+
+function invalidReferralRequestBodyResponse(reply: FastifyReply): unknown {
+  return reply.status(400).send({ error: 'Referral request body must be an object' });
+}
+
+function normalizeOptionalReferralString(value: unknown): string | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  return normalizeRequiredReferralString(value) ?? undefined;
+}
+
+function unsafeReferralRecordFieldNames(record: Record<string, unknown>): string[] {
+  return Object.keys(record).filter((field) => hasUnsafeReferralRouteText(field));
+}
+
+function unsupportedReferralQueryFields(query: Record<string, unknown>): string[] {
+  return Object.keys(query).filter((field) => !LEGACY_REFERRAL_LIST_QUERY_FIELDS.has(field));
+}
+
+function unsupportedReferralBodyFields(body: Record<string, unknown>, allowedFields: Set<string>): string[] {
+  return Object.keys(body).filter((field) => !allowedFields.has(field)).sort();
+}
+
+function normalizeReferralListInteger(
+  label: string,
+  value: unknown,
+  defaultValue: number
+): { value: number } | { error: string } {
+  if (value === undefined || value === null) {
+    return { value: defaultValue };
+  }
+
+  const normalized = typeof value === 'string' && /^\d+$/.test(value.trim()) ? Number(value.trim()) : value;
+  if (typeof normalized !== 'number' || !Number.isInteger(normalized) || normalized < 0) {
+    return { error: `${label} must be a non-negative integer` };
+  }
+
+  if (!Number.isSafeInteger(normalized)) {
+    return { error: `${label} must be a safe integer` };
+  }
+
+  return { value: normalized };
+}
+
+function normalizeOptionalReferralStatus(value: unknown): { value?: string } | { error: string } {
+  if (value === undefined || value === null) {
+    return {};
+  }
+
+  if (typeof value !== 'string' || !value.trim()) {
+    return { error: 'Referral list status must be link_clicked, signup_completed, first_menu_published, or expired' };
+  }
+
+  if (hasUnsafeReferralRouteText(value)) {
+    return { error: 'Referral list status contains unsafe control characters' };
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (hasUnsafeReferralRouteText(normalized)) {
+    return { error: 'Referral list status contains unsafe control characters' };
+  }
+
+  if (!LEGACY_REFERRAL_STATUSES.has(normalized)) {
+    return { error: 'Referral list status must be link_clicked, signup_completed, first_menu_published, or expired' };
+  }
+
+  return { value: normalized };
+}
+
 export default async function referralRoutes(fastify: FastifyInstance) {
   const userRepo = AppDataSource.getRepository(User);
 
@@ -33,10 +175,16 @@ export default async function referralRoutes(fastify: FastifyInstance) {
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const userId = request.user?.userId;
+        const userId = getAuthenticatedLegacyReferralUserId(request.user);
 
         if (!userId) {
           return reply.status(401).send({ error: 'Unauthorized' });
+        }
+        if (hasUnsafeReferralRouteText(userId)) {
+          return reply.status(400).send({ error: 'Referral user id contains unsafe control characters' });
+        }
+        if (hasOversizedLegacyReferralUserId(userId)) {
+          return reply.status(400).send({ error: 'Referral user id must be 255 characters or fewer' });
         }
 
         const user = await userRepo.findOne({ where: { id: userId } });
@@ -49,6 +197,9 @@ export default async function referralRoutes(fastify: FastifyInstance) {
         let referralCode = user.referral_code;
         if (!referralCode) {
           referralCode = await ReferralService.generateReferralCode(user);
+        }
+        if (hasUnsafeReferralRouteText(referralCode)) {
+          return reply.status(500).send({ error: 'Referral code contains unsafe control characters' });
         }
 
         // Generate shareable link
@@ -89,10 +240,16 @@ Let me know what you think! 😊`;
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const userId = request.user?.userId;
+        const userId = getAuthenticatedLegacyReferralUserId(request.user);
 
         if (!userId) {
           return reply.status(401).send({ error: 'Unauthorized' });
+        }
+        if (hasUnsafeReferralRouteText(userId)) {
+          return reply.status(400).send({ error: 'Referral user id contains unsafe control characters' });
+        }
+        if (hasOversizedLegacyReferralUserId(userId)) {
+          return reply.status(400).send({ error: 'Referral user id must be 255 characters or fewer' });
         }
 
         const stats = await ReferralService.getStats(userId);
@@ -104,7 +261,8 @@ Let me know what you think! 😊`;
             total_clicks: stats.link_clicked,
             total_signups: stats.signup_completed,
             total_published: stats.first_menu_published,
-            total_rewards_earned_cents: stats.total_rewards_earned_cents,
+            total_rewards_earned_cents: 0,
+            rewards_enabled: false,
             funnel: {
               link_clicked: stats.link_clicked,
               signup_completed: stats.signup_completed,
@@ -133,16 +291,52 @@ Let me know what you think! 😊`;
     },
     async (request: FastifyRequest<{ Querystring: { limit?: string; offset?: string; status?: string } }>, reply: FastifyReply) => {
       try {
-        const userId = request.user?.userId;
+        const userId = getAuthenticatedLegacyReferralUserId(request.user);
 
         if (!userId) {
           return reply.status(401).send({ error: 'Unauthorized' });
         }
+        if (hasUnsafeReferralRouteText(userId)) {
+          return reply.status(400).send({ error: 'Referral user id contains unsafe control characters' });
+        }
+        if (hasOversizedLegacyReferralUserId(userId)) {
+          return reply.status(400).send({ error: 'Referral user id must be 255 characters or fewer' });
+        }
 
-        const limit = parseInt(request.query.limit || '20', 10);
-        const offset = parseInt(request.query.offset || '0', 10);
+        const query = normalizeReferralQueryRecord(request.query);
+        if (!query) {
+          return reply.status(400).send({ error: 'Referral query must be an object' });
+        }
 
-        const referrals = await ReferralService.getReferrals(userId, limit, offset);
+        if (unsafeReferralRecordFieldNames(query).length > 0) {
+          return reply.status(400).send({
+            error: 'Referral query field names contain unsafe control characters',
+          });
+        }
+
+        const unsupportedFields = unsupportedReferralQueryFields(query);
+        if (unsupportedFields.length > 0) {
+          return reply.status(400).send({
+            error: `Unsupported referral query field(s): ${unsupportedFields.join(', ')}`,
+          });
+        }
+
+        const limit = normalizeReferralListInteger('Referral list limit', query.limit, 20);
+        if ('error' in limit) {
+          return reply.status(400).send({ error: limit.error });
+        }
+
+        const offset = normalizeReferralListInteger('Referral list offset', query.offset, 0);
+        if ('error' in offset) {
+          return reply.status(400).send({ error: offset.error });
+        }
+
+        const status = normalizeOptionalReferralStatus(query.status);
+        if ('error' in status) {
+          return reply.status(400).send({ error: status.error });
+        }
+
+        const referrals = await ReferralService.getReferrals(userId, limit.value, offset.value, status.value);
 
         // Format response
         const data = referrals.map((ref) => ({
@@ -150,9 +344,10 @@ Let me know what you think! 😊`;
           referee_name: ref.referee?.email?.split('@')[0] || 'Pending',
           referee_email: ref.referee_email,
           status: ref.status,
-          reward_claimed: ref.reward_claimed,
-          reward_type: ref.reward_type,
-          reward_value_cents: ref.reward_value_cents,
+          reward_claimed: false,
+          reward_type: null,
+          reward_value_cents: 0,
+          rewards_enabled: false,
           created_at: ref.created_at,
           signup_completed_at: ref.signup_completed_at,
           first_menu_published_at: ref.first_menu_published_at,
@@ -163,8 +358,8 @@ Let me know what you think! 😊`;
           data,
           meta: {
             total: referrals.length,
-            limit,
-            offset,
+            limit: limit.value,
+            offset: offset.value,
           },
         });
       } catch (error: any) {
@@ -182,10 +377,48 @@ Let me know what you think! 😊`;
     '/track-click',
     async (request: FastifyRequest<{ Body: TrackClickRequest }>, reply: FastifyReply) => {
       try {
-        const { referral_code, source, utm_source } = request.body;
+        const body = normalizeReferralRequestBodyRecord(request.body);
+        if (body === null) {
+          return invalidReferralRequestBodyResponse(reply);
+        }
 
-        if (!referral_code) {
+        if (unsafeReferralRecordFieldNames(body).length > 0) {
+          return reply.status(400).send({
+            error: 'Referral request field names contain unsafe control characters',
+          });
+        }
+
+        const unsupportedFields = unsupportedReferralBodyFields(body, LEGACY_REFERRAL_TRACK_CLICK_BODY_FIELDS);
+        if (unsupportedFields.length > 0) {
+          return reply.status(400).send({
+            error: `Unsupported referral request field(s): ${unsupportedFields.join(', ')}`,
+          });
+        }
+
+        const referralCode = normalizeRequiredReferralString(body.referral_code);
+
+        if (!referralCode) {
           return reply.status(400).send({ error: 'referral_code is required' });
+        }
+        if (hasUnsafeReferralRouteText(referralCode)) {
+          return reply.status(400).send({ error: 'referral_code contains unsafe control characters' });
+        }
+        if (referralCode.length > MAX_LEGACY_REFERRAL_CODE_LENGTH) {
+          return reply.status(400).send({ error: `referral_code must be at most ${MAX_LEGACY_REFERRAL_CODE_LENGTH} characters` });
+        }
+        const source = normalizeOptionalReferralString(body.source);
+        if (source && hasUnsafeReferralRouteText(source)) {
+          return reply.status(400).send({ error: 'source contains unsafe control characters' });
+        }
+        if (source && source.length > MAX_LEGACY_REFERRAL_ATTRIBUTION_LENGTH) {
+          return reply.status(400).send({ error: `source must be at most ${MAX_LEGACY_REFERRAL_ATTRIBUTION_LENGTH} characters` });
+        }
+        const utmSource = normalizeOptionalReferralString(body.utm_source);
+        if (utmSource && hasUnsafeReferralRouteText(utmSource)) {
+          return reply.status(400).send({ error: 'utm_source contains unsafe control characters' });
+        }
+        if (utmSource && utmSource.length > MAX_LEGACY_REFERRAL_ATTRIBUTION_LENGTH) {
+          return reply.status(400).send({ error: `utm_source must be at most ${MAX_LEGACY_REFERRAL_ATTRIBUTION_LENGTH} characters` });
         }
 
         // Extract IP and user agent for fraud prevention
@@ -201,9 +434,9 @@ Let me know what you think! 😊`;
           .substring(0, 32);
 
         const result = await ReferralService.trackClick({
-          referral_code,
+          referral_code: referralCode,
           source,
-          utm_source,
+          utm_source: utmSource,
           click_ip,
           device_fingerprint,
         });
@@ -234,13 +467,37 @@ Let me know what you think! 😊`;
     '/validate',
     async (request: FastifyRequest<{ Body: ValidateCodeRequest }>, reply: FastifyReply) => {
       try {
-        const { referral_code } = request.body;
-
-        if (!referral_code) {
-          return reply.status(400).send({ error: 'referral_code is required' });
+        const body = normalizeReferralRequestBodyRecord(request.body);
+        if (body === null) {
+          return invalidReferralRequestBodyResponse(reply);
         }
 
-        const validation = await ReferralService.validateCode(referral_code);
+        if (unsafeReferralRecordFieldNames(body).length > 0) {
+          return reply.status(400).send({
+            error: 'Referral request field names contain unsafe control characters',
+          });
+        }
+
+        const unsupportedFields = unsupportedReferralBodyFields(body, LEGACY_REFERRAL_VALIDATE_BODY_FIELDS);
+        if (unsupportedFields.length > 0) {
+          return reply.status(400).send({
+            error: `Unsupported referral request field(s): ${unsupportedFields.join(', ')}`,
+          });
+        }
+
+        const referralCode = normalizeRequiredReferralString(body.referral_code);
+
+        if (!referralCode) {
+          return reply.status(400).send({ error: 'referral_code is required' });
+        }
+        if (hasUnsafeReferralRouteText(referralCode)) {
+          return reply.status(400).send({ error: 'referral_code contains unsafe control characters' });
+        }
+        if (referralCode.length > MAX_LEGACY_REFERRAL_CODE_LENGTH) {
+          return reply.status(400).send({ error: `referral_code must be at most ${MAX_LEGACY_REFERRAL_CODE_LENGTH} characters` });
+        }
+
+        const validation = await ReferralService.validateCode(referralCode);
 
         if (!validation.valid) {
           return reply.status(404).send({

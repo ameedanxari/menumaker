@@ -24,6 +24,9 @@ class IntegrationViewModel @Inject constructor(
     private val _connectState = MutableStateFlow<Resource<PaymentProcessorData>?>(null)
     val connectState: StateFlow<Resource<PaymentProcessorData>?> = _connectState.asStateFlow()
 
+    private val _disconnectState = MutableStateFlow<Resource<Unit>?>(null)
+    val disconnectState: StateFlow<Resource<Unit>?> = _disconnectState.asStateFlow()
+
     fun loadIntegrations(businessId: String) {
         viewModelScope.launch {
             repository.getIntegrations(businessId).collect { resource ->
@@ -51,6 +54,7 @@ class IntegrationViewModel @Inject constructor(
     fun disconnectIntegration(id: String, businessId: String) {
         viewModelScope.launch {
             repository.disconnectIntegration(id).collect { resource ->
+                _disconnectState.value = resource
                 if (resource is Resource.Success) {
                     loadIntegrations(businessId)
                 }

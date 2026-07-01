@@ -1,0 +1,6 @@
+path,title,type,subject,authority,owner,created_or_last_evidence,status,replacement,inbound_links,retention_reason,disposition,conflict_flags,sha256
+README.md,Root readme,reference,project,current,fixtures,2026-06-20,authoritative,,,"approved root file",current,,
+docs/README.md,Fixture docs,reference,docs,current,fixtures,2026-06-20,authoritative,,,"fixture current docs",current,,
+docs/product/status.md,Fixture status,status,product,current,fixtures,2026-06-20,authoritative,,,"fixture status",current,,
+docs/product/capability-index.md,Fixture capability index,reference,product,current,fixtures,2026-06-20,authoritative,,,"fixture capability index",current,,
+docs/archive/2026/old-status.md,Old status,status,archive,none,fixtures,2026-06-20,historical,docs/product/status.md,,"fixture archive",archive,,

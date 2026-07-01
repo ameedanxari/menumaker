@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../services/api';
 import { useCartStore } from '../stores/cartStore';
 import { PaymentModal } from '../components/payments/PaymentModal';
@@ -14,6 +14,7 @@ import {
   Loader2,
   ShoppingBag,
   ImageIcon,
+  CheckCircle,
 } from 'lucide-react';
 
 interface Business {
@@ -33,6 +34,57 @@ interface Business {
     delivery_fee_flat_cents: number;
     minimum_order_cents: number;
     currency: string;
+  };
+}
+
+const PUBLIC_MENU_DELIVERY_TYPES = new Set(['flat', 'distance', 'free']);
+const UNSAFE_PUBLIC_MENU_TEXT_CONTROLS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/u;
+
+function safePublicBoolean(value: unknown): boolean | null {
+  return typeof value === 'boolean' ? value : null;
+}
+
+function safePublicCents(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) return null;
+  return value;
+}
+
+function safePublicDeliveryFeeType(value: unknown): 'flat' | 'distance' | 'free' | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase();
+  if (!PUBLIC_MENU_DELIVERY_TYPES.has(normalized)) return null;
+  return normalized as 'flat' | 'distance' | 'free';
+}
+
+export function sanitizePublicBusinessSettings(rawSettings: Business['settings'] | null | undefined): Business['settings'] | undefined {
+  if (!rawSettings) return undefined;
+  const delivery_enabled = safePublicBoolean(rawSettings.delivery_enabled);
+  const pickup_enabled = safePublicBoolean(rawSettings.pickup_enabled);
+  const delivery_fee_type = safePublicDeliveryFeeType(rawSettings.delivery_fee_type);
+  const delivery_fee_flat_cents = safePublicCents(rawSettings.delivery_fee_flat_cents);
+  const minimum_order_cents = safePublicCents(rawSettings.minimum_order_cents);
+
+  if (
+    delivery_enabled === null ||
+    pickup_enabled === null ||
+    delivery_fee_type === null ||
+    delivery_fee_flat_cents === null ||
+    minimum_order_cents === null
+  ) {
+    return undefined;
+  }
+
+  return {
+    delivery_enabled,
+    pickup_enabled,
+    delivery_fee_type,
+    delivery_fee_flat_cents,
+    minimum_order_cents,
+    currency: typeof rawSettings.currency === 'string' &&
+      rawSettings.currency.trim().length === 3 &&
+      !UNSAFE_PUBLIC_MENU_TEXT_CONTROLS.test(rawSettings.currency)
+      ? rawSettings.currency.trim().slice(0, 3).toUpperCase()
+      : 'USD',
   };
 }
 
@@ -61,6 +113,9 @@ interface Menu {
 
 export default function PublicMenuPage() {
   const { businessSlug } = useParams<{ businessSlug: string }>();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isConfirmationPage = location.pathname === '/order-confirmation';
   const [business, setBusiness] = useState<Business | null>(null);
   const [menu, setMenu] = useState<Menu | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -91,10 +146,17 @@ export default function PublicMenuPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const [lastOrder, setLastOrder] = useState<any>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (isConfirmationPage) {
+      setLastOrder(JSON.parse(sessionStorage.getItem('lastOrderConfirmation') || 'null'));
+      setIsLoading(false);
+      return;
+    }
+
     async function fetchData() {
       if (!businessSlug) return;
 
@@ -110,8 +172,13 @@ export default function PublicMenuPage() {
         }
 
         const businessData = businessResponse.data.business;
+        const sanitizedSettings = sanitizePublicBusinessSettings(businessData.settings);
+        businessData.settings = sanitizedSettings;
         setBusiness(businessData);
         setBusinessId(businessData.id);
+        if (sanitizedSettings?.delivery_enabled) {
+          setCheckoutForm((previous) => ({ ...previous, deliveryType: 'delivery' }));
+        }
 
         // Fetch active menu
         try {
@@ -120,7 +187,7 @@ export default function PublicMenuPage() {
             setMenu(menuResponse.data.menu);
           }
         } catch (_err) {
-          setError('No active menu available');
+          setMenu(null);
         }
       } catch (err: any) {
         setError(err.response?.data?.error?.message || 'Failed to load menu');
@@ -130,7 +197,7 @@ export default function PublicMenuPage() {
     }
 
     fetchData();
-  }, [businessSlug, setBusinessId]);
+  }, [businessSlug, isConfirmationPage, setBusinessId]);
 
   const groupedItems = menu?.items?.reduce((acc, item) => {
     if (!item.dish?.is_available) return acc;
@@ -159,6 +226,26 @@ export default function PublicMenuPage() {
 
     if (items.length === 0) return;
     if (!business) return;
+
+    if (!checkoutForm.customerName.trim()) {
+      setError('Name is required');
+      return;
+    }
+
+    if (!/^\+?[0-9 ()-]{7,}$/.test(checkoutForm.customerPhone.trim())) {
+      setError('Invalid phone format');
+      return;
+    }
+
+    if (checkoutForm.deliveryType === 'delivery' && !checkoutForm.deliveryAddress.trim()) {
+      setError('Delivery address is required');
+      return;
+    }
+
+    if (checkoutForm.deliveryType === 'delivery' && !business.settings?.delivery_enabled) {
+      setError('Delivery is unavailable for this business');
+      return;
+    }
 
     setIsSubmitting(true);
     setError('');
@@ -191,11 +278,29 @@ export default function PublicMenuPage() {
         setShowPaymentModal(true);
       } else {
         // For cash/card (COD), order is complete
+        const order = response.data.order;
+        sessionStorage.setItem(
+          'lastOrderConfirmation',
+          JSON.stringify({
+            order,
+            business,
+            customer: {
+              name: checkoutForm.customerName,
+              phone: checkoutForm.customerPhone,
+              email: checkoutForm.customerEmail,
+            },
+            items,
+            subtotal,
+            deliveryFee,
+            total,
+          })
+        );
         setOrderSuccess(true);
+        setLastOrder({ order });
         clearCart();
         setShowCheckout(false);
         setShowCart(false);
-        setTimeout(() => setOrderSuccess(false), 5000);
+        navigate('/order-confirmation');
       }
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to place order');
@@ -236,6 +341,53 @@ export default function PublicMenuPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+      </div>
+    );
+  }
+
+  if (isConfirmationPage) {
+    const confirmation = lastOrder;
+    const order = confirmation?.order;
+
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="card max-w-2xl w-full">
+          <div className="text-center mb-6">
+            <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
+            <h1 className="text-3xl font-bold text-gray-900">Thank you for your order!</h1>
+            <p className="text-gray-600 mt-2">Your order confirmed successfully.</p>
+          </div>
+
+          {order && (
+            <div className="space-y-4">
+              <div data-testid="order-id" className="text-lg font-semibold text-primary-700">
+                Order #{String(order.id).replace(/^order-/, '')}
+              </div>
+              <div>
+                <h2 className="font-semibold text-gray-900">Customer</h2>
+                <p>{confirmation.customer?.name}</p>
+                <p>{confirmation.customer?.phone}</p>
+              </div>
+              <div>
+                <h2 className="font-semibold text-gray-900">Items</h2>
+                <div className="space-y-2">
+                  {(confirmation.items || []).map((item: any) => (
+                    <div key={item.dishId} className="flex justify-between">
+                      <span>
+                        {item.quantity} × {item.dishName}
+                      </span>
+                      <span>${(item.price * item.quantity).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="border-t pt-4 flex justify-between text-lg font-semibold">
+                <span>Total</span>
+                <span>${Number(confirmation.total || 0).toFixed(2)}</span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -364,7 +516,7 @@ export default function PublicMenuPage() {
                               className="btn-primary text-sm inline-flex items-center gap-1 px-3 py-1"
                             >
                               <Plus className="w-4 h-4" />
-                              Add
+                              Add to Cart
                             </button>
                           </div>
                         </div>
@@ -378,20 +530,25 @@ export default function PublicMenuPage() {
         ) : (
           <div className="card text-center py-12">
             <ShoppingBag className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No menu items available at this time.</p>
+            <p className="text-gray-600">No active menu available yet. Please check back soon.</p>
           </div>
         )}
       </div>
 
       {/* Floating Cart Button */}
-      {getItemCount() > 0 && (
+      {business && (
         <button
           onClick={() => setShowCart(true)}
+          data-testid="cart-badge"
           className="fixed bottom-6 right-6 btn-primary rounded-full w-16 h-16 shadow-lg flex items-center justify-center"
+          aria-label="Open cart"
         >
           <div className="relative">
             <ShoppingCart className="w-6 h-6" />
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+            <span
+              data-testid="cart-count"
+              className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center"
+            >
               {getItemCount()}
             </span>
           </div>
@@ -441,6 +598,7 @@ export default function PublicMenuPage() {
                           <button
                             onClick={() => updateQuantity(item.dishId, item.quantity - 1)}
                             className="p-1 hover:bg-gray-200 rounded"
+                            aria-label="Decrease quantity"
                           >
                             <Minus className="w-4 h-4" />
                           </button>
@@ -448,12 +606,14 @@ export default function PublicMenuPage() {
                           <button
                             onClick={() => updateQuantity(item.dishId, item.quantity + 1)}
                             className="p-1 hover:bg-gray-200 rounded"
+                            aria-label="Increase quantity"
                           >
                             <Plus className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => removeItem(item.dishId)}
                             className="p-1 hover:bg-red-50 rounded ml-2"
+                            aria-label="Remove item"
                           >
                             <X className="w-4 h-4 text-red-600" />
                           </button>
@@ -512,7 +672,7 @@ export default function PublicMenuPage() {
               </div>
             </div>
 
-            <form onSubmit={handleCheckout} className="p-6 space-y-6">
+            <form onSubmit={handleCheckout} noValidate className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="customerName" className="label">
@@ -520,6 +680,7 @@ export default function PublicMenuPage() {
                   </label>
                   <input
                     id="customerName"
+                    name="customerName"
                     type="text"
                     value={checkoutForm.customerName}
                     onChange={(e) =>
@@ -536,6 +697,7 @@ export default function PublicMenuPage() {
                   </label>
                   <input
                     id="customerPhone"
+                    name="customerPhone"
                     type="tel"
                     value={checkoutForm.customerPhone}
                     onChange={(e) =>
@@ -553,6 +715,7 @@ export default function PublicMenuPage() {
                 </label>
                 <input
                   id="customerEmail"
+                  name="customerEmail"
                   type="email"
                   value={checkoutForm.customerEmail}
                   onChange={(e) =>
@@ -614,6 +777,7 @@ export default function PublicMenuPage() {
                   </label>
                   <textarea
                     id="deliveryAddress"
+                    name="deliveryAddress"
                     value={checkoutForm.deliveryAddress}
                     onChange={(e) =>
                       setCheckoutForm({ ...checkoutForm, deliveryAddress: e.target.value })
@@ -630,6 +794,7 @@ export default function PublicMenuPage() {
                 </label>
                 <textarea
                   id="notes"
+                  name="notes"
                   value={checkoutForm.notes}
                   onChange={(e) =>
                     setCheckoutForm({ ...checkoutForm, notes: e.target.value })
@@ -642,6 +807,7 @@ export default function PublicMenuPage() {
               <div>
                 <label className="label">Payment Method</label>
                 <select
+                  name="paymentMethod"
                   value={checkoutForm.paymentMethod}
                   onChange={(e) =>
                     setCheckoutForm({
@@ -658,7 +824,7 @@ export default function PublicMenuPage() {
               </div>
 
               {/* Order Summary */}
-              <div className="border-t border-gray-200 pt-4">
+              <div data-testid="order-summary" className="border-t border-gray-200 pt-4">
                 <h3 className="font-semibold text-gray-900 mb-3">Order Summary</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">

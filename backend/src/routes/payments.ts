@@ -9,6 +9,35 @@ import { Business } from '../models/Business.js';
 import { AppDataSource } from '../config/database.js';
 import { Payment } from '../models/Payment.js';
 
+export const processedStripeEventIds = new Set<string>();
+
+export function isMockChargeEnabled(envVars: NodeJS.ProcessEnv = process.env): boolean {
+  return envVars.NODE_ENV === 'test' && envVars.ENABLE_FAKE_PAYMENTS === 'true';
+}
+
+export function getExactWebhookBody(request: { rawBody?: Buffer; body?: unknown }): Buffer {
+  if (Buffer.isBuffer(request.rawBody)) return request.rawBody;
+  if (Buffer.isBuffer(request.body)) return request.body;
+  throw new Error('Exact raw webhook body is required');
+}
+
+export function isPaymentTransitionAllowed(current: string, next: string): boolean {
+  const allowed: Record<string, string[]> = {
+    pending: ['succeeded', 'failed', 'canceled'],
+    succeeded: ['refunded'],
+    failed: [],
+    canceled: [],
+    refunded: [],
+  };
+  return current === next || Boolean(allowed[current]?.includes(next));
+}
+
+export function recordStripeEventOnce(eventId: string): boolean {
+  if (processedStripeEventIds.has(eventId)) return false;
+  processedStripeEventIds.add(eventId);
+  return true;
+}
+
 export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
   const stripeService = new StripeService();
   const orderService = new OrderService();
@@ -335,48 +364,51 @@ export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
     });
   });
 
-  /**
-   * POST /payments/mock-charge
-   * Development-only helper to mark a payment as succeeded without processor integration.
-   */
-  fastify.post('/mock-charge', async (request, reply) => {
-    const { amount_cents, currency = 'INR', method, reference } = request.body as {
-      amount_cents: number;
-      currency?: string;
-      method: string;
-      reference?: string;
-    };
+  if (isMockChargeEnabled()) {
+    /**
+     * POST /payments/mock-charge
+     * Test-only helper to mark a payment as succeeded without processor integration.
+     */
+    fastify.post('/mock-charge', {
+      preHandler: authenticate,
+    }, async (request, reply) => {
+      const { amount_cents, currency = 'INR', method, reference } = request.body as {
+        amount_cents: number;
+        currency?: string;
+        method: string;
+        reference?: string;
+      };
 
-    if (!amount_cents || !method) {
-      return reply.status(400).send({
-        success: false,
-        error: { code: 'INVALID_PAYMENT', message: 'amount_cents and method are required' },
+      if (!amount_cents || !method) {
+        return reply.status(400).send({
+          success: false,
+          error: { code: 'INVALID_PAYMENT', message: 'amount_cents and method are required' },
+        });
+      }
+
+      // Create a payment record marked as succeeded
+      const payment = paymentRepo.create({
+        amount_cents,
+        currency,
+        status: 'succeeded',
+        processor_type: method as ProcessorType,
+        processor_payment_id: `mock_${Date.now()}`,
+        net_amount_cents: amount_cents,
+        processor_fee_cents: 0,
+        metadata: { reference, test_only: true },
       });
-    }
 
-    // Create a payment record marked as succeeded
-    const payment = paymentRepo.create({
-      amount_cents,
-      currency,
-      status: 'succeeded',
-      processor: method,
-      processor_type: method as ProcessorType,
-      processor_payment_id: `mock_${Date.now()}`,
-      net_amount_cents: amount_cents,
-      processor_fee_cents: 0,
-      metadata: { reference },
+      await paymentRepo.save(payment);
+
+      reply.send({
+        success: true,
+        data: {
+          payment_id: payment.id,
+          status: payment.status,
+        },
+      });
     });
-
-    await paymentRepo.save(payment);
-
-    reply.send({
-      success: true,
-      data: {
-        payment_id: payment.id,
-        status: payment.status,
-      },
-    });
-  });
+  }
 
   /**
    * POST /payments/webhook
@@ -402,11 +434,11 @@ export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
       return;
     }
 
-    // Get raw body for signature verification
-    const rawBody = (request as any).rawBody || request.body;
+    const rawBody = getExactWebhookBody(request as any);
 
     // Process webhook
     const { processed, event } = await stripeService.handleWebhook(rawBody, signature);
+    const firstReceipt = recordStripeEventOnce(event.id);
 
     // Log webhook processing
     logSecurityEvent(request.log, `Stripe webhook processed: ${event.type}`, {
@@ -419,7 +451,7 @@ export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
     reply.send({
       success: true,
       data: {
-        processed,
+        processed: processed && firstReceipt,
         eventType: event.type,
         eventId: event.id,
       },

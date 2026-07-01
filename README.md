@@ -5,17 +5,17 @@
 [![Node.js Version](https://img.shields.io/badge/node-20.x-green.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/typescript-5.x-blue.svg)](https://www.typescriptlang.org/)
 
-> **Transform your kitchen into a business. Start selling in minutes, not months.**
+> **Transform your kitchen into a business with verified launch-scope ordering, menu, payment, and operations workflows.**
 
-MenuMaker is a comprehensive, production-ready platform empowering food entrepreneurs to launch and grow their businesses online. From home-based sellers to cloud kitchens, MenuMaker provides enterprise-grade tools for menu management, order processing, payments, and marketplace discovery—scaled to support 5,000+ sellers.
+MenuMaker is a restaurant menu management and ordering platform for food entrepreneurs, home-based sellers, and cloud kitchens. Current launch readiness is governed by [docs/product/status.md](./docs/product/status.md) and the [capability registry](./docs/product/capability-index.md); historical phase guides are not release authority.
 
-**🎯 All Phase 3 features complete and production-ready!**
+**Current posture:** local remediation/build evidence is green for launch-scope flows, but public production release still requires the live evidence listed in [docs/product/status.md](./docs/product/status.md).
 
 ---
 
 ## ✨ Features
 
-### Core Platform (Phase 1-3 Complete)
+### Launch-scope platform
 - 🔐 **Authentication** - JWT-based auth with refresh tokens
 - 🏪 **Business Management** - Multi-business support, custom slugs, settings
 - 📋 **Menu Builder** - Intuitive drag-and-drop menu editor
@@ -24,27 +24,29 @@ MenuMaker is a comprehensive, production-ready platform empowering food entrepre
 - 🌐 **Public Menu Pages** - SEO-optimized, shareable menu URLs
 - 💳 **Payment Processing** - Stripe, Razorpay, PhonePe, Paytm, UPI, Manual
 - 📊 **Analytics** - Revenue, orders, performance metrics
-
-### Growth Features
 - 📱 **WhatsApp Integration** - Order confirmations via WhatsApp
-- 📸 **OCR Menu Import** - Upload menu photos, auto-extract dishes
-- 💎 **Subscription Tiers** - Free, Pro, Business plans
-- 🎁 **Referral System** - Earn rewards, leaderboards, affiliate program
 - 🔒 **GDPR Compliance** - Cookie consent, data export/deletion
 - 🔄 **Reorder Flow** - One-click reordering for customers
-
-### Enterprise Scale (5,000+ Sellers)
 - 💰 **Multiple Payment Processors** - Connect Stripe, Razorpay, PhonePe, Paytm
 - 💸 **Automated Payouts** - Configurable schedules (daily/weekly/monthly)
 - 🌍 **Multi-Language** - Hindi, Tamil, Marathi with RTL layout support
-- 📄 **Tax Compliance** - GST invoice generation, tax reports
 - ⭐ **Reviews & Complaints** - Customer feedback, seller responses
 - 🔍 **Marketplace Discovery** - Search, filter, featured sellers
-- 🖥️ **POS Integration** - Square, Dine, Zoho order sync
-- 🚚 **Delivery Partners** - Swiggy, Zomato, Dunzo integration
 - 🎟️ **Coupons & Promotions** - Discount codes, automatic promotions
-- 👥 **Admin Backend** - User management, moderation, support tickets
+- 🎁 **Basic Referral Codes** - Share/validate referral codes without reward or leaderboard claims
+- 👥 **Admin Portal** - First-party `/admin` route for user management, moderation, support tickets, and feature readiness
 - 🎨 **Design System** - Comprehensive UI component library, dark mode
+
+### Disabled until separately enabled and evidenced
+
+These capabilities exist only as launch-gated or historical scope until the capability registry, provider credentials, privacy/security review, contract evidence, and smoke tests say otherwise:
+
+- ⛔ OCR menu import
+- ⛔ Paid subscription tiers, trials, upgrades, and billing portal flows
+- ⛔ Enhanced referral rewards, leaderboards, affiliate payouts, and prize campaigns
+- ⛔ Tax reporting / GST invoice generation
+- ⛔ POS sync
+- ⛔ Third-party delivery partner integrations
 
 ---
 
@@ -104,24 +106,13 @@ cd frontend && npm run dev
 
 ## 📚 Documentation
 
-- **[Next Steps & Improvements](./NEXT-STEPS.md)** - Roadmap and future enhancements
-- **[Component Library](./COMPONENT-LIBRARY.md)** - UI component documentation
-- **[Brand Guidelines](./BRAND-GUIDELINES.md)** - Visual identity and voice
-- **[Design System Guide](./DESIGN-SYSTEM-GUIDE.md)** - Complete design system
+- **[Governed docs entry point](./docs/README.md)** - Current architecture, operations, security, release, and product status.
+- **[Product status](./docs/product/status.md)** - Evidence-backed release posture and remaining release blockers.
+- **[Capability index](./docs/product/capability-index.md)** - Source of truth for enabled/disabled capability state.
+- **[Design-system state matrix](./docs/design-system/state-matrix.yaml)** - Cross-platform UI state authority.
 - **[API Documentation](http://localhost:3001/api/docs)** - OpenAPI/Swagger docs (when running)
 
-### Additional Guides
-- [Payment Processors](./PAYMENT-PROCESSORS-GUIDE.md)
-- [Automated Payouts](./PAYOUTS-GUIDE.md)
-- [Multi-Language Support](./I18N-GUIDE.md)
-- [Tax Compliance](./TAX-REPORTS-GUIDE.md)
-- [Marketplace](./MARKETPLACE-GUIDE.md)
-- [POS Integration](./POS-INTEGRATION-GUIDE.md)
-- [Delivery Integration](./DELIVERY-INTEGRATION-GUIDE.md)
-- [Coupons & Promotions](./COUPONS-PROMOTIONS-GUIDE.md)
-- [Enhanced Referrals](./ENHANCED-REFERRAL-GUIDE.md)
-- [Admin Backend](./ADMIN-BACKEND-GUIDE.md)
-- [GDPR Compliance](./GDPR-COMPLIANCE-GUIDE.md)
+Historical root guides are inventoried in [docs/governance/document-inventory.csv](./docs/governance/document-inventory.csv) and are superseded by the governed docs tree unless explicitly listed as current.
 
 ---
 
@@ -320,8 +311,10 @@ npm run migration:run
 - `/api/v1/payouts` - Payout management
 - `/api/v1/marketplace` - Seller discovery
 - `/api/v1/coupons` - Promotions
-- `/api/v1/referrals` - Referral program
+- `/api/v1/referrals` - Basic referral-code sharing and validation
 - `/api/v1/admin` - Admin backend (restricted)
+
+Disabled route groups such as POS, delivery partner, OCR, tax reporting, subscriptions, and enhanced referrals are kept out of the public OpenAPI contract until enabled and evidenced.
 
 ---
 
@@ -337,7 +330,7 @@ All design values defined in `frontend/design-tokens.json`:
 - **Dark Mode**: Full support with system preference
 
 ### Components
-20+ production-ready components:
+20+ shared UI components:
 - **Atoms**: Button, Input, Checkbox, Badge, Avatar
 - **Molecules**: Card, Modal, Dropdown, Alert, Toast
 - **Organisms**: Header, DataTable, Form
@@ -381,15 +374,7 @@ MIT License - see [LICENSE](./LICENSE) file
 
 ## 🎯 Project Status
 
-**All Phase 3 features complete! 🎉**
-
-✅ Phase 1 - MVP (Core features)
-✅ Phase 2 - Growth (WhatsApp, OCR, Subscriptions, Referrals, GDPR)
-✅ Phase 3 - Scale (5,000+ sellers, Marketplace, Integrations, Admin Backend)
-
-**Production Ready**: The platform is fully functional and ready for deployment.
-
-See [NEXT-STEPS.md](./NEXT-STEPS.md) for post-launch roadmap and Phase 4 features.
+Current status is evidence-backed in [docs/product/status.md](./docs/product/status.md). Do not use “production ready” or advertise disabled capabilities unless the status page and capability registry have been updated with release evidence.
 
 ---
 

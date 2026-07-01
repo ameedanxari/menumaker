@@ -2,16 +2,32 @@
 import PackageDescription
 
 let package = Package(
-    name: "MenuMaker",
-    platforms: [.iOS(.v17)],
-    products: [
-        .library(name: "MenuMaker", targets: ["MenuMaker"]),
-        .library(name: "MenuMakerCustomer", targets: ["MenuMakerCustomer"])
+    name: "MenuMakerCore",
+    platforms: [
+        .iOS(.v17)
     ],
-    dependencies: [],
+    products: [
+        .library(name: "MenuMakerCore", targets: ["MenuMakerCore"])
+    ],
     targets: [
-        .target(name: "MenuMaker", dependencies: []),
-        .target(name: "MenuMakerCustomer", dependencies: ["MenuMaker"]),
-        .testTarget(name: "MenuMakerTests", dependencies: ["MenuMaker"])
+        .target(
+            name: "MenuMakerCore",
+            path: "MenuMaker",
+            exclude: [
+                "App",
+                "Assets.xcassets",
+                "Generated/DesignTokens/asset-colors.json",
+                "Info.plist",
+                "Resources"
+            ]
+        ),
+        .testTarget(
+            name: "MenuMakerCoreTests",
+            dependencies: ["MenuMakerCore"],
+            path: "MenuMakerTests",
+            exclude: [
+                "TestFixtureLoader.swift"
+            ]
+        )
     ]
 )

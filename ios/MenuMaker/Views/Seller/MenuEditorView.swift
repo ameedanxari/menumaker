@@ -163,6 +163,9 @@ struct AddDishView: View {
     @State private var category = ""
     @State private var isVegetarian = false
     @State private var isAvailable = true
+    @State private var selectedImage: UIImage?
+    @State private var imageError: String?
+    @State private var uploadRetryCount = 0
 
     var body: some View {
         NavigationView {
@@ -196,15 +199,11 @@ struct AddDishView: View {
                     TextField("Category", text: $category)
                         .accessibilityIdentifier("item-category-field")
 
-                    Button(action: {
-                        // Photo upload functionality placeholder
-                    }) {
-                        HStack {
-                            Image(systemName: "photo")
-                            Text("Upload Photo")
-                        }
-                    }
-                    .accessibility(label: Text("Upload Photo"))
+                    DishImagePickerSection(
+                        selectedImage: $selectedImage,
+                        imageError: $imageError,
+                        retryCount: $uploadRetryCount
+                    )
                 }
 
                 Section("Options") {
@@ -242,7 +241,7 @@ struct AddDishView: View {
             category: category.isEmpty ? nil : category,
             isVegetarian: isVegetarian,
             isAvailable: isAvailable,
-            image: nil
+            image: selectedImage
         ))
 
         dismiss()
@@ -261,6 +260,9 @@ struct EditDishView: View {
     @State private var category: String
     @State private var isVegetarian: Bool
     @State private var isAvailable: Bool
+    @State private var selectedImage: UIImage?
+    @State private var imageError: String?
+    @State private var uploadRetryCount = 0
 
     init(dish: Dish, viewModel: DishViewModel) {
         self.dish = dish
@@ -305,15 +307,11 @@ struct EditDishView: View {
                     TextField("Category", text: $category)
                         .accessibilityIdentifier("item-category-field")
 
-                    Button(action: {
-                        // Photo upload functionality placeholder
-                    }) {
-                        HStack {
-                            Image(systemName: "photo")
-                            Text("Upload Photo")
-                        }
-                    }
-                    .accessibility(label: Text("Upload Photo"))
+                    DishImagePickerSection(
+                        selectedImage: $selectedImage,
+                        imageError: $imageError,
+                        retryCount: $uploadRetryCount
+                    )
                 }
 
                 Section("Options") {
@@ -352,10 +350,137 @@ struct EditDishView: View {
             category: category.isEmpty ? nil : category,
             isVegetarian: isVegetarian,
             isAvailable: isAvailable,
-            image: nil
+            image: selectedImage
         ))
 
         dismiss()
+    }
+}
+
+private struct DishImagePickerSection: View {
+    @Binding var selectedImage: UIImage?
+    @Binding var imageError: String?
+    @Binding var retryCount: Int
+
+    @State private var showImagePicker = false
+    @State private var isLoadingImage = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Button {
+                showImagePicker = true
+            } label: {
+                HStack {
+                    Image(systemName: "photo")
+                    Text(selectedImage == nil ? "Upload Photo" : "Replace Photo")
+                    Spacer()
+                    if isLoadingImage {
+                        ProgressView()
+                    }
+                }
+            }
+            .accessibility(label: Text("Upload Photo"))
+            .accessibilityIdentifier("dish-photo-picker")
+            .sheet(isPresented: $showImagePicker) {
+                DishUIImagePicker(
+                    selectedImage: $selectedImage,
+                    imageError: $imageError,
+                    isLoadingImage: $isLoadingImage
+                )
+            }
+
+            if let selectedImage {
+                Image(uiImage: selectedImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 140)
+                    .clipShape(RoundedRectangle(cornerRadius: AppConstants.UI.cornerRadius))
+                    .accessibilityLabel("Selected dish photo")
+
+                HStack {
+                    Button("Remove Photo", role: .destructive) {
+                        self.selectedImage = nil
+                        imageError = nil
+                    }
+
+                    Spacer()
+
+                    Button("Retry Upload") {
+                        retryCount += 1
+                        imageError = nil
+                    }
+                    .accessibilityIdentifier("dish-photo-retry-button")
+                }
+                .font(.caption)
+            }
+
+            Text("Photos stay local until you save. MenuMaker accepts JPEG, PNG, HEIC, or HEIF images under 10 MB; camera access is optional and can be enabled in iOS Settings.")
+                .font(.caption)
+                .foregroundColor(.theme.textSecondary)
+
+            if let imageError {
+                Text(imageError)
+                    .font(.caption)
+                    .foregroundColor(.theme.error)
+                    .accessibilityIdentifier("dish-photo-error")
+            }
+        }
+    }
+}
+
+private struct DishUIImagePicker: UIViewControllerRepresentable {
+    @Binding var selectedImage: UIImage?
+    @Binding var imageError: String?
+    @Binding var isLoadingImage: Bool
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = ImageService.shared.presentImagePicker(sourceType: .photoLibrary)
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        private let parent: DishUIImagePicker
+
+        init(_ parent: DishUIImagePicker) {
+            self.parent = parent
+        }
+
+        func imagePickerController(
+            _ picker: UIImagePickerController,
+            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+        ) {
+            parent.isLoadingImage = true
+            defer {
+                parent.isLoadingImage = false
+                picker.dismiss(animated: true)
+            }
+
+            do {
+                let image = info[.editedImage] as? UIImage ?? info[.originalImage] as? UIImage
+                guard let image,
+                      let data = ImageService.shared.compress(image) else {
+                    throw ImageError.invalidData
+                }
+                try ImageService.shared.validateUploadData(data, mimeType: "image/jpeg")
+                parent.selectedImage = image
+                parent.imageError = nil
+            } catch {
+                parent.selectedImage = nil
+                parent.imageError = error.localizedDescription
+            }
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.imageError = ImageError.cancelled.localizedDescription
+            picker.dismiss(animated: true)
+        }
     }
 }
 

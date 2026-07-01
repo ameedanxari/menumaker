@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ProfileView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
@@ -6,6 +7,7 @@ struct ProfileView: View {
     @State private var showEditProfile = false
     @State private var showChangePassword = false
     @State private var showLogoutConfirmation = false
+    @State private var showPhotoPicker = false
 
     var body: some View {
         ScrollView {
@@ -13,8 +15,12 @@ struct ProfileView: View {
                 // Profile Header
                 if let user = authViewModel.currentUser {
                     ProfileHeader(user: user, onEditPhoto: {
-                        // TODO: Implement photo upload
+                        showPhotoPicker = true
                     })
+                    if viewModel.isLoading {
+                        ProgressView("Updating profile photo…")
+                            .accessibilityIdentifier("profile-photo-upload-progress")
+                    }
                 }
 
                 // Profile Info
@@ -77,6 +83,13 @@ struct ProfileView: View {
                 viewModel: viewModel,
                 isPresented: $showChangePassword
             )
+        }
+        .sheet(isPresented: $showPhotoPicker) {
+            ProfilePhotoPicker { image in
+                Task {
+                    await viewModel.updateProfilePhoto(image)
+                }
+            }
         }
         .confirmationDialog("Logout", isPresented: $showLogoutConfirmation) {
             Button("Logout", role: .destructive) {
@@ -153,6 +166,46 @@ struct ProfileHeader: View {
                 }
                 .accessibility(label: Text("Edit photo"))
             }
+        }
+    }
+}
+
+private struct ProfilePhotoPicker: UIViewControllerRepresentable {
+    let onImageSelected: (UIImage) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = ImageService.shared.presentImagePicker(sourceType: .photoLibrary)
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+
+    final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        private let parent: ProfilePhotoPicker
+
+        init(parent: ProfilePhotoPicker) {
+            self.parent = parent
+        }
+
+        func imagePickerController(
+            _ picker: UIImagePickerController,
+            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+        ) {
+            let image = info[.editedImage] as? UIImage ?? info[.originalImage] as? UIImage
+            if let image {
+                parent.onImageSelected(image)
+            }
+            parent.dismiss()
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.dismiss()
         }
     }
 }
