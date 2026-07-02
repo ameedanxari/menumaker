@@ -1,5 +1,5 @@
 ---
-generated_at: 2026-07-01T23:53:57Z
+generated_at: 2026-07-02T00:09:40Z
 generated_by: scripts/build-path-ledger.sh
 plan_files: 14
 total_paths: 623
