@@ -50,6 +50,8 @@ describe('capability registry', () => {
   function repoFile(pathFromRoot: string): string {
     const fromCurrent = join(process.cwd(), pathFromRoot);
     if (existsSync(fromCurrent)) return fromCurrent;
+    const fromProjectRoot = join(process.cwd(), '..', pathFromRoot);
+    if (existsSync(fromProjectRoot)) return fromProjectRoot;
     return join(process.cwd(), pathFromRoot.replace(/^backend\//, ''));
   }
 
