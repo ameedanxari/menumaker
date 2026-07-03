@@ -143,7 +143,12 @@ export const capabilityRegistry: CapabilityDefinition[] = [
     launchScope: false,
     status: 'disabled',
     featureFlag: 'ENHANCED_REFERRALS_ENABLED',
-    routePrefixes: ['/api/v1/affiliate', '/api/v1/viral', '/api/v1/leaderboard'],
+    routePrefixes: [
+      '/api/v1/affiliates',
+      '/api/v1/badges',
+      '/api/v1/customers/referrals',
+      '/api/v1/referrals',
+    ],
     contractOperationIds: ['applyForAffiliate', 'approveAffiliate', 'claimViralReward'],
     tests: ['EnhancedReferralService.test.ts'],
     clientOrOperatorConsumers: ['admin_growth_console'],

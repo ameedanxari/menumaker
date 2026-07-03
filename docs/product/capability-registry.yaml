@@ -138,7 +138,11 @@ capabilities:
     status: disabled
     feature_flag: ENHANCED_REFERRALS_ENABLED
     dependencies: [coupon_service, notification_outbox]
-    route_prefixes: [/api/v1/affiliate, /api/v1/viral, /api/v1/leaderboard]
+    route_prefixes:
+      - /api/v1/affiliates
+      - /api/v1/badges
+      - /api/v1/customers/referrals
+      - /api/v1/referrals
     contract_operation_ids: [applyForAffiliate, approveAffiliate, claimViralReward]
     client_or_operator_consumers: [admin_growth_console]
     tests: [EnhancedReferralService.test.ts]
