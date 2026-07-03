@@ -1,5 +1,5 @@
 ---
-generated_at: 2026-07-03T07:52:22Z
+generated_at: 2026-07-03T08:08:15Z
 total_tasks: 14
 phase_counts:
   foundation: 8
