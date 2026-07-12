@@ -1,6 +1,7 @@
 # Audit Report
 
-_Audited: 2026-06-19_
+_Audited: 2026-07-11_
+_Method: latest ai-prompt-library `c7039ba`; read-only fan-out across backend and clients; local Node/npm execution unavailable._
 
 ## Components
 
@@ -13,7 +14,7 @@ _Audited: 2026-06-19_
   - Unit tests cover core services, selected routes, middleware, coupons, reviews, and WhatsApp.
 - **What is broken or missing:**
   - `npm run build` executes `tsc || exit 0`; TypeScript errors cannot fail local or CI builds, and `tsconfig.json` disables strictness, unused checks, fallthrough checks, and emit-on-error protection.
-  - Production disables TypeORM synchronization but the repository contains no migrations; a clean production database cannot be proven bootstrappable (`SRC-008`).
+  - Production disables TypeORM synchronization and relies on one large initial migration; zero-to-current and upgrade validation are not evidenced, and schema/entity parity remains unproven.
   - Environment validation covers only six variables while payment, storage, email, OCR, POS, referrals, and messaging consume many unvalidated variables.
   - `POST /payments/mock-charge` is public and writes succeeded payment records; webhook raw-body capture is configured without a registered raw-body plugin, so signature verification is not proven (`SRC-001`, `SRC-002`).
   - JWT refresh tokens have no rotation, server-side revocation, token family, logout invalidation, or account-state recheck beyond user existence.
@@ -67,7 +68,7 @@ _Audited: 2026-06-19_
   - Seller screens substitute hard-coded dishes/orders/reviews whenever repository state is empty, making empty/error states look successful.
   - Settings clear-cache/cart and help/legal navigation, profile/review image upload, and notification preference persistence are TODO-only.
   - Saved payment cards are hard-coded; production secure-storage integration is absent.
-  - Access and refresh tokens are stored in plain Preferences DataStore instead of protected credential storage (`SRC-003`, `SRC-005`).
+  - Token migration exists, but the current wrapper is reversible Base64 in ordinary preferences rather than Keystore-backed storage.
   - Retrofit methods/paths diverge from backend routes: PATCH versus PUT, `business_id` versus `businessId`, `/profile` versus `/auth/profile`, `/notifications/read-all` versus `/mark-all-read`, and nonexistent generic integration/analytics endpoints (`SRC-009`).
   - Duplicate `CartScreen` and `MenuScreen` files exist in competing packages; only one of each is navigated.
   - Repository cache conversion drops order items; sync submits partial order data and prints exceptions instead of classifying/retrying failures.
@@ -81,24 +82,24 @@ _Audited: 2026-06-19_
   - `android/app/src/main/kotlin/com/menumaker/data/repository/OrderRepository.kt` — cached orders lose item detail.
   - `android/app/src/main/kotlin/com/menumaker/workers/SyncWorker.kt` — partial payload and weak retry/error handling.
 - **Risks for production:**
-  - The seller app can appear populated while disconnected, mutating calls can fail with 404/405, and credentials are insufficiently protected.
+  - The seller app can appear populated while disconnected, mutating calls can fail with 404/405, and credential at-rest protection is insufficient.
 
 ### `ios/`
 - **Completion:** 60%
 - **What works:**
   - SwiftUI seller/customer role switching, broad screens, repositories/ViewModels, Keychain token storage, theme assets, localization, unit tests, UI tests, and fake API coverage exist.
-  - The Xcode project has one buildable application target plus unit/UI-test targets and a shared `MenuMaker` scheme.
+  - The Xcode project now has separate Business/Customer app and UI-test targets/schemes.
 - **What is broken or missing:**
-  - Deployment expects `MenuMaker-Business` and `MenuMaker-Customer` schemes, but the Xcode project exposes only `MenuMaker`; standalone customer/business targets do not exist.
+  - Signed distribution, staging/live API validation, and real-provider smoke evidence are not present.
   - `Package.swift` declares targets without matching `Sources/<target>` structure and does not define application products; it is not a substitute for missing Xcode targets.
-  - Customer/business-specific UI-test directories are not represented as Xcode targets/schemes.
+  - Historical target/scheme claims in this report are superseded by the current Xcode project layout.
   - `APIClient.swift` mixes production HTTP, token refresh, mutable test fixtures, unsafe generic casts, and approximately 1,300 lines of mock routing in one production source file.
   - iOS endpoint constants independently drift from backend paths (`businessOrders`, marketplace search, reviews, referrals, favorites, integrations, analytics) (`SRC-009`).
   - Menu photo upload remains placeholder-only and several UI tests validate mocks rather than backend compatibility.
   - `MenuMakerApp.swift` contains an obsolete embedded debugging task checklist in production source.
 - **Key files reviewed:**
-  - `ios/MenuMaker.xcodeproj/project.pbxproj` — only MenuMaker, MenuMakerTests, and MenuMakerUITests targets.
-  - `ios/MenuMaker.xcodeproj/xcshareddata/xcschemes/MenuMaker.xcscheme` — sole shared scheme.
+  - `ios/MenuMaker.xcodeproj/project.pbxproj` — Business/Customer app and UI-test targets are present.
+  - `ios/MenuMaker.xcodeproj/xcshareddata/xcschemes/` — role-specific schemes are present.
   - `ios/Package.swift` — library target declarations do not align with repository layout or release packaging.
   - `ios/MenuMaker/Core/Services/APIClient.swift` — production and UI-test transports are coupled.
   - `ios/MenuMaker/Shared/Constants/AppConstants.swift` — hand-maintained path and product constants.

@@ -1,6 +1,6 @@
 # Source Ledger
 
-_Generated at: 2026-06-29T11:55:47Z_
+_Generated at: 2026-07-11T23:50:48-0700_
 _Research triggers: production readiness, payments, authentication tokens, privacy, AWS infrastructure, CI/CD security, POS sync evidence hardening, delivery tracking evidence hardening_
 
 ## Sources
